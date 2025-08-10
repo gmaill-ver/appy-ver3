@@ -35,6 +35,18 @@
             overflow-x: hidden;
         }
         
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+        
         .app-container {
             position: relative;
             z-index: 1;
@@ -138,6 +150,212 @@
             color: var(--primary);
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* 使い方ガイド */
+        .guide-section {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-left: 4px solid var(--primary);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .guide-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .guide-content {
+            color: var(--dark);
+            line-height: 1.8;
+        }
+        
+        .guide-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+        }
+        
+        .guide-step-number {
+            width: 30px;
+            height: 30px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        
+        .guide-step-content {
+            flex: 1;
+        }
+        
+        .guide-step-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .guide-step-description {
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        /* グラフスタイル */
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* 週間学習グラフ */
+        .weekly-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            padding: 20px 10px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        
+        .day-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bar {
+            width: 100%;
+            max-width: 40px;
+            background: linear-gradient(to top, #6366f1, #8b5cf6);
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .bar:hover {
+            transform: scaleY(1.05);
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .day-label {
+            font-size: 13px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+        
+        /* 科目別進捗 */
+        .subject-progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .subject-progress-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .subject-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .subject-percentage {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .progress-bar-container {
+            position: relative;
+            height: 15px; /* 40pxから15pxに変更 */
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+        
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        /* 弱点分析カード */
+        .weakness-card {
+            background: #fef2f2;
+            border-left: 4px solid var(--danger);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .weakness-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 5px;
+        }
+        
+        .weakness-detail {
+            font-size: 14px;
+            color: var(--dark);
         }
         
         /* コンテンツカード */
@@ -267,11 +485,11 @@
         .hierarchy-list {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 15px; /* 10pxから15pxに変更 */
         }
         
         .hierarchy-item {
-            padding: 20px;
+            padding: 15px;
             background: var(--light);
             border: 2px solid transparent;
             border-radius: 12px;
@@ -321,26 +539,26 @@
         /* 問題番号グリッド */
         .question-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-            gap: 12px;
-            max-height: 400px;
+            grid-template-columns: repeat(auto-fill, minmax(25px, 1fr)); /* 45pxから25pxに変更 */
+            gap: 5px; /* 8pxから5pxに変更 */
+            max-height: 300px; /* 400pxから300pxに変更 */
             overflow-y: auto;
-            padding: 20px;
+            padding: 10px; /* 15pxから10pxに変更 */
             background: var(--light);
             border-radius: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .question-cell {
             aspect-ratio: 1;
             background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
+            border: 1px solid #e5e7eb; /* 2pxから1pxに変更 */
+            border-radius: 5px; /* 8pxから5pxに変更 */
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 10px; /* 12pxから10pxに変更 */
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
@@ -366,40 +584,183 @@
         .question-cell.bookmarked::after {
             content: '⭐';
             position: absolute;
-            top: -5px;
-            right: -5px;
-            font-size: 14px;
+            top: -3px; /* -5pxから-3pxに変更 */
+            right: -3px; /* -5pxから-3pxに変更 */
+            font-size: 8px; /* 12pxから8pxに変更 */
             background: var(--warning);
-            width: 22px;
-            height: 22px;
+            width: 14px; /* 20pxから14pxに変更 */
+            height: 14px; /* 20pxから14pxに変更 */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        /* アクションボタン（横並び） */
-        .action-buttons {
+        /* 復習用リスト */
+        .review-list {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .review-item {
+            padding: 15px;
+            background: var(--light);
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .review-item:hover {
+            background: white;
+            transform: translateX(5px);
+        }
+        
+        .review-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .review-item-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--dark);
+        }
+        
+        .review-item-detail {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .review-item-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        .review-item-status.wrong {
+            background: var(--danger);
+        }
+        
+        .review-item-status.bookmarked {
+            background: var(--warning);
+        }
+        
+        /* 新規登録フォーム */
+        .registration-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
-            margin-bottom: 20px;
+        }
+        
+        .add-button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--success), #34d399);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .add-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .delete-button {
+            padding: 8px 16px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-button:hover {
+            background: #dc2626;
+        }
+        
+        /* 統計表示 - 横並びに変更 */
+        .stats-grid {
+            display: flex; /* gridからflexに変更 */
+            gap: 10px; /* 15pxから10pxに変更 */
+            margin-bottom: 15px; /* 25pxから15pxに変更 */
+            overflow-x: auto;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 100px; /* 最小幅を設定 */
+            padding: 15px 10px; /* パディングを調整 */
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border-radius: 12px; /* 15pxから12pxに変更 */
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px; /* 4pxから3pxに変更 */
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+        
+        .stat-value {
+            font-size: 24px; /* 28pxから24pxに変更 */
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 3px;
+        }
+        
+        .stat-label {
+            font-size: 12px; /* 13pxから12pxに変更 */
+            color: var(--gray);
+        }
+        
+        /* アクションボタン - 横並びに変更 */
+        .action-buttons {
+            display: flex; /* gridからflexに変更 */
+            gap: 10px;
+            margin-bottom: 15px; /* 20pxから15pxに変更 */
         }
         
         .action-btn {
             flex: 1;
-            padding: 20px;
+            padding: 12px 10px; /* パディングを調整 */
             border: none;
-            border-radius: 15px;
+            border-radius: 10px; /* 12pxから10pxに変更 */
             font-weight: 700;
             color: white;
             cursor: pointer;
             transition: all 0.3s;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            font-size: 14px;
+            gap: 6px; /* 8pxから6pxに変更 */
+            font-size: 13px; /* 14pxから13pxに変更 */
         }
         
         .action-btn:hover {
@@ -412,165 +773,15 @@
         }
         
         .action-btn.correct {
-            background: #10b981;
+            background: linear-gradient(135deg, #10b981, #34d399);
         }
         
         .action-btn.wrong {
-            background: #ef4444;
+            background: linear-gradient(135deg, #ef4444, #f87171);
         }
         
         .action-btn.bookmark {
-            background: #f59e0b;
-        }
-        
-        .action-btn span:first-child {
-            font-size: 24px;
-        }
-        
-        /* 統計表示（横並び） */
-        .stats-grid {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            flex: 1;
-            padding: 20px;
-            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-            border-radius: 15px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--dark);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 13px;
-            color: var(--gray);
-        }
-        
-        /* 不正解・ブックマークリスト */
-        .filter-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .filter-btn {
-            padding: 10px 20px;
-            background: var(--light);
-            border: 2px solid transparent;
-            border-radius: 10px;
-            font-weight: 600;
-            color: var(--gray);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .filter-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        /* 科目別進捗（細いバー） */
-        .subject-progress-item {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: var(--shadow);
-        }
-        
-        .subject-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .subject-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--dark);
-        }
-        
-        .subject-percentage {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        
-        .progress-bar-container {
-            position: relative;
-            height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #34d399);
-            border-radius: 4px;
-            transition: width 0.5s ease;
-        }
-        
-        .progress-details {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-size: 12px;
-            color: var(--gray);
-        }
-        
-        /* 使い方セクション */
-        .guide-section {
-            background: #f0f9ff;
-            border-left: 4px solid var(--primary);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .guide-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 15px;
-        }
-        
-        .guide-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .guide-number {
-            width: 30px;
-            height: 30px;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-        
-        .guide-text {
-            flex: 1;
-            color: var(--dark);
-            line-height: 1.6;
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
         }
         
         /* 保存ボタン */
@@ -586,11 +797,31 @@
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .save-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
         
         .save-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        
+        .save-button:active::before {
+            width: 300px;
+            height: 300px;
         }
         
         /* タブコンテンツ */
@@ -608,48 +839,77 @@
             to { opacity: 1; }
         }
         
-        /* チャート */
-        .weekly-chart {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            height: 200px;
-            padding: 20px 10px;
-            background: #f9fafb;
-            border-radius: 10px;
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
         }
         
-        .day-bar {
-            flex: 1;
+        .modal.active {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            padding: 20px;
         }
         
-        .bar {
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
             width: 100%;
-            max-width: 40px;
-            background: linear-gradient(to top, #6366f1, #8b5cf6);
-            border-radius: 4px 4px 0 0;
-            transition: all 0.3s;
-            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
         }
         
-        .bar-value {
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 12px;
-            font-weight: 600;
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
             color: var(--dark);
         }
         
-        .day-label {
-            font-size: 13px;
-            color: var(--gray);
-            font-weight: 500;
+        .modal-close {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: var(--light);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
         }
         
         /* レスポンシブ */
@@ -658,16 +918,17 @@
                 padding: 15px;
             }
             
-            .action-buttons {
+            .header-content {
                 flex-direction: column;
+                align-items: flex-start;
             }
             
             .stats-grid {
-                flex-direction: column;
+                flex-wrap: wrap;
             }
             
-            .question-grid {
-                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            .stat-card {
+                min-width: calc(50% - 5px);
             }
         }
     </style>
@@ -689,12 +950,13 @@
 
         <!-- タブナビゲーション -->
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('guide')">使い方</button>
-            <button class="tab-btn" onclick="switchTab('record')">学習記録</button>
-            <button class="tab-btn" onclick="switchTab('register')">問題集登録</button>
-            <button class="tab-btn" onclick="switchTab('stats')">統計分析</button>
-            <button class="tab-btn" onclick="switchTab('progress')">進捗管理</button>
-            <button class="tab-btn" onclick="switchTab('review')">復習</button>
+            <button class="tab-btn active" onclick="switchTab('guide', event)">使い方</button>
+            <button class="tab-btn" onclick="switchTab('record', event)">学習記録</button>
+            <button class="tab-btn" onclick="switchTab('review', event)">復習</button>
+            <button class="tab-btn" onclick="switchTab('register', event)">問題集登録</button>
+            <button class="tab-btn" onclick="switchTab('stats', event)">統計分析</button>
+            <button class="tab-btn" onclick="switchTab('progress', event)">進捗管理</button>
+            <button class="tab-btn" onclick="switchTab('history', event)">学習履歴</button>
         </div>
 
         <!-- 使い方タブ -->
@@ -702,54 +964,62 @@
             <div class="content-card">
                 <div class="card-header">
                     <div class="card-icon">📖</div>
-                    <h2 class="card-title">StudyTracker Proの使い方</h2>
+                    <h2 class="card-title">StudyTracker Pro の使い方</h2>
                 </div>
                 
                 <div class="guide-section">
-                    <div class="guide-title">🚀 クイックスタート</div>
+                    <div class="guide-title">
+                        <span>🎯</span>
+                        <span>基本的な使い方</span>
+                    </div>
                     
                     <div class="guide-step">
-                        <div class="guide-number">1</div>
-                        <div class="guide-text">
-                            <strong>問題集を登録</strong><br>
-                            「問題集登録」タブで、お持ちの肢別問題集を登録します。科目→章→節→項の階層構造で自由に追加できます。
+                        <div class="guide-step-number">1</div>
+                        <div class="guide-step-content">
+                            <div class="guide-step-title">問題集を登録する</div>
+                            <div class="guide-step-description">「問題集登録」タブから、お持ちの肢別問題集を登録します。科目→章→節→項の階層構造で管理できます。</div>
                         </div>
                     </div>
                     
                     <div class="guide-step">
-                        <div class="guide-number">2</div>
-                        <div class="guide-text">
-                            <strong>学習記録を入力</strong><br>
-                            「学習記録」タブで問題集を選択し、階層を辿って問題番号一覧を表示。各問題をタップして正解/不正解を記録します。
+                        <div class="guide-step-number">2</div>
+                        <div class="guide-step-content">
+                            <div class="guide-step-title">学習記録をつける</div>
+                            <div class="guide-step-description">「学習記録」タブで問題集を選び、解いた問題を正解/不正解で記録します。重要な問題はブックマークも可能です。</div>
                         </div>
                     </div>
                     
                     <div class="guide-step">
-                        <div class="guide-number">3</div>
-                        <div class="guide-text">
-                            <strong>進捗を確認</strong><br>
-                            「統計分析」タブで学習の進捗や正答率をグラフで確認。弱点科目が一目でわかります。
+                        <div class="guide-step-number">3</div>
+                        <div class="guide-step-content">
+                            <div class="guide-step-title">復習する</div>
+                            <div class="guide-step-description">「復習」タブで、間違えた問題やブックマークした問題を効率的に復習できます。</div>
                         </div>
                     </div>
                     
                     <div class="guide-step">
-                        <div class="guide-number">4</div>
-                        <div class="guide-text">
-                            <strong>効率的に復習</strong><br>
-                            「復習」タブで間違えた問題やブックマークした問題だけを表示。苦手問題を集中的に学習できます。
+                        <div class="guide-step-number">4</div>
+                        <div class="guide-step-content">
+                            <div class="guide-step-title">進捗を確認する</div>
+                            <div class="guide-step-description">「統計分析」「進捗管理」タブで、学習の進み具合や正答率を確認できます。弱点分野も一目でわかります。</div>
                         </div>
                     </div>
                 </div>
                 
                 <div class="guide-section">
-                    <div class="guide-title">💡 便利な機能</div>
-                    
-                    <ul style="color: var(--dark); line-height: 1.8; padding-left: 20px;">
-                        <li><strong>階層構造対応</strong>: 科目→章→節→項（節に直接問題も可）</li>
-                        <li><strong>一括操作</strong>: 正解/不正解/ブックマークを一括設定</li>
-                        <li><strong>自動統計</strong>: 学習データから自動で統計を生成</li>
-                        <li><strong>データ永続化</strong>: ブラウザにデータを保存、いつでも続きから</li>
-                    </ul>
+                    <div class="guide-title">
+                        <span>💡</span>
+                        <span>便利な機能</span>
+                    </div>
+                    <div class="guide-content">
+                        <ul style="margin-left: 20px; line-height: 2;">
+                            <li>階層構造での問題管理：科目→章→節→項の細かい単位で管理</li>
+                            <li>正答率の自動計算：科目別、章別の正答率を自動で集計</li>
+                            <li>弱点分析：間違いが多い分野を自動で抽出</li>
+                            <li>学習履歴：いつ、どの範囲を学習したか記録</li>
+                            <li>ブックマーク機能：重要問題や苦手問題をマーク</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -810,13 +1080,6 @@
                     </button>
                 </div>
 
-                <div class="filter-buttons">
-                    <button class="filter-btn active" onclick="filterQuestions('all', this)">全て表示</button>
-                    <button class="filter-btn" onclick="filterQuestions('unanswered', this)">未解答</button>
-                    <button class="filter-btn" onclick="filterQuestions('wrong', this)">不正解のみ</button>
-                    <button class="filter-btn" onclick="filterQuestions('bookmarked', this)">ブックマーク</button>
-                </div>
-
                 <div class="question-grid" id="questionGrid">
                     <!-- 動的に生成 -->
                 </div>
@@ -831,6 +1094,10 @@
                         <div class="stat-label">正解数</div>
                     </div>
                     <div class="stat-card">
+                        <div class="stat-value" id="wrongCount">0</div>
+                        <div class="stat-label">不正解数</div>
+                    </div>
+                    <div class="stat-card">
                         <div class="stat-value" id="correctRate">0%</div>
                         <div class="stat-label">正答率</div>
                     </div>
@@ -842,6 +1109,31 @@
             </div>
         </div>
 
+        <!-- 復習タブ -->
+        <div id="review-tab" class="tab-content">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">🔄</div>
+                    <h2 class="card-title">不正解問題一覧</h2>
+                </div>
+                
+                <div class="review-list" id="wrongQuestionsList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">⭐</div>
+                    <h2 class="card-title">ブックマーク問題一覧</h2>
+                </div>
+                
+                <div class="review-list" id="bookmarkedQuestionsList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+
         <!-- 問題集登録タブ -->
         <div id="register-tab" class="tab-content">
             <div class="content-card">
@@ -850,26 +1142,29 @@
                     <h2 class="card-title">新規問題集登録</h2>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">問題集名</label>
-                    <input type="text" class="form-control" id="newBookName" placeholder="例: 合格革命 肢別過去問集 2024年版">
-                </div>
+                <div class="registration-form">
+                    <div class="form-group">
+                        <label class="form-label">問題集名</label>
+                        <input type="text" class="form-control" id="newBookName" placeholder="例: 合格革命 肢別過去問集 2024年版">
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">試験種別</label>
-                    <select class="form-control" id="newExamType">
-                        <option value="">選択してください</option>
-                        <option value="gyousei">行政書士試験</option>
-                        <option value="takken">宅建士試験</option>
-                        <option value="sharoushi">社労士試験</option>
-                        <option value="fp">FP技能検定</option>
-                        <option value="other">その他</option>
-                    </select>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">試験種別</label>
+                        <select class="form-control" id="newExamType">
+                            <option value="">選択してください</option>
+                            <option value="gyousei">行政書士試験</option>
+                            <option value="takken">宅建士試験</option>
+                            <option value="sharoushi">社労士試験</option>
+                            <option value="fp">FP技能検定</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
 
-                <button class="save-button" onclick="createNewBook()">
-                    問題集を作成
-                </button>
+                    <button class="add-button" onclick="createNewBook()">
+                        <span>➕</span>
+                        <span>問題集を作成</span>
+                    </button>
+                </div>
             </div>
 
             <!-- 登録済み問題集一覧 -->
@@ -888,6 +1183,1222 @@
         <!-- 統計分析タブ -->
         <div id="stats-tab" class="tab-content">
             <!-- 週間学習グラフ -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>📊</span>
+                    <span>週間学習グラフ</span>
+                </div>
+                <div class="weekly-chart" id="weeklyChart">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+
+            <!-- 科目別進捗 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">📚</div>
+                    <h2 class="card-title">科目別進捗</h2>
+                </div>
+                
+                <div class="subject-progress-list" id="subjectProgressList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+
+            <!-- 弱点分析 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2 class="card-title">弱点分析</h2>
+                </div>
+                
+                <div id="weaknessAnalysis">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 進捗管理タブ -->
+        <div id="progress-tab" class="tab-content">
             <div class="content-card">
                 <div class="card-header">
                     <div class="card-icon">📊</div>
+                    <h2 class="card-title">全体学習進捗</h2>
+                </div>
+                
+                <div id="progressContent">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 学習履歴タブ -->
+        <div id="history-tab" class="tab-content">
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">📅</div>
+                    <h2 class="card-title">学習履歴</h2>
+                </div>
+                
+                <div class="hierarchy-list" id="historyList">
+                    <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 階層構造編集モーダル -->
+    <div id="structureModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">階層構造を編集</h3>
+                <button class="modal-close" onclick="closeModal('structureModal')">×</button>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">階層レベル</label>
+                <select class="form-control" id="hierarchyLevel" onchange="updateHierarchyForm()">
+                    <option value="subject">科目</option>
+                    <option value="chapter">章</option>
+                    <option value="section">節</option>
+                    <option value="subsection">項</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">名称</label>
+                <input type="text" class="form-control" id="hierarchyName" placeholder="例: 民法の基本原則">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">問題数（項の場合のみ）</label>
+                <input type="number" class="form-control" id="questionCount" placeholder="50" min="1">
+            </div>
+
+            <div class="form-group" id="parentSelect" style="display: none;">
+                <label class="form-label">親階層</label>
+                <select class="form-control" id="parentHierarchy">
+                    <option value="">選択してください</option>
+                </select>
+            </div>
+
+            <button class="save-button" onclick="saveHierarchy()">階層を追加</button>
+        </div>
+    </div>
+
+    <script>
+        // データ構造
+        let books = {};
+        let currentBook = null;
+        let currentPath = [];
+        let questionStates = {};
+        let allRecords = [];
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBooksFromStorage();
+            initializeSampleData();
+            updateBookSelect();
+            loadAllRecords();
+            updateAnalytics();
+        });
+        
+        // サンプルデータの初期化
+        function initializeSampleData() {
+            if (Object.keys(books).length === 0) {
+                // サンプル: 合格革命 肢別過去問集
+                const sampleBook = {
+                    id: 'goukaku-2024',
+                    name: '合格革命 肢別過去問集 2024年版',
+                    examType: 'gyousei',
+                    structure: {
+                        '民法': {
+                            type: 'subject',
+                            children: {
+                                '総則': {
+                                    type: 'chapter',
+                                    children: {
+                                        '民法の基本原則': {
+                                            type: 'section',
+                                            children: {
+                                                '信義誠実の原則': {
+                                                    type: 'subsection',
+                                                    questionCount: 15,
+                                                    questions: generateQuestionNumbers(1, 15)
+                                                },
+                                                '権利の行使又は義務の履行': {
+                                                    type: 'subsection',
+                                                    questionCount: 12,
+                                                    questions: generateQuestionNumbers(16, 27)
+                                                }
+                                            }
+                                        },
+                                        '権利の主体・客体': {
+                                            type: 'section',
+                                            children: {
+                                                '権利能力': {
+                                                    type: 'subsection',
+                                                    questionCount: 20,
+                                                    questions: generateQuestionNumbers(28, 47)
+                                                },
+                                                '意思能力': {
+                                                    type: 'subsection',
+                                                    questionCount: 18,
+                                                    questions: generateQuestionNumbers(48, 65)
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                '物権': {
+                                    type: 'chapter',
+                                    children: {
+                                        '物権総則': {
+                                            type: 'section',
+                                            children: {
+                                                '物権の効力': {
+                                                    type: 'subsection',
+                                                    questionCount: 25,
+                                                    questions: generateQuestionNumbers(66, 90)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        '行政法': {
+                            type: 'subject',
+                            children: {
+                                '行政法総論': {
+                                    type: 'chapter',
+                                    children: {
+                                        '行政主体': {
+                                            type: 'section',
+                                            children: {
+                                                '国と地方公共団体': {
+                                                    type: 'subsection',
+                                                    questionCount: 30,
+                                                    questions: generateQuestionNumbers(1, 30)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    createdAt: new Date().toISOString()
+                };
+                
+                books[sampleBook.id] = sampleBook;
+                saveBooksToStorage();
+            }
+        }
+        
+        // 問題番号生成
+        function generateQuestionNumbers(start, end) {
+            const questions = [];
+            for (let i = start; i <= end; i++) {
+                questions.push(i);
+            }
+            return questions;
+        }
+        
+        // LocalStorage操作
+        function loadBooksFromStorage() {
+            const stored = localStorage.getItem('studyTrackerBooks');
+            if (stored) {
+                books = JSON.parse(stored);
+            }
+        }
+        
+        function saveBooksToStorage() {
+            localStorage.setItem('studyTrackerBooks', JSON.stringify(books));
+        }
+        
+        // 全記録を読み込み
+        function loadAllRecords() {
+            const history = localStorage.getItem('studyHistory');
+            if (history) {
+                allRecords = JSON.parse(history);
+                updateHistoryDisplay(allRecords);
+                updateReviewLists();
+            }
+        }
+        
+        // タブ切り替え
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'register') {
+                updateRegisteredBooksList();
+            } else if (tabName === 'progress') {
+                updateProgressDisplay();
+            } else if (tabName === 'stats') {
+                updateAnalytics();
+            } else if (tabName === 'review') {
+                updateReviewLists();
+            }
+        }
+        
+        // 問題集選択更新
+        function updateBookSelect() {
+            const select = document.getElementById('bookSelect');
+            select.innerHTML = '<option value="">問題集を選択してください</option>';
+            
+            Object.values(books).forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // 問題集構造読み込み
+        function loadBookStructure() {
+            const bookId = document.getElementById('bookSelect').value;
+            if (!bookId) return;
+            
+            currentBook = books[bookId];
+            currentPath = [];
+            
+            document.getElementById('breadcrumb').style.display = 'block';
+            document.getElementById('hierarchySection').style.display = 'block';
+            document.getElementById('questionSection').style.display = 'none';
+            
+            updateBreadcrumb();
+            showHierarchyLevel(currentBook.structure);
+        }
+        
+        // パンくずリスト更新
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('breadcrumb');
+            let html = `<span class="breadcrumb-item" onclick="navigateTo(-1)">${currentBook.name}</span>`;
+            
+            currentPath.forEach((item, index) => {
+                html += '<span class="breadcrumb-separator">›</span>';
+                html += `<span class="breadcrumb-item ${index === currentPath.length - 1 ? 'active' : ''}" 
+                         onclick="navigateTo(${index})">${item.name}</span>`;
+            });
+            
+            breadcrumb.innerHTML = html;
+        }
+        
+        // 階層表示
+        function showHierarchyLevel(structure, parentName = null) {
+            const list = document.getElementById('hierarchyList');
+            const title = document.getElementById('hierarchyTitle');
+            
+            list.innerHTML = '';
+            
+            // タイトル設定
+            if (currentPath.length === 0) {
+                title.textContent = '科目を選択';
+            } else if (currentPath[currentPath.length - 1].type === 'subject') {
+                title.textContent = '章を選択';
+            } else if (currentPath[currentPath.length - 1].type === 'chapter') {
+                title.textContent = '節を選択';
+            } else if (currentPath[currentPath.length - 1].type === 'section') {
+                title.textContent = '項を選択';
+            }
+            
+            Object.entries(structure).forEach(([name, item]) => {
+                const div = document.createElement('div');
+                div.className = 'hierarchy-item';
+                div.onclick = () => selectHierarchy(name, item);
+                
+                let detail = '';
+                if (item.type === 'subsection') {
+                    detail = `${item.questionCount}問`;
+                } else {
+                    const count = countQuestions(item);
+                    detail = `${Object.keys(item.children || {}).length}項目 / ${count}問`;
+                }
+                
+                div.innerHTML = `
+                    <div class="hierarchy-item-info">
+                        <div class="hierarchy-item-title">${name}</div>
+                        <div class="hierarchy-item-detail">${detail}</div>
+                    </div>
+                    <div class="hierarchy-item-count">${getTypeLabel(item.type)}</div>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+        
+        // 階層選択
+        function selectHierarchy(name, item) {
+            currentPath.push({ name, ...item });
+            updateBreadcrumb();
+            
+            if (item.type === 'subsection' || (item.type === 'section' && item.questions)) {
+                // 最下層（項または問題を持つ節）に到達したら問題表示
+                showQuestions(item);
+            } else if (item.children) {
+                // まだ下の階層があるので続ける
+                showHierarchyLevel(item.children);
+            } else {
+                alert('この階層には問題または下位階層がありません');
+            }
+        }
+        
+        // パンくずナビゲーション
+        function navigateTo(index) {
+            if (index === -1) {
+                // 最上位に戻る
+                currentPath = [];
+                showHierarchyLevel(currentBook.structure);
+                document.getElementById('questionSection').style.display = 'none';
+            } else {
+                // 特定の階層に戻る
+                currentPath = currentPath.slice(0, index + 1);
+                const current = getCurrentStructure();
+                
+                if (currentPath[index].type === 'subsection') {
+                    showQuestions(currentPath[index]);
+                } else {
+                    showHierarchyLevel(currentPath[index].children);
+                    document.getElementById('questionSection').style.display = 'none';
+                }
+            }
+            updateBreadcrumb();
+        }
+        
+        // 現在の構造を取得
+        function getCurrentStructure() {
+            let current = currentBook.structure;
+            currentPath.forEach(item => {
+                if (item.children) {
+                    current = item.children;
+                }
+            });
+            return current;
+        }
+        
+        // 問題表示
+        function showQuestions(item) {
+            document.getElementById('hierarchySection').style.display = 'none';
+            document.getElementById('questionSection').style.display = 'block';
+            
+            const grid = document.getElementById('questionGrid');
+            grid.innerHTML = '';
+            questionStates = {};
+            
+            item.questions.forEach(num => {
+                const cell = document.createElement('div');
+                cell.className = 'question-cell';
+                cell.textContent = num;
+                cell.dataset.number = num;
+                cell.onclick = () => toggleQuestion(num);
+                
+                grid.appendChild(cell);
+                
+                questionStates[num] = {
+                    state: null,
+                    bookmarked: false
+                };
+            });
+            
+            updateStats();
+        }
+        
+        // 問題状態切り替え
+        function toggleQuestion(num) {
+            const cell = document.querySelector(`[data-number="${num}"]`);
+            const state = questionStates[num];
+            
+            if (state.state === null) {
+                state.state = 'correct';
+                cell.classList.add('correct');
+            } else if (state.state === 'correct') {
+                state.state = 'wrong';
+                cell.classList.remove('correct');
+                cell.classList.add('wrong');
+            } else {
+                state.state = null;
+                cell.classList.remove('wrong');
+            }
+            
+            updateStats();
+        }
+        
+        // 正解マーク
+        function markCorrect() {
+            Object.keys(questionStates).forEach(num => {
+                if (questionStates[num].state === null) {
+                    questionStates[num].state = 'correct';
+                    const cell = document.querySelector(`[data-number="${num}"]`);
+                    if (cell) {
+                        cell.classList.add('correct');
+                    }
+                }
+            });
+            updateStats();
+        }
+        
+        // 不正解マーク
+        function markWrong() {
+            Object.keys(questionStates).forEach(num => {
+                if (questionStates[num].state === null) {
+                    questionStates[num].state = 'wrong';
+                    const cell = document.querySelector(`[data-number="${num}"]`);
+                    if (cell) {
+                        cell.classList.add('wrong');
+                    }
+                }
+            });
+            updateStats();
+        }
+        
+        // ブックマーク切り替え
+        function toggleBookmark() {
+            Object.keys(questionStates).forEach(num => {
+                if (questionStates[num].state !== null) {
+                    questionStates[num].bookmarked = !questionStates[num].bookmarked;
+                    const cell = document.querySelector(`[data-number="${num}"]`);
+                    if (cell) {
+                        cell.classList.toggle('bookmarked');
+                    }
+                }
+            });
+        }
+        
+        // 統計更新
+        function updateStats() {
+            let total = 0;
+            let correct = 0;
+            let wrong = 0;
+            
+            Object.values(questionStates).forEach(state => {
+                if (state.state !== null) {
+                    total++;
+                    if (state.state === 'correct') {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                }
+            });
+            
+            const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
+            
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+            document.getElementById('correctRate').textContent = rate + '%';
+        }
+        
+        // 記録保存
+        function saveRecord() {
+            const button = event.currentTarget;
+            const originalText = button.textContent;
+            
+            button.textContent = '保存中...';
+            button.style.background = 'linear-gradient(135deg, #10b981, #34d399)';
+            
+            const record = {
+                bookId: currentBook.id,
+                bookName: currentBook.name,
+                path: currentPath.map(p => p.name),
+                questions: questionStates,
+                timestamp: new Date().toISOString(),
+                stats: {
+                    total: parseInt(document.getElementById('totalCount').textContent),
+                    correct: parseInt(document.getElementById('correctCount').textContent),
+                    wrong: parseInt(document.getElementById('wrongCount').textContent),
+                    rate: document.getElementById('correctRate').textContent
+                }
+            };
+            
+            saveToHistory(record);
+            updateDailyStreak();
+            loadAllRecords();
+            updateAnalytics();
+            
+            setTimeout(() => {
+                button.textContent = '✓ 保存完了！';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
+                }, 1500);
+            }, 1000);
+        }
+        
+        // 連続学習日数の更新
+        function updateDailyStreak() {
+            const today = new Date().toDateString();
+            const lastStudyDate = localStorage.getItem('lastStudyDate');
+            let streakDays = parseInt(localStorage.getItem('streakDays') || '0');
+            
+            if (lastStudyDate !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastStudyDate === yesterday.toDateString()) {
+                    streakDays++;
+                } else if (lastStudyDate !== today) {
+                    streakDays = 1;
+                }
+                
+                localStorage.setItem('lastStudyDate', today);
+                localStorage.setItem('streakDays', streakDays.toString());
+            }
+        }
+        
+        // 履歴保存
+        function saveToHistory(record) {
+            let history = localStorage.getItem('studyHistory');
+            history = history ? JSON.parse(history) : [];
+            history.push(record);
+            
+            // 最新100件のみ保持
+            if (history.length > 100) {
+                history = history.slice(-100);
+            }
+            
+            localStorage.setItem('studyHistory', JSON.stringify(history));
+        }
+        
+        // 履歴表示更新
+        function updateHistoryDisplay(history) {
+            const list = document.getElementById('historyList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            history.slice(-10).reverse().forEach(record => {
+                const date = new Date(record.timestamp);
+                const div = document.createElement('div');
+                div.className = 'hierarchy-item';
+                
+                div.innerHTML = `
+                    <div class="hierarchy-item-info">
+                        <div class="hierarchy-item-title">${record.path.join(' › ')}</div>
+                        <div class="hierarchy-item-detail">
+                            ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
+                            | ${record.bookName}
+                        </div>
+                    </div>
+                    <div class="hierarchy-item-count">${record.stats.rate}</div>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+        
+        // 統計分析の更新
+        function updateAnalytics() {
+            updateWeeklyChart();
+            updateSubjectProgress();
+            updateWeaknessAnalysis();
+        }
+        
+        // 週間学習グラフの更新
+        function updateWeeklyChart() {
+            const chart = document.getElementById('weeklyChart');
+            if (!chart) return;
+            
+            const weekData = getWeekData();
+            const days = ['月', '火', '水', '木', '金', '土', '日'];
+            
+            let html = '';
+            days.forEach((day, index) => {
+                const count = weekData[index] || 0;
+                const height = count > 0 ? Math.min(80, count * 5) : 10;
+                
+                html += `
+                    <div class="day-bar">
+                        <div class="bar" style="height: ${height}%;">
+                            <span class="bar-value">${count}</span>
+                        </div>
+                        <span class="day-label">${day}</span>
+                    </div>
+                `;
+            });
+            
+            chart.innerHTML = html;
+        }
+        
+        // 週間データ取得
+        function getWeekData() {
+            const weekData = [0, 0, 0, 0, 0, 0, 0];
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+            
+            allRecords.forEach(record => {
+                const recordDate = new Date(record.timestamp);
+                if (recordDate >= startOfWeek) {
+                    const dayIndex = (recordDate.getDay() + 6) % 7;
+                    weekData[dayIndex] += record.stats.total || 0;
+                }
+            });
+            
+            return weekData;
+        }
+        
+        // 科目別進捗の更新
+        function updateSubjectProgress() {
+            const list = document.getElementById('subjectProgressList');
+            if (!list) return;
+            
+            const subjectStats = {};
+            
+            // 各科目の統計を集計
+            allRecords.forEach(record => {
+                const subject = record.path[0];
+                if (!subject) return;
+                
+                if (!subjectStats[subject]) {
+                    subjectStats[subject] = {
+                        total: 0,
+                        correct: 0,
+                        wrong: 0
+                    };
+                }
+                
+                subjectStats[subject].total += record.stats.total || 0;
+                subjectStats[subject].correct += record.stats.correct || 0;
+                subjectStats[subject].wrong += record.stats.wrong || 0;
+            });
+            
+            list.innerHTML = '';
+            
+            Object.entries(subjectStats).forEach(([subject, stats]) => {
+                const percentage = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                
+                const div = document.createElement('div');
+                div.className = 'subject-progress-item';
+                
+                let barColor = 'linear-gradient(90deg, #10b981, #34d399)';
+                if (percentage < 60) {
+                    barColor = 'linear-gradient(90deg, #ef4444, #f87171)';
+                } else if (percentage < 80) {
+                    barColor = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+                }
+                
+                div.innerHTML = `
+                    <div class="subject-header">
+                        <span class="subject-name">${subject}</span>
+                        <span class="subject-percentage">${percentage}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${percentage}%; background: ${barColor};">
+                        </div>
+                    </div>
+                    <div class="progress-details">
+                        <span>${stats.total}問解答 | ${stats.correct}問正解</span>
+                        <span>正答率: ${percentage}%</span>
+                    </div>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+        
+        // 弱点分析の更新
+        function updateWeaknessAnalysis() {
+            const container = document.getElementById('weaknessAnalysis');
+            if (!container) return;
+            
+            const weaknesses = [];
+            const subjectStats = {};
+            
+            // 各科目の統計を集計
+            allRecords.forEach(record => {
+                const subject = record.path[0];
+                if (!subject) return;
+                
+                if (!subjectStats[subject]) {
+                    subjectStats[subject] = {
+                        total: 0,
+                        correct: 0,
+                        wrong: 0
+                    };
+                }
+                
+                subjectStats[subject].total += record.stats.total || 0;
+                subjectStats[subject].correct += record.stats.correct || 0;
+                subjectStats[subject].wrong += record.stats.wrong || 0;
+            });
+            
+            // 弱点を抽出
+            Object.entries(subjectStats).forEach(([subject, stats]) => {
+                if (stats.total > 0) {
+                    const percentage = Math.round((stats.correct / stats.total) * 100);
+                    if (percentage < 70) {
+                        weaknesses.push({
+                            subject,
+                            percentage,
+                            wrong: stats.wrong
+                        });
+                    }
+                }
+            });
+            
+            // 正答率の低い順にソート
+            weaknesses.sort((a, b) => a.percentage - b.percentage);
+            
+            container.innerHTML = '';
+            
+            if (weaknesses.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280;">弱点分野はありません。素晴らしい成績です！</p>';
+            } else {
+                weaknesses.forEach(weakness => {
+                    const div = document.createElement('div');
+                    div.className = 'weakness-card';
+                    div.innerHTML = `
+                        <div class="weakness-title">${weakness.subject}</div>
+                        <div class="weakness-detail">正答率: ${weakness.percentage}% | 間違い: ${weakness.wrong}問</div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+        
+        // 復習リストの更新
+        function updateReviewLists() {
+            updateWrongQuestionsList();
+            updateBookmarkedQuestionsList();
+        }
+        
+        // 不正解問題リストの更新
+        function updateWrongQuestionsList() {
+            const list = document.getElementById('wrongQuestionsList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            const wrongQuestions = [];
+            
+            allRecords.forEach(record => {
+                Object.entries(record.questions).forEach(([num, state]) => {
+                    if (state.state === 'wrong') {
+                        wrongQuestions.push({
+                            bookName: record.bookName,
+                            path: record.path,
+                            questionNumber: num,
+                            timestamp: record.timestamp
+                        });
+                    }
+                });
+            });
+            
+            if (wrongQuestions.length === 0) {
+                list.innerHTML = '<p style="color: #6b7280; padding: 20px;">不正解問題はありません</p>';
+            } else {
+                wrongQuestions.slice(-20).reverse().forEach(question => {
+                    const div = document.createElement('div');
+                    div.className = 'review-item';
+                    
+                    div.innerHTML = `
+                        <div class="review-item-info">
+                            <div class="review-item-title">${question.path.join(' › ')} - 問題${question.questionNumber}</div>
+                            <div class="review-item-detail">${question.bookName}</div>
+                        </div>
+                        <div class="review-item-status wrong">不正解</div>
+                    `;
+                    
+                    list.appendChild(div);
+                });
+            }
+        }
+        
+        // ブックマーク問題リストの更新
+        function updateBookmarkedQuestionsList() {
+            const list = document.getElementById('bookmarkedQuestionsList');
+            if (!list) return;
+            
+            list.innerHTML = '';
+            
+            const bookmarkedQuestions = [];
+            
+            allRecords.forEach(record => {
+                Object.entries(record.questions).forEach(([num, state]) => {
+                    if (state.bookmarked) {
+                        bookmarkedQuestions.push({
+                            bookName: record.bookName,
+                            path: record.path,
+                            questionNumber: num,
+                            timestamp: record.timestamp,
+                            state: state.state
+                        });
+                    }
+                });
+            });
+            
+            if (bookmarkedQuestions.length === 0) {
+                list.innerHTML = '<p style="color: #6b7280; padding: 20px;">ブックマーク問題はありません</p>';
+            } else {
+                bookmarkedQuestions.slice(-20).reverse().forEach(question => {
+                    const div = document.createElement('div');
+                    div.className = 'review-item';
+                    
+                    div.innerHTML = `
+                        <div class="review-item-info">
+                            <div class="review-item-title">${question.path.join(' › ')} - 問題${question.questionNumber}</div>
+                            <div class="review-item-detail">${question.bookName}</div>
+                        </div>
+                        <div class="review-item-status bookmarked">★</div>
+                    `;
+                    
+                    list.appendChild(div);
+                });
+            }
+        }
+        
+        // 新規問題集作成
+        function createNewBook() {
+            const name = document.getElementById('newBookName').value;
+            const examType = document.getElementById('newExamType').value;
+            
+            if (!name || !examType) {
+                alert('問題集名と試験種別を入力してください');
+                return;
+            }
+            
+            const bookId = 'book_' + Date.now();
+            const newBook = {
+                id: bookId,
+                name: name,
+                examType: examType,
+                structure: {},
+                createdAt: new Date().toISOString()
+            };
+            
+            books[bookId] = newBook;
+            saveBooksToStorage();
+            
+            currentBook = newBook;
+            openModal('structureModal');
+            
+            // フォームリセット
+            document.getElementById('newBookName').value = '';
+            document.getElementById('newExamType').value = '';
+            
+            updateBookSelect();
+            updateRegisteredBooksList();
+        }
+        
+        // 登録済み問題集一覧更新
+        function updateRegisteredBooksList() {
+            const list = document.getElementById('registeredBooks');
+            list.innerHTML = '';
+            
+            Object.values(books).forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'hierarchy-item';
+                
+                const totalQuestions = countQuestionsInBook(book);
+                
+                div.innerHTML = `
+                    <div class="hierarchy-item-info">
+                        <div class="hierarchy-item-title">${book.name}</div>
+                        <div class="hierarchy-item-detail">
+                            ${getExamTypeName(book.examType)} | ${Object.keys(book.structure).length}科目 | ${totalQuestions}問
+                        </div>
+                    </div>
+                    <button class="delete-button" onclick="editBook('${book.id}')">編集</button>
+                `;
+                
+                list.appendChild(div);
+            });
+        }
+        
+        // 問題集編集
+        function editBook(bookId) {
+            currentBook = books[bookId];
+            openModal('structureModal');
+        }
+        
+        // モーダル操作
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            if (modalId === 'structureModal') {
+                updateHierarchyForm();
+            }
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // 階層フォーム更新
+        function updateHierarchyForm() {
+            const level = document.getElementById('hierarchyLevel').value;
+            const parentSelect = document.getElementById('parentSelect');
+            const questionCount = document.getElementById('questionCount').parentElement;
+            
+            if (level === 'subject') {
+                parentSelect.style.display = 'none';
+                questionCount.style.display = 'none';
+            } else if (level === 'subsection' || level === 'section') {
+                parentSelect.style.display = 'block';
+                questionCount.style.display = 'block';
+                
+                if (level === 'section') {
+                    updateParentOptions('chapter');
+                    document.querySelector('label[for="questionCount"]').textContent = '問題数（節に直接問題がある場合）';
+                } else {
+                    updateParentOptions('section');
+                    document.querySelector('label[for="questionCount"]').textContent = '問題数';
+                }
+            } else {
+                parentSelect.style.display = 'block';
+                questionCount.style.display = 'none';
+                
+                if (level === 'chapter') {
+                    updateParentOptions('subject');
+                }
+            }
+        }
+        
+        // 親階層オプション更新
+        function updateParentOptions(parentType) {
+            const select = document.getElementById('parentHierarchy');
+            select.innerHTML = '<option value="">選択してください</option>';
+            
+            if (!currentBook) return;
+            
+            function addOptions(structure, path = []) {
+                Object.entries(structure).forEach(([name, item]) => {
+                    if (item.type === parentType) {
+                        const option = document.createElement('option');
+                        option.value = [...path, name].join('/');
+                        option.textContent = [...path, name].join(' › ');
+                        select.appendChild(option);
+                    }
+                    if (item.children) {
+                        addOptions(item.children, [...path, name]);
+                    }
+                });
+            }
+            
+            addOptions(currentBook.structure);
+        }
+        
+        // 階層保存
+        function saveHierarchy() {
+            const level = document.getElementById('hierarchyLevel').value;
+            const name = document.getElementById('hierarchyName').value;
+            const parent = document.getElementById('parentHierarchy').value;
+            const count = document.getElementById('questionCount').value;
+            
+            if (!name) {
+                alert('名称を入力してください');
+                return;
+            }
+            
+            if (level !== 'subject' && !parent) {
+                alert('親階層を選択してください');
+                return;
+            }
+            
+            const hasQuestions = (level === 'subsection' || level === 'section') && count;
+            
+            if (level === 'subsection' && !count) {
+                alert('項には問題数を入力してください');
+                return;
+            }
+            
+            // 階層を追加
+            if (level === 'subject') {
+                currentBook.structure[name] = {
+                    type: 'subject',
+                    children: {}
+                };
+            } else {
+                const parentPath = parent.split('/');
+                let target = currentBook.structure;
+                
+                parentPath.forEach(p => {
+                    if (target[p]) {
+                        target = target[p].children || {};
+                    }
+                });
+                
+                if (hasQuestions) {
+                    target[name] = {
+                        type: level,
+                        questionCount: parseInt(count),
+                        questions: generateQuestionNumbers(1, parseInt(count))
+                    };
+                    
+                    if (level === 'section') {
+                        target[name].children = {};
+                    }
+                } else if (level === 'section') {
+                    target[name] = {
+                        type: 'section',
+                        children: {}
+                    };
+                } else {
+                    target[name] = {
+                        type: level,
+                        children: {}
+                    };
+                }
+            }
+            
+            saveBooksToStorage();
+            closeModal('structureModal');
+            
+            // フォームリセット
+            document.getElementById('hierarchyName').value = '';
+            document.getElementById('questionCount').value = '';
+            
+            alert('追加しました');
+        }
+        
+        // 進捗表示更新
+        function updateProgressDisplay() {
+            const content = document.getElementById('progressContent');
+            content.innerHTML = '';
+            
+            // 全体の進捗を表示
+            const overallDiv = document.createElement('div');
+            overallDiv.className = 'guide-section';
+            
+            let totalQuestions = 0;
+            let totalAnswered = 0;
+            let totalCorrect = 0;
+            
+            // 各問題集の統計を集計
+            Object.values(books).forEach(book => {
+                const bookQuestions = countQuestionsInBook(book);
+                totalQuestions += bookQuestions;
+                
+                // この問題集の解答数を集計
+                allRecords.forEach(record => {
+                    if (record.bookId === book.id) {
+                        totalAnswered += record.stats.total || 0;
+                        totalCorrect += record.stats.correct || 0;
+                    }
+                });
+            });
+            
+            const overallRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+            const progressPercentage = totalQuestions > 0 ? Math.round((totalAnswered / totalQuestions) * 100) : 0;
+            
+            overallDiv.innerHTML = `
+                <div class="guide-title">
+                    <span>📊</span>
+                    <span>全体進捗状況</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div class="stat-card">
+                        <div class="stat-value">${totalQuestions}</div>
+                        <div class="stat-label">総問題数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${totalAnswered}</div>
+                        <div class="stat-label">解答済み</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${totalCorrect}</div>
+                        <div class="stat-label">正解数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${overallRate}%</div>
+                        <div class="stat-label">正答率</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">進捗率: ${progressPercentage}%</div>
+                    <div class="progress-bar-container" style="height: 20px;">
+                        <div class="progress-bar-fill" style="width: ${progressPercentage}%;"></div>
+                    </div>
+                </div>
+            `;
+            
+            content.appendChild(overallDiv);
+            
+            // 各問題集の進捗
+            Object.values(books).forEach(book => {
+                const bookDiv = document.createElement('div');
+                bookDiv.className = 'hierarchy-item';
+                bookDiv.style.marginTop = '15px';
+                
+                const bookQuestions = countQuestionsInBook(book);
+                let bookAnswered = 0;
+                let bookCorrect = 0;
+                
+                allRecords.forEach(record => {
+                    if (record.bookId === book.id) {
+                        bookAnswered += record.stats.total || 0;
+                        bookCorrect += record.stats.correct || 0;
+                    }
+                });
+                
+                const bookRate = bookAnswered > 0 ? Math.round((bookCorrect / bookAnswered) * 100) : 0;
+                
+                bookDiv.innerHTML = `
+                    <div class="hierarchy-item-info">
+                        <div class="hierarchy-item-title">${book.name}</div>
+                        <div class="hierarchy-item-detail">
+                            総問題数: ${bookQuestions}問 | 解答済み: ${bookAnswered}問 | 正答率: ${bookRate}%
+                        </div>
+                    </div>
+                `;
+                
+                content.appendChild(bookDiv);
+            });
+        }
+        
+        // ヘルパー関数
+        function countQuestions(item) {
+            if (item.type === 'subsection') {
+                return item.questionCount || 0;
+            }
+            
+            let count = 0;
+            if (item.children) {
+                Object.values(item.children).forEach(child => {
+                    count += countQuestions(child);
+                });
+            }
+            return count;
+        }
+        
+        function countQuestionsInBook(book) {
+            let count = 0;
+            Object.values(book.structure).forEach(item => {
+                count += countQuestions(item);
+            });
+            return count;
+        }
+        
+        function getTypeLabel(type) {
+            const labels = {
+                'subject': '科目',
+                'chapter': '章',
+                'section': '節',
+                'subsection': '項'
+            };
+            return labels[type] || type;
+        }
+        
+        function getExamTypeName(type) {
+            const names = {
+                'gyousei': '行政書士',
+                'takken': '宅建士',
+                'sharoushi': '社労士',
+                'fp': 'FP技能',
+                'other': 'その他'
+            };
+            return names[type] || type;
+        }
+    </script>
+</body>
+</html>
