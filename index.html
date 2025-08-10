@@ -13,9 +13,9 @@
         }
         
         :root {
-            --primary: #6b46c1;
-            --primary-light: #9061f9;
-            --secondary: #ec4899;
+            --primary: #2c3e50;
+            --primary-light: #34495e;
+            --secondary: #3498db;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
@@ -39,7 +39,7 @@
         
         /* ヘッダー */
         .app-header {
-            background: linear-gradient(135deg, rgba(107, 70, 193, 0.95) 0%, rgba(236, 72, 153, 0.95) 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             backdrop-filter: blur(10px);
             padding: 20px;
             text-align: center;
@@ -142,6 +142,95 @@
             color: var(--dark);
         }
         
+        /* ツリービュー（階層表示） */
+        .tree-view {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .tree-item {
+            margin-bottom: 5px;
+        }
+        
+        .tree-node {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tree-node:hover {
+            background: var(--light);
+        }
+        
+        .tree-toggle {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+        
+        .tree-toggle.expanded {
+            transform: rotate(90deg);
+        }
+        
+        .tree-icon {
+            margin-right: 5px;
+        }
+        
+        .tree-label {
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .tree-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .tree-action-btn {
+            padding: 3px 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tree-action-btn:hover {
+            background: var(--primary-light);
+        }
+        
+        .tree-action-btn.delete {
+            background: var(--danger);
+        }
+        
+        .tree-children {
+            display: none;
+            margin-left: 25px;
+            margin-top: 5px;
+        }
+        
+        .tree-children.expanded {
+            display: block;
+        }
+        
+        .tree-level-subject { font-weight: 700; }
+        .tree-level-chapter { font-weight: 600; }
+        .tree-level-section { font-weight: 500; }
+        .tree-level-subsection { font-weight: 400; }
+        
         /* アコーディオン */
         .accordion {
             margin-bottom: 10px;
@@ -165,7 +254,7 @@
         
         .accordion-header.active {
             border-radius: 10px 10px 0 0;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
         
@@ -219,6 +308,11 @@
             margin-bottom: 10px;
         }
         
+        .achievement-icon.disabled {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+        
         .achievement-label {
             font-size: 14px;
             color: var(--gray);
@@ -230,45 +324,6 @@
             font-size: 18px;
             font-weight: 700;
             color: var(--dark);
-        }
-        
-        .achievement-badge-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        
-        .badge-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            background: var(--light);
-            border-radius: 12px;
-            opacity: 0.5;
-            transition: all 0.3s;
-        }
-        
-        .badge-card.unlocked {
-            opacity: 1;
-            background: white;
-            box-shadow: var(--shadow);
-        }
-        
-        .badge-icon {
-            font-size: 36px;
-            margin-bottom: 8px;
-            filter: grayscale(100%);
-        }
-        
-        .badge-card.unlocked .badge-icon {
-            filter: grayscale(0);
-        }
-        
-        .badge-label {
-            font-size: 12px;
-            color: var(--gray);
-            text-align: center;
         }
         
         /* 問題集選択 */
@@ -464,14 +519,14 @@
         .bar {
             width: 100%;
             max-width: 30px;
-            background: linear-gradient(to top, var(--primary), var(--primary-light));
+            background: linear-gradient(to top, var(--primary), var(--secondary));
             border-radius: 3px 3px 0 0;
             transition: all 0.3s;
             position: relative;
         }
         
         .bar.today {
-            background: linear-gradient(to top, var(--secondary), var(--warning));
+            background: linear-gradient(to top, var(--warning), var(--secondary));
         }
         
         .bar-value {
@@ -673,6 +728,34 @@
             font-size: 14px;
         }
         
+        /* 削除リスト */
+        .delete-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--light);
+        }
+        
+        .delete-list-item:hover {
+            background: var(--lighter);
+        }
+        
+        .delete-btn {
+            padding: 5px 10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        
         /* フッタータブ */
         .footer-tabs {
             position: fixed;
@@ -737,7 +820,7 @@
         
         .save-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(107, 70, 193, 0.3);
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
         }
         
         /* モーダル */
@@ -993,42 +1076,25 @@
         </div>
     </div>
     
-    <!-- 階層構造編集モーダル -->
-    <div id="structureModal" class="modal">
+    <!-- 階層編集モーダル -->
+    <div id="hierarchyEditModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>階層構造を編集</h3>
-                <button class="modal-close" onclick="closeModal('structureModal')">×</button>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">階層レベル</label>
-                <select class="form-control" id="hierarchyLevel" onchange="updateHierarchyForm()">
-                    <option value="subject">科目</option>
-                    <option value="chapter">章</option>
-                    <option value="section">節</option>
-                    <option value="subsection">項</option>
-                </select>
+                <h3>階層を編集</h3>
+                <button class="modal-close" onclick="closeModal('hierarchyEditModal')">×</button>
             </div>
             
             <div class="form-group">
                 <label class="form-label">名称</label>
-                <input type="text" class="form-control" id="hierarchyName" placeholder="例: 民法">
+                <input type="text" class="form-control" id="editHierarchyName">
             </div>
             
-            <div class="form-group" id="parentSelectGroup" style="display: none;">
-                <label class="form-label">親階層</label>
-                <select class="form-control" id="parentHierarchy">
-                    <option value="">選択してください</option>
-                </select>
-            </div>
-            
-            <div class="form-group" id="questionCountGroup" style="display: none;">
+            <div class="form-group" id="editQuestionGroup" style="display: none;">
                 <label class="form-label">問題数</label>
-                <input type="number" class="form-control" id="questionCount" min="1" placeholder="例: 50">
+                <input type="number" class="form-control" id="editQuestionCount" min="1">
             </div>
             
-            <button class="save-button" onclick="saveHierarchy()">保存</button>
+            <button class="save-button" onclick="saveEditHierarchy()">保存</button>
         </div>
     </div>
     
@@ -1043,6 +1109,7 @@
         let currentChartView = 'week';
         let currentHeatmapView = 'wrong';
         let currentReviewPage = { wrong: 1, bookmark: 1 };
+        let editingHierarchy = null;
         const ITEMS_PER_PAGE = 10;
         
         // 初期化
@@ -1200,7 +1267,7 @@
             const titles = {
                 'register': '📝 問題集登録',
                 'history': '📅 学習履歴',
-                'results': '🏆 実績・バッジ',
+                'results': '🏆 獲得バッジ',
                 'settings': '⚙️ 設定'
             };
             
@@ -1228,7 +1295,7 @@
             document.getElementById('footerModal').classList.remove('active');
         }
         
-        // 各フッターコンテンツ
+        // 問題集登録コンテンツ（ツリー表示）
         function getRegisterContent() {
             let html = `
                 <div class="card">
@@ -1238,30 +1305,224 @@
                         <option value="gyousei">行政書士</option>
                         <option value="takken">宅建士</option>
                     </select>
-                    <button class="save-button" style="margin-top: 15px;" onclick="createNewBook()">登録</button>
+                    <button class="save-button" style="margin-top: 15px;" onclick="createNewBook()">新規作成</button>
                 </div>
                 <div class="card">
                     <h4>登録済み問題集</h4>
+                    <div id="booksTreeView"></div>
+                </div>
             `;
+            
+            setTimeout(() => {
+                renderBooksTreeView();
+            }, 100);
+            
+            return html;
+        }
+        
+        // 問題集ツリービュー表示
+        function renderBooksTreeView() {
+            const container = document.getElementById('booksTreeView');
+            if (!container) return;
+            
+            let html = '<div class="tree-view">';
             
             Object.values(books).forEach(book => {
                 html += `
-                    <div style="padding: 10px; border-bottom: 1px solid var(--light);">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div style="font-weight: 600;">${book.name}</div>
-                                <div style="font-size: 12px; color: var(--gray);">${Object.keys(book.structure).length}科目</div>
+                    <div class="tree-item">
+                        <div class="tree-node" onclick="toggleTreeNode(this)">
+                            <span class="tree-toggle">▶</span>
+                            <span class="tree-icon">📚</span>
+                            <span class="tree-label tree-level-book">${book.name}</span>
+                            <div class="tree-actions">
+                                <button class="tree-action-btn" onclick="addHierarchy('${book.id}', null, 'subject', event)">+科目</button>
                             </div>
-                            <button onclick="editBook('${book.id}')" style="padding: 5px 10px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer;">編集</button>
+                        </div>
+                        <div class="tree-children">
+                            ${renderTreeLevel(book.structure, book.id, [])}
                         </div>
                     </div>
                 `;
             });
             
             html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // ツリー階層レンダリング
+        function renderTreeLevel(structure, bookId, path) {
+            let html = '';
+            
+            Object.entries(structure).forEach(([name, item]) => {
+                const currentPath = [...path, name];
+                const pathStr = currentPath.join('/');
+                const hasChildren = item.children && Object.keys(item.children).length > 0;
+                
+                html += `
+                    <div class="tree-item">
+                        <div class="tree-node" ${hasChildren ? 'onclick="toggleTreeNode(this)"' : ''}>
+                            ${hasChildren ? '<span class="tree-toggle">▶</span>' : '<span style="width: 20px; display: inline-block;"></span>'}
+                            <span class="tree-icon">${getTreeIcon(item.type)}</span>
+                            <span class="tree-label tree-level-${item.type}">${name}</span>
+                `;
+                
+                // アクションボタン
+                html += '<div class="tree-actions">';
+                
+                if (item.type === 'subject') {
+                    html += `<button class="tree-action-btn" onclick="addHierarchy('${bookId}', '${pathStr}', 'chapter', event)">+章</button>`;
+                } else if (item.type === 'chapter') {
+                    html += `<button class="tree-action-btn" onclick="addHierarchy('${bookId}', '${pathStr}', 'section', event)">+節</button>`;
+                } else if (item.type === 'section' && !item.questions) {
+                    html += `<button class="tree-action-btn" onclick="addHierarchy('${bookId}', '${pathStr}', 'subsection', event)">+項</button>`;
+                }
+                
+                if ((item.type === 'section' || item.type === 'subsection') && !item.questions) {
+                    html += `<button class="tree-action-btn" onclick="addQuestions('${bookId}', '${pathStr}', event)">+問題</button>`;
+                }
+                
+                if (item.questions) {
+                    html += `<span style="margin-left: 10px; font-size: 12px; color: var(--gray);">${item.questions.length}問</span>`;
+                }
+                
+                html += `<button class="tree-action-btn delete" onclick="deleteHierarchy('${bookId}', '${pathStr}', event)">削除</button>`;
+                html += '</div>';
+                
+                html += '</div>';
+                
+                if (hasChildren) {
+                    html += `
+                        <div class="tree-children">
+                            ${renderTreeLevel(item.children, bookId, currentPath)}
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            });
+            
             return html;
         }
         
+        // ツリーアイコン取得
+        function getTreeIcon(type) {
+            const icons = {
+                'subject': '📂',
+                'chapter': '📄',
+                'section': '📑',
+                'subsection': '📝'
+            };
+            return icons[type] || '📄';
+        }
+        
+        // ツリーノード展開/折りたたみ
+        function toggleTreeNode(node) {
+            const toggle = node.querySelector('.tree-toggle');
+            const children = node.nextElementSibling;
+            
+            if (toggle && children) {
+                toggle.classList.toggle('expanded');
+                children.classList.toggle('expanded');
+            }
+        }
+        
+        // 階層追加
+        function addHierarchy(bookId, parentPath, type, event) {
+            event.stopPropagation();
+            
+            const name = prompt(`${getTypeLabel(type)}の名前を入力してください:`);
+            if (!name) return;
+            
+            const book = books[bookId];
+            let target = book.structure;
+            
+            if (parentPath) {
+                const pathArray = parentPath.split('/');
+                pathArray.forEach(p => {
+                    if (target[p]) {
+                        target = target[p].children || {};
+                    }
+                });
+            }
+            
+            target[name] = {
+                type: type,
+                children: {}
+            };
+            
+            saveBooksToStorage();
+            renderBooksTreeView();
+        }
+        
+        // 問題追加
+        function addQuestions(bookId, path, event) {
+            event.stopPropagation();
+            
+            const count = prompt('問題数を入力してください:');
+            if (!count || isNaN(count)) return;
+            
+            const book = books[bookId];
+            const pathArray = path.split('/');
+            let target = book.structure;
+            
+            for (let i = 0; i < pathArray.length - 1; i++) {
+                target = target[pathArray[i]].children || {};
+            }
+            
+            const lastKey = pathArray[pathArray.length - 1];
+            const startNum = getNextQuestionNumber(book);
+            
+            target[lastKey].questions = generateQuestionNumbers(startNum, startNum + parseInt(count) - 1);
+            delete target[lastKey].children;
+            
+            saveBooksToStorage();
+            renderBooksTreeView();
+        }
+        
+        // 次の問題番号取得
+        function getNextQuestionNumber(book) {
+            let maxNum = 0;
+            
+            function traverse(structure) {
+                Object.values(structure).forEach(item => {
+                    if (item.questions) {
+                        const max = Math.max(...item.questions);
+                        if (max > maxNum) maxNum = max;
+                    }
+                    if (item.children) {
+                        traverse(item.children);
+                    }
+                });
+            }
+            
+            traverse(book.structure);
+            return maxNum + 1;
+        }
+        
+        // 階層削除
+        function deleteHierarchy(bookId, path, event) {
+            event.stopPropagation();
+            
+            if (!confirm('この項目を削除しますか？')) return;
+            
+            const book = books[bookId];
+            const pathArray = path.split('/');
+            
+            if (pathArray.length === 1) {
+                delete book.structure[pathArray[0]];
+            } else {
+                let target = book.structure;
+                for (let i = 0; i < pathArray.length - 2; i++) {
+                    target = target[pathArray[i]].children || {};
+                }
+                delete target[pathArray[pathArray.length - 2]].children[pathArray[pathArray.length - 1]];
+            }
+            
+            saveBooksToStorage();
+            renderBooksTreeView();
+        }
+        
+        // 学習履歴コンテンツ
         function getHistoryContent() {
             let html = '<div class="card">';
             
@@ -1282,61 +1543,75 @@
             return html;
         }
         
+        // 実績コンテンツ（画像のバッジと同じ）
         function getResultsContent() {
             const stats = calculateOverallProgress();
             const streakDays = localStorage.getItem('streakDays') || '0';
             
-            // バッジ判定
+            // バッジ設定（画像と同じ8種類）
             const badges = [
-                { icon: '🎯', label: '初学習', unlocked: allRecords.length > 0 },
-                { icon: '📚', label: '100問達成', unlocked: stats.totalAnswered >= 100 },
-                { icon: '🔥', label: '7日連続', unlocked: parseInt(streakDays) >= 7 },
-                { icon: '⭐', label: '正答率90%', unlocked: stats.overallRate >= 90 },
-                { icon: '🏆', label: '1000問達成', unlocked: stats.totalAnswered >= 1000 },
-                { icon: '🚀', label: '全科目制覇', unlocked: Object.keys(calculateSubjectStats()).length >= 4 },
-                { icon: '🎯', label: '30日継続', unlocked: parseInt(streakDays) >= 30 },
-                { icon: '👑', label: 'マスター', unlocked: stats.totalAnswered >= 5000 }
+                { 
+                    icon: '🎯', 
+                    label: '初学習', 
+                    unlocked: allRecords.length > 0,
+                    value: allRecords.length > 0 ? '達成' : '未達成'
+                },
+                { 
+                    icon: '📚', 
+                    label: '100問達成', 
+                    unlocked: stats.totalAnswered >= 100,
+                    value: `${stats.totalAnswered}問`
+                },
+                { 
+                    icon: '🔥', 
+                    label: '7日連続', 
+                    unlocked: parseInt(streakDays) >= 7,
+                    value: `${streakDays}日`
+                },
+                { 
+                    icon: '⭐', 
+                    label: '正答率90%', 
+                    unlocked: stats.overallRate >= 90,
+                    value: `${stats.overallRate}%`
+                },
+                { 
+                    icon: '🏆', 
+                    label: '1000問達成', 
+                    unlocked: stats.totalAnswered >= 1000,
+                    value: stats.totalAnswered >= 1000 ? '達成' : `${stats.totalAnswered}問`
+                },
+                { 
+                    icon: '🚀', 
+                    label: '全科目制覇', 
+                    unlocked: Object.keys(calculateSubjectStats()).length >= 4,
+                    value: `${Object.keys(calculateSubjectStats()).length}科目`
+                },
+                { 
+                    icon: '🎯', 
+                    label: '30日継続', 
+                    unlocked: parseInt(streakDays) >= 30,
+                    value: `${streakDays}日`
+                },
+                { 
+                    icon: '👑', 
+                    label: 'マスター', 
+                    unlocked: stats.totalAnswered >= 5000 && stats.overallRate >= 85,
+                    value: stats.totalAnswered >= 5000 ? '達成' : '未達成'
+                }
             ];
             
             let html = `
                 <div class="card">
-                    <h4 style="margin-bottom: 15px;">🏆 実績・バッジ</h4>
-                    <p style="text-align: center; color: var(--gray); margin-bottom: 20px;">獲得した成果</p>
-                </div>
-                
-                <div class="achievement-grid">
-                    <div class="achievement-card">
-                        <div class="achievement-icon">🎯</div>
-                        <div class="achievement-label">初学習</div>
-                        <div class="achievement-value">${allRecords.length > 0 ? '達成' : '未達成'}</div>
-                    </div>
-                    <div class="achievement-card">
-                        <div class="achievement-icon">📚</div>
-                        <div class="achievement-label">100問達成</div>
-                        <div class="achievement-value">${stats.totalAnswered}問</div>
-                    </div>
-                    <div class="achievement-card">
-                        <div class="achievement-icon">🔥</div>
-                        <div class="achievement-label">7日連続</div>
-                        <div class="achievement-value">${streakDays}日</div>
-                    </div>
-                    <div class="achievement-card">
-                        <div class="achievement-icon">⭐</div>
-                        <div class="achievement-label">正答率90%</div>
-                        <div class="achievement-value">${stats.overallRate}%</div>
-                    </div>
-                </div>
-                
-                <div class="card" style="margin-top: 20px;">
-                    <h4 style="margin-bottom: 15px;">獲得バッジ</h4>
-                    <div class="achievement-badge-grid">
+                    <h4 style="text-align: center; margin-bottom: 20px;">獲得バッジ</h4>
+                    <div class="achievement-grid">
             `;
             
             badges.forEach(badge => {
                 html += `
-                    <div class="badge-card ${badge.unlocked ? 'unlocked' : ''}">
-                        <div class="badge-icon">${badge.icon}</div>
-                        <div class="badge-label">${badge.label}</div>
+                    <div class="achievement-card">
+                        <div class="achievement-icon ${!badge.unlocked ? 'disabled' : ''}">${badge.icon}</div>
+                        <div class="achievement-label">${badge.label}</div>
+                        <div class="achievement-value">${badge.value}</div>
                     </div>
                 `;
             });
@@ -1349,22 +1624,56 @@
             return html;
         }
         
+        // 設定コンテンツ
         function getSettingsContent() {
-            return `
+            let html = `
                 <div class="card">
                     <h4>📖 使い方</h4>
                     <ol style="margin-left: 20px; line-height: 1.8;">
-                        <li>「登録」から問題集を登録</li>
+                        <li>「登録」から問題集を作成し、階層構造を設定</li>
                         <li>「記録入力」で問題を解いた結果を記録</li>
                         <li>「分析」で学習状況を確認</li>
                         <li>「進捗」で全体の進み具合を把握</li>
                         <li>間違えた問題は「復習」機能で集中学習</li>
                     </ol>
                 </div>
+                
+                <div class="card">
+                    <h4>🗑️ 問題集を削除</h4>
+            `;
+            
+            Object.values(books).forEach(book => {
+                html += `
+                    <div class="delete-list-item">
+                        <div>
+                            <div style="font-weight: 600;">${book.name}</div>
+                            <div style="font-size: 12px; color: var(--gray);">${Object.keys(book.structure).length}科目</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteBook('${book.id}')">削除</button>
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                
                 <div class="card">
                     <button class="save-button" style="background: var(--danger);" onclick="clearAllData()">すべてのデータを削除</button>
                 </div>
             `;
+            
+            return html;
+        }
+        
+        // 問題集削除
+        function deleteBook(bookId) {
+            if (!confirm('この問題集を削除しますか？')) return;
+            
+            delete books[bookId];
+            saveBooksToStorage();
+            updateBookSelect();
+            closeFooterModal();
+            alert('削除しました');
         }
         
         // アコーディオン
@@ -1936,7 +2245,7 @@
             }
             
             const bookId = 'book_' + Date.now();
-            currentBook = {
+            books[bookId] = {
                 id: bookId,
                 name: name,
                 examType: examType,
@@ -1944,133 +2253,18 @@
                 createdAt: new Date().toISOString()
             };
             
-            books[bookId] = currentBook;
             saveBooksToStorage();
             updateBookSelect();
+            renderBooksTreeView();
             
-            closeFooterModal();
-            openModal('structureModal');
-        }
-        
-        // 問題集編集
-        function editBook(bookId) {
-            currentBook = books[bookId];
-            closeFooterModal();
-            openModal('structureModal');
+            document.getElementById('newBookName').value = '';
+            document.getElementById('newExamType').value = '';
+            alert('作成しました');
         }
         
         // モーダル操作
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-            if (modalId === 'structureModal') {
-                updateHierarchyForm();
-            }
-        }
-        
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
-        }
-        
-        // 階層フォーム更新
-        function updateHierarchyForm() {
-            const level = document.getElementById('hierarchyLevel').value;
-            const parentGroup = document.getElementById('parentSelectGroup');
-            const questionGroup = document.getElementById('questionCountGroup');
-            
-            if (level === 'subject') {
-                parentGroup.style.display = 'none';
-                questionGroup.style.display = 'none';
-            } else if (level === 'chapter') {
-                parentGroup.style.display = 'block';
-                questionGroup.style.display = 'none';
-                updateParentOptions('subject');
-            } else if (level === 'section') {
-                parentGroup.style.display = 'block';
-                questionGroup.style.display = 'block';
-                updateParentOptions('chapter');
-            } else if (level === 'subsection') {
-                parentGroup.style.display = 'block';
-                questionGroup.style.display = 'block';
-                updateParentOptions('section');
-            }
-        }
-        
-        // 親階層オプション更新
-        function updateParentOptions(parentType) {
-            const select = document.getElementById('parentHierarchy');
-            select.innerHTML = '<option value="">選択してください</option>';
-            
-            if (!currentBook) return;
-            
-            function addOptions(structure, path = []) {
-                Object.entries(structure).forEach(([name, item]) => {
-                    if (item.type === parentType) {
-                        const option = document.createElement('option');
-                        option.value = [...path, name].join('/');
-                        option.textContent = [...path, name].join(' › ');
-                        select.appendChild(option);
-                    }
-                    if (item.children) {
-                        addOptions(item.children, [...path, name]);
-                    }
-                });
-            }
-            
-            addOptions(currentBook.structure);
-        }
-        
-        // 階層保存
-        function saveHierarchy() {
-            const level = document.getElementById('hierarchyLevel').value;
-            const name = document.getElementById('hierarchyName').value;
-            const parent = document.getElementById('parentHierarchy').value;
-            const count = document.getElementById('questionCount').value;
-            
-            if (!name) {
-                alert('名称を入力してください');
-                return;
-            }
-            
-            if (level !== 'subject' && !parent) {
-                alert('親階層を選択してください');
-                return;
-            }
-            
-            // 階層追加
-            if (level === 'subject') {
-                currentBook.structure[name] = {
-                    type: 'subject',
-                    children: {}
-                };
-            } else {
-                const parentPath = parent.split('/');
-                let target = currentBook.structure;
-                
-                parentPath.forEach(p => {
-                    if (target[p]) {
-                        target = target[p].children || {};
-                    }
-                });
-                
-                if ((level === 'section' || level === 'subsection') && count) {
-                    target[name] = {
-                        type: level,
-                        questions: generateQuestionNumbers(1, parseInt(count))
-                    };
-                    if (level === 'section') {
-                        target[name].children = {};
-                    }
-                } else {
-                    target[name] = {
-                        type: level,
-                        children: {}
-                    };
-                }
-            }
-            
-            saveBooksToStorage();
-            closeModal('structureModal');
-            alert('保存しました');
         }
         
         // 弱点分析更新
@@ -2245,6 +2439,16 @@
             
             traverse(book.structure);
             return count;
+        }
+        
+        function getTypeLabel(type) {
+            const labels = {
+                'subject': '科目',
+                'chapter': '章',
+                'section': '節',
+                'subsection': '項'
+            };
+            return labels[type] || type;
         }
         
         // データクリア
