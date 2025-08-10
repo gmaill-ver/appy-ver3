@@ -152,6 +152,185 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
         
+        /* グラフスタイル */
+        .chart-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-canvas {
+            width: 100%;
+            height: 250px;
+            position: relative;
+        }
+        
+        /* 週間学習グラフ */
+        .weekly-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 200px;
+            padding: 20px 10px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        
+        .day-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .bar {
+            width: 100%;
+            max-width: 40px;
+            background: linear-gradient(to top, #6366f1, #8b5cf6);
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .bar:hover {
+            transform: scaleY(1.05);
+        }
+        
+        .bar-value {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .day-label {
+            font-size: 13px;
+            color: var(--gray);
+            font-weight: 500;
+        }
+        
+        /* 月間推移 */
+        .monthly-chart {
+            position: relative;
+            height: 250px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 10px;
+        }
+        
+        .line-chart-container {
+            position: relative;
+            height: 100%;
+        }
+        
+        /* レーダーチャート */
+        .radar-chart {
+            width: 250px;
+            height: 250px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .radar-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 科目別進捗 */
+        .subject-progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .subject-progress-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .subject-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .subject-percentage {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .progress-bar-container {
+            position: relative;
+            height: 40px;
+            background: #e5e7eb;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 20px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+        }
+        
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        /* 弱点分析カード */
+        .weakness-card {
+            background: #fef2f2;
+            border-left: 4px solid var(--danger);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .weakness-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 5px;
+        }
+        
+        .weakness-detail {
+            font-size: 14px;
+            color: var(--dark);
+        }
+        
         /* コンテンツカード */
         .content-card {
             background: white;
@@ -688,6 +867,7 @@
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('record')">学習記録</button>
             <button class="tab-btn" onclick="switchTab('register')">問題集登録</button>
+            <button class="tab-btn" onclick="switchTab('stats')">統計分析</button>
             <button class="tab-btn" onclick="switchTab('progress')">進捗管理</button>
             <button class="tab-btn" onclick="switchTab('history')">学習履歴</button>
         </div>
@@ -819,6 +999,216 @@
                 
                 <div class="hierarchy-list" id="registeredBooks">
                     <!-- 動的に生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 統計分析タブ -->
+        <div id="stats-tab" class="tab-content">
+            <!-- 週間学習グラフ -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>📊</span>
+                    <span>週間学習グラフ</span>
+                </div>
+                <div class="weekly-chart" id="weeklyChart">
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">月</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">火</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">水</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">木</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">金</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">土</span>
+                    </div>
+                    <div class="day-bar">
+                        <div class="bar" style="height: 20%;">
+                            <span class="bar-value">0</span>
+                        </div>
+                        <span class="day-label">日</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 月間推移 -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>📈</span>
+                    <span>月間推移</span>
+                </div>
+                <div class="monthly-chart">
+                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- 科目別正答率（レーダーチャート風） -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span>🎯</span>
+                    <span>科目別正答率</span>
+                </div>
+                <div class="radar-chart">
+                    <svg class="radar-svg" viewBox="0 0 250 250">
+                        <!-- 背景の六角形 -->
+                        <polygon points="125,40 200,85 200,165 125,210 50,165 50,85" 
+                                fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="125,70 175,100 175,150 125,180 75,150 75,100" 
+                                fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="125,100 150,115 150,135 125,150 100,135 100,115" 
+                                fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        
+                        <!-- データポリゴン -->
+                        <polygon id="dataPolygon" points="125,60 180,95 180,155 125,190 70,155 70,95" 
+                                fill="rgba(99, 102, 241, 0.3)" stroke="#6366f1" stroke-width="2"/>
+                        
+                        <!-- ラベル -->
+                        <text x="125" y="30" text-anchor="middle" font-size="12" fill="#374151">民法</text>
+                        <text x="210" y="85" text-anchor="start" font-size="12" fill="#374151">行政法</text>
+                        <text x="210" y="165" text-anchor="start" font-size="12" fill="#374151">憲法</text>
+                        <text x="125" y="225" text-anchor="middle" font-size="12" fill="#374151">商法</text>
+                        <text x="40" y="165" text-anchor="end" font-size="12" fill="#374151">基礎法学</text>
+                        <text x="40" y="85" text-anchor="end" font-size="12" fill="#374151">一般知識</text>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 科目別進捗 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">📚</div>
+                    <h2 class="card-title">科目別進捗</h2>
+                </div>
+                
+                <div class="subject-progress-list">
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">民法</span>
+                            <span class="subject-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 0%;">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>0問解答 | 0問正解</span>
+                            <span>正答率: 0%</span>
+                        </div>
+                    </div>
+
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">行政法</span>
+                            <span class="subject-percentage">100%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, #10b981, #34d399);">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>10問解答 | 10問正解</span>
+                            <span>正答率: 100%</span>
+                        </div>
+                    </div>
+
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">憲法</span>
+                            <span class="subject-percentage">60%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 60%; background: linear-gradient(90deg, #f59e0b, #fbbf24);">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>5問解答 | 3問正解</span>
+                            <span>正答率: 60%</span>
+                        </div>
+                    </div>
+
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">商法</span>
+                            <span class="subject-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 0%;">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>0問解答 | 0問正解</span>
+                            <span>正答率: 0%</span>
+                        </div>
+                    </div>
+
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">基礎法学</span>
+                            <span class="subject-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 0%;">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>0問解答 | 0問正解</span>
+                            <span>正答率: 0%</span>
+                        </div>
+                    </div>
+
+                    <div class="subject-progress-item">
+                        <div class="subject-header">
+                            <span class="subject-name">一般知識</span>
+                            <span class="subject-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: 0%;">
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <span>0問解答 | 0問正解</span>
+                            <span>正答率: 0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 弱点分析 -->
+            <div class="content-card">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2 class="card-title">弱点分析</h2>
+                </div>
+                
+                <div class="weakness-card">
+                    <div class="weakness-title">憲法</div>
+                    <div class="weakness-detail">正答率: 60% | 間違い: 2問</div>
                 </div>
             </div>
         </div>
@@ -1287,7 +1677,7 @@
             document.getElementById('correctRate').textContent = rate + '%';
         }
         
-        // 記録保存
+        // 記録保存（統計データも更新）
         function saveRecord() {
             const button = event.currentTarget;
             const originalText = button.textContent;
@@ -1310,6 +1700,7 @@
             };
             
             saveToHistory(record);
+            updateDailyStreak(); // 連続学習日数更新
             
             setTimeout(() => {
                 button.textContent = '✓ 保存完了！';
@@ -1319,6 +1710,27 @@
                     button.style.background = 'linear-gradient(135deg, var(--primary), var(--secondary))';
                 }, 1500);
             }, 1000);
+        }
+        
+        // 連続学習日数の更新
+        function updateDailyStreak() {
+            const today = new Date().toDateString();
+            const lastStudyDate = localStorage.getItem('lastStudyDate');
+            let streakDays = parseInt(localStorage.getItem('streakDays') || '0');
+            
+            if (lastStudyDate !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastStudyDate === yesterday.toDateString()) {
+                    streakDays++;
+                } else if (lastStudyDate !== today) {
+                    streakDays = 1;
+                }
+                
+                localStorage.setItem('lastStudyDate', today);
+                localStorage.setItem('streakDays', streakDays.toString());
+            }
         }
         
         // 履歴保存
