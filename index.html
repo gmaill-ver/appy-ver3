@@ -140,26 +140,19 @@
             color: var(--dark);
         }
         
-        /* 問題集カード選択 */
-        .book-cards {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin: 10px;
-        }
-        
+        /* 問題集カード選択（開閉式） */
         .book-card {
             background: white;
             border: 2px solid var(--light);
             border-radius: 12px;
             padding: 15px;
+            margin: 10px;
             cursor: pointer;
             transition: all 0.3s;
         }
         
         .book-card:hover {
             border-color: var(--secondary);
-            transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
         }
         
@@ -178,12 +171,9 @@
             color: var(--gray);
         }
         
-        /* 階層リスト表示 */
+        /* 階層リスト表示（統一デザイン） */
         .hierarchy-list {
-            background: white;
-            border-radius: 15px;
             padding: 10px;
-            margin: 10px;
         }
         
         .hierarchy-item {
@@ -196,7 +186,7 @@
         .hierarchy-row {
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 12px;
             background: white;
             cursor: pointer;
             transition: all 0.3s;
@@ -231,14 +221,20 @@
             font-weight: 500;
         }
         
+        .hierarchy-meta {
+            margin-left: auto;
+            margin-right: 10px;
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
         .hierarchy-actions {
             display: flex;
             gap: 5px;
-            margin-left: auto;
         }
         
         .hierarchy-action {
-            padding: 4px 8px;
+            padding: 4px;
             background: var(--primary);
             color: white;
             border: none;
@@ -316,30 +312,22 @@
         }
         
         .heatmap-controls {
-            display: flex;
-            gap: 10px;
             margin-bottom: 15px;
         }
         
-        .heatmap-btn {
-            flex: 1;
+        .heatmap-select {
+            width: 100%;
             padding: 10px;
             border: 1px solid var(--light);
             border-radius: 8px;
             background: white;
+            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .heatmap-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
         }
         
         .heatmap-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(20px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(25px, 1fr));
             gap: 1px;
             max-height: 400px;
             overflow-y: auto;
@@ -366,6 +354,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            position: relative;
         }
         
         .heatmap-cell.correct {
@@ -378,9 +367,27 @@
             color: white;
         }
         
-        .heatmap-cell.bookmarked {
-            background: var(--warning);
-            color: white;
+        .heatmap-cell.bookmarked::after {
+            content: '★';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 8px;
+            color: var(--warning);
+        }
+        
+        /* レーダーチャート */
+        .radar-chart-container {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .radar-chart {
+            width: 300px;
+            height: 300px;
+            position: relative;
         }
         
         /* 学習グラフ（縦棒） */
@@ -713,6 +720,34 @@
             font-size: 14px;
         }
         
+        /* 削除リスト */
+        .delete-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid var(--light);
+        }
+        
+        .delete-list-item:hover {
+            background: var(--lighter);
+        }
+        
+        .delete-btn {
+            padding: 5px 10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        
         /* 保存ボタン */
         .save-button {
             width: 100%;
@@ -913,14 +948,14 @@
     <div class="content-area">
         <!-- 記録入力タブ -->
         <div id="record-tab" class="tab-content active">
-            <!-- 問題集選択（カード形式） -->
+            <!-- 問題集選択（開閉式カード） -->
             <div id="bookCardsContainer"></div>
             
             <!-- パンくずリスト -->
             <div class="breadcrumb" id="breadcrumb" style="display: none;"></div>
             
             <!-- 階層リスト（記録用） -->
-            <div id="recordHierarchyContainer"></div>
+            <div id="recordHierarchyContainer" style="display: none;"></div>
             
             <!-- 問題入力 -->
             <div class="card" id="questionSection" style="display: none;">
@@ -997,8 +1032,9 @@
                 </div>
                 <div class="accordion-content">
                     <div class="heatmap-controls">
-                        <button class="heatmap-btn active" onclick="switchHeatmap('wrong', this)">不正解</button>
-                        <button class="heatmap-btn" onclick="switchHeatmap('bookmark', this)">ブックマーク</button>
+                        <select class="heatmap-select" id="heatmapBookSelect" onchange="updateHeatmap()">
+                            <option value="">問題集を選択</option>
+                        </select>
                     </div>
                     <div class="heatmap-grid" id="heatmapGrid"></div>
                 </div>
@@ -1028,10 +1064,12 @@
             
             <div class="card">
                 <div class="card-header">
-                    <span class="card-icon">📚</span>
+                    <span class="card-icon">📈</span>
                     <span class="card-title">科目別進捗</span>
                 </div>
-                <div id="subjectProgress"></div>
+                <div class="radar-chart-container">
+                    <canvas id="radarChart" width="300" height="300"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -1087,9 +1125,9 @@
         let allRecords = [];
         let bookmarkMode = false;
         let currentChartView = 'day';
-        let currentHeatmapView = 'wrong';
         let expandedNodes = new Set();
         let savedQuestionStates = {};
+        let selectedBookCard = null;
         
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1099,7 +1137,7 @@
             loadAllRecords();
             loadSavedQuestionStates();
             updateChartBars();
-            updateHeatmap();
+            updateHeatmapBookSelect();
         });
         
         // サンプルデータ
@@ -1244,17 +1282,17 @@
             updateStats();
         }
         
-        // 問題集カード表示
+        // 問題集カード表示（開閉式）
         function renderBookCards() {
             const container = document.getElementById('bookCardsContainer');
             if (!container) return;
             
-            let html = '<div class="book-cards">';
+            let html = '';
             
             Object.values(books).forEach(book => {
                 const questionCount = countQuestionsInBook(book);
                 html += `
-                    <div class="book-card" id="book-card-${book.id}" onclick="selectBook('${book.id}')">
+                    <div class="book-card" id="book-card-${book.id}" onclick="toggleBookCard('${book.id}')">
                         <div class="book-card-title">📚 ${book.name}</div>
                         <div class="book-card-meta">
                             ${Object.keys(book.structure).length}科目 | ${questionCount}問
@@ -1263,19 +1301,39 @@
                 `;
             });
             
-            html += '</div>';
             container.innerHTML = html;
+        }
+        
+        // 問題集カードの開閉
+        function toggleBookCard(bookId) {
+            const card = document.getElementById(`book-card-${bookId}`);
+            
+            // 既に選択されているカードをクリックしたら閉じる
+            if (selectedBookCard === bookId) {
+                card.classList.remove('selected');
+                selectedBookCard = null;
+                currentBook = null;
+                currentPath = [];
+                document.getElementById('breadcrumb').style.display = 'none';
+                document.getElementById('recordHierarchyContainer').style.display = 'none';
+                document.getElementById('questionSection').style.display = 'none';
+            } else {
+                // 他のカードの選択を解除
+                document.querySelectorAll('.book-card').forEach(c => {
+                    c.classList.remove('selected');
+                });
+                
+                // 新しいカードを選択
+                card.classList.add('selected');
+                selectedBookCard = bookId;
+                selectBook(bookId);
+            }
         }
         
         // 問題集選択
         function selectBook(bookId) {
             currentBook = books[bookId];
             currentPath = [];
-            
-            document.querySelectorAll('.book-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            document.getElementById(`book-card-${bookId}`).classList.add('selected');
             
             document.getElementById('breadcrumb').style.display = 'flex';
             document.getElementById('questionSection').style.display = 'none';
@@ -1326,7 +1384,7 @@
                             <span style="width: 20px;"></span>
                             <span class="hierarchy-icon">${getHierarchyIcon(item.type)}</span>
                             <span class="hierarchy-label">${name}</span>
-                            <span style="margin-left: auto; margin-right: 10px; font-size: 12px; color: var(--gray);">${item.questions.length}問</span>
+                            <span class="hierarchy-meta">${item.questions.length}問</span>
                         </div>
                     `;
                 } else if (hasChildren) {
@@ -1379,7 +1437,7 @@
             breadcrumb.innerHTML = html;
         }
         
-        // パンくずナビゲーション（修正版）
+        // パンくずナビゲーション
         function navigateTo(index) {
             if (index === -1) {
                 // 問題集レベルに戻る
@@ -1457,6 +1515,7 @@
                 updateWeaknessAnalysis();
             } else if (tabName === 'progress') {
                 updateProgressContent();
+                drawRadarChart();
             }
         }
         
@@ -1500,11 +1559,8 @@
         // 問題集登録コンテンツ
         function getRegisterContent() {
             let html = `
-                <div class="card">
-                    <input type="text" class="form-control" placeholder="問題集名" id="newBookName">
-                    <button class="save-button" style="margin-top: 15px;" onclick="createNewBook()">新規作成</button>
-                </div>
-                <div class="card">
+                <div class="save-button" onclick="showNewBookDialog()">新規作成</div>
+                <div style="margin-top: 20px;">
                     <h4>登録済み問題集</h4>
                     <div id="registerHierarchy"></div>
                 </div>
@@ -1517,7 +1573,7 @@
             return html;
         }
         
-        // 登録用階層表示
+        // 登録用階層表示（記録入力と同じデザイン）
         function renderRegisterHierarchy() {
             const container = document.getElementById('registerHierarchy');
             if (!container) return;
@@ -1536,6 +1592,7 @@
                             <span class="hierarchy-label">${book.name}</span>
                             <div class="hierarchy-actions">
                                 <button class="hierarchy-action" onclick="addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
+                                <button class="hierarchy-action delete" onclick="deleteBook('${book.id}', event)" title="削除">🗑️</button>
                             </div>
                         </div>
                         <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
@@ -1569,7 +1626,7 @@
                 
                 // 問題数表示
                 if (item.questions) {
-                    html += `<span style="margin-left: auto; margin-right: 10px; font-size: 12px; color: var(--gray);">${item.questions.length}問</span>`;
+                    html += `<span class="hierarchy-meta">${item.questions.length}問</span>`;
                 }
                 
                 // アクションボタン
@@ -1638,7 +1695,41 @@
             document.getElementById('inputDialog').style.display = 'none';
         }
         
-        // 階層追加（修正版）
+        // 新規問題集作成ダイアログ
+        function showNewBookDialog() {
+            const dialogBody = `
+                <div class="form-group">
+                    <label class="form-label">問題集名</label>
+                    <input type="text" class="form-control" id="newBookName" placeholder="問題集名を入力">
+                </div>
+            `;
+            
+            showDialog('新規問題集作成', dialogBody, () => {
+                const name = document.getElementById('newBookName').value;
+                if (!name) {
+                    alert('問題集名を入力してください');
+                    return;
+                }
+                
+                const bookId = 'book_' + Date.now();
+                books[bookId] = {
+                    id: bookId,
+                    name: name,
+                    examType: 'gyousei',
+                    structure: {},
+                    createdAt: new Date().toISOString()
+                };
+                
+                saveBooksToStorage();
+                renderBookCards();
+                renderRegisterHierarchy();
+                updateHeatmapBookSelect();
+                closeDialog();
+                alert('作成しました');
+            });
+        }
+        
+        // 階層追加
         function addHierarchy(bookId, parentPath, type, event) {
             event.stopPropagation();
             
@@ -1737,6 +1828,19 @@
             saveBooksToStorage();
             renderBookCards();
             renderRegisterHierarchy();
+        }
+        
+        // 問題集削除
+        function deleteBook(bookId, event) {
+            event.stopPropagation();
+            
+            if (!confirm('この問題集を削除しますか？')) return;
+            
+            delete books[bookId];
+            saveBooksToStorage();
+            renderBookCards();
+            renderRegisterHierarchy();
+            updateHeatmapBookSelect();
         }
         
         // 学習履歴コンテンツ
@@ -1844,11 +1948,207 @@
         function getSettingsContent() {
             let html = `
                 <div class="card">
+                    <h4>📖 使い方</h4>
+                    <ol style="margin-left: 20px; line-height: 1.8;">
+                        <li>「登録」から問題集を作成し、階層構造を設定</li>
+                        <li>「記録入力」で問題を解いた結果を記録</li>
+                        <li>「分析」で学習状況を確認</li>
+                        <li>「進捗」で全体の進み具合を把握</li>
+                    </ol>
+                </div>
+                
+                <div class="card">
+                    <h4>🗑️ 問題集を削除</h4>
+            `;
+            
+            Object.values(books).forEach(book => {
+                html += `
+                    <div class="delete-list-item">
+                        <div>
+                            <div style="font-weight: 600;">${book.name}</div>
+                            <div style="font-size: 12px; color: var(--gray);">${Object.keys(book.structure).length}科目</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteBookFromSettings('${book.id}')">削除</button>
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                
+                <div class="card">
                     <button class="save-button" style="background: var(--danger);" onclick="clearAllData()">すべてのデータを削除</button>
                 </div>
             `;
             
             return html;
+        }
+        
+        // 設定から問題集削除
+        function deleteBookFromSettings(bookId) {
+            if (!confirm('この問題集を削除しますか？')) return;
+            
+            delete books[bookId];
+            saveBooksToStorage();
+            renderBookCards();
+            updateHeatmapBookSelect();
+            closeFooterModal();
+            alert('削除しました');
+        }
+        
+        // ヒートマップ問題集選択更新
+        function updateHeatmapBookSelect() {
+            const select = document.getElementById('heatmapBookSelect');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">問題集を選択</option>';
+            
+            Object.values(books).forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.name;
+                select.appendChild(option);
+            });
+        }
+        
+        // ヒートマップ更新
+        function updateHeatmap() {
+            const container = document.getElementById('heatmapGrid');
+            const select = document.getElementById('heatmapBookSelect');
+            if (!container || !select) return;
+            
+            const bookId = select.value;
+            if (!bookId) {
+                container.innerHTML = '<p style="color: var(--gray); text-align: center;">問題集を選択してください</p>';
+                return;
+            }
+            
+            const book = books[bookId];
+            if (!book) return;
+            
+            let html = '';
+            const allQuestions = getAllQuestionsFromBook(book);
+            let currentLabel = '';
+            
+            allQuestions.forEach(q => {
+                // ラベル表示
+                const label = `${q.subject} › ${q.chapter}${q.section ? ' › ' + q.section : ''}${q.subsection ? ' › ' + q.subsection : ''}`;
+                if (label !== currentLabel) {
+                    currentLabel = label;
+                    html += `<div class="heatmap-label">${label}</div>`;
+                }
+                
+                const state = getQuestionStateFromRecords(book.id, q);
+                let cellClass = '';
+                
+                if (state.wrong) cellClass = 'wrong';
+                else if (state.correct) cellClass = 'correct';
+                
+                if (state.bookmarked) {
+                    cellClass += ' bookmarked';
+                }
+                
+                html += `<div class="heatmap-cell ${cellClass}">${q.number}</div>`;
+            });
+            
+            container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
+        }
+        
+        // レーダーチャート描画
+        function drawRadarChart() {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = 150;
+            const centerY = 150;
+            const radius = 100;
+            
+            const subjectStats = calculateSubjectStats();
+            const subjects = Object.keys(subjectStats);
+            
+            if (subjects.length === 0) {
+                ctx.clearRect(0, 0, 300, 300);
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('データがありません', centerX, centerY);
+                return;
+            }
+            
+            const angleStep = (Math.PI * 2) / subjects.length;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 300, 300);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            
+            for (let i = 1; i <= 5; i++) {
+                ctx.beginPath();
+                for (let j = 0; j < subjects.length; j++) {
+                    const angle = j * angleStep - Math.PI / 2;
+                    const x = centerX + Math.cos(angle) * (radius * i / 5);
+                    const y = centerY + Math.sin(angle) * (radius * i / 5);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            
+            // Draw lines from center
+            for (let i = 0; i < subjects.length; i++) {
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            // Draw data
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            subjects.forEach((subject, i) => {
+                const stats = subjectStats[subject];
+                const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius * percentage);
+                const y = centerY + Math.sin(angle) * (radius * percentage);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw labels
+            ctx.fillStyle = '#1f2937';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            
+            subjects.forEach((subject, i) => {
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius + 20);
+                const y = centerY + Math.sin(angle) * (radius + 20);
+                
+                ctx.fillText(subject, x, y);
+            });
         }
         
         // チャート切り替え
@@ -1964,52 +2264,6 @@
             return weekData;
         }
         
-        // ヒートマップ切り替え
-        function switchHeatmap(view, btn) {
-            currentHeatmapView = view;
-            document.querySelectorAll('.heatmap-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            updateHeatmap();
-        }
-        
-        // ヒートマップ更新
-        function updateHeatmap() {
-            const container = document.getElementById('heatmapGrid');
-            if (!container) return;
-            
-            let html = '';
-            
-            Object.values(books).forEach(book => {
-                const allQuestions = getAllQuestionsFromBook(book);
-                let currentLabel = '';
-                
-                allQuestions.forEach(q => {
-                    // ラベル表示
-                    const label = `${q.subject} › ${q.chapter}${q.section ? ' › ' + q.section : ''}${q.subsection ? ' › ' + q.subsection : ''}`;
-                    if (label !== currentLabel) {
-                        currentLabel = label;
-                        html += `<div class="heatmap-label">${label}</div>`;
-                    }
-                    
-                    const state = getQuestionStateFromRecords(book.id, q);
-                    let cellClass = '';
-                    
-                    if (currentHeatmapView === 'wrong') {
-                        if (state.wrong) cellClass = 'wrong';
-                        else if (state.correct) cellClass = 'correct';
-                    } else if (currentHeatmapView === 'bookmark') {
-                        if (state.bookmarked) cellClass = 'bookmarked';
-                        else if (state.correct) cellClass = 'correct';
-                        else if (state.wrong) cellClass = 'wrong';
-                    }
-                    
-                    html += `<div class="heatmap-cell ${cellClass}">${q.number}</div>`;
-                });
-            });
-            
-            container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
-        }
-        
         // 問題集から全問題を取得
         function getAllQuestionsFromBook(book) {
             const questions = [];
@@ -2098,7 +2352,6 @@
         // 進捗コンテンツ更新
         function updateProgressContent() {
             const overallContainer = document.getElementById('overallProgress');
-            const subjectContainer = document.getElementById('subjectProgress');
             
             const stats = calculateOverallProgress();
             
@@ -2126,29 +2379,6 @@
                 </div>
                 <p style="text-align: center; margin-top: 10px;">進捗率: ${stats.progressPercentage}%</p>
             `;
-            
-            const subjectStats = calculateSubjectStats();
-            let subjectHtml = '';
-            
-            Object.entries(subjectStats).forEach(([subject, stats]) => {
-                const percentage = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-                subjectHtml += `
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                            <span>${subject}</span>
-                            <span>${percentage}%</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" style="width: ${percentage}%;"></div>
-                        </div>
-                        <div style="font-size: 12px; color: var(--gray); margin-top: 3px;">
-                            ${stats.total}問解答 | ${stats.correct}問正解
-                        </div>
-                    </div>
-                `;
-            });
-            
-            subjectContainer.innerHTML = subjectHtml || '<p style="color: var(--gray);">データがありません</p>';
         }
         
         // ブックマークモード切り替え
@@ -2296,32 +2526,6 @@
                 localStorage.setItem('lastStudyDate', today);
                 localStorage.setItem('streakDays', streakDays.toString());
             }
-        }
-        
-        // 新規問題集作成
-        function createNewBook() {
-            const name = document.getElementById('newBookName').value;
-            
-            if (!name) {
-                alert('問題集名を入力してください');
-                return;
-            }
-            
-            const bookId = 'book_' + Date.now();
-            books[bookId] = {
-                id: bookId,
-                name: name,
-                examType: 'gyousei',
-                structure: {},
-                createdAt: new Date().toISOString()
-            };
-            
-            saveBooksToStorage();
-            renderBookCards();
-            renderRegisterHierarchy();
-            
-            document.getElementById('newBookName').value = '';
-            alert('作成しました');
         }
         
         // アコーディオン
