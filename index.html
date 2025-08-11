@@ -178,7 +178,7 @@
             color: var(--gray);
         }
         
-        /* 階層リスト表示（画像2の形式） */
+        /* 階層リスト表示 */
         .hierarchy-list {
             background: white;
             border-radius: 15px;
@@ -233,7 +233,8 @@
         
         .hierarchy-actions {
             display: flex;
-            gap: 8px;
+            gap: 5px;
+            margin-left: auto;
         }
         
         .hierarchy-action {
@@ -242,12 +243,14 @@
             color: white;
             border: none;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 14px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 3px;
+            justify-content: center;
             transition: all 0.3s;
+            width: 28px;
+            height: 28px;
         }
         
         .hierarchy-action:hover {
@@ -257,7 +260,10 @@
         .hierarchy-action.delete {
             background: transparent;
             color: var(--danger);
-            padding: 4px;
+        }
+        
+        .hierarchy-action.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
         }
         
         .hierarchy-children {
@@ -268,25 +274,6 @@
         
         .hierarchy-children.expanded {
             display: block;
-        }
-        
-        /* 記録入力用階層 */
-        .record-hierarchy-item {
-            background: white;
-            border: 1px solid var(--light);
-            border-radius: 8px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .record-hierarchy-item:hover {
-            border-color: var(--secondary);
-        }
-        
-        .record-hierarchy-item.selected {
-            border-color: var(--primary);
-            background: rgba(44, 62, 80, 0.05);
         }
         
         /* パンくずリスト */
@@ -321,7 +308,7 @@
             color: var(--gray);
         }
         
-        /* ヒートマップ改良版 */
+        /* ヒートマップ */
         .heatmap-container {
             background: white;
             border-radius: 10px;
@@ -841,6 +828,62 @@
             justify-content: center;
         }
         
+        /* 入力ダイアログ */
+        .input-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .input-dialog h3 {
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .dialog-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .dialog-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .dialog-btn.secondary {
+            background: var(--light);
+            color: var(--dark);
+        }
+        
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2999;
+        }
+        
         /* レスポンシブ */
         @media (max-width: 768px) {
             .achievement-grid {
@@ -1024,6 +1067,17 @@
         </div>
     </div>
     
+    <!-- 入力ダイアログ -->
+    <div id="dialogOverlay" class="dialog-overlay" style="display: none;"></div>
+    <div id="inputDialog" class="input-dialog" style="display: none;">
+        <h3 id="dialogTitle">タイトル</h3>
+        <div id="dialogBody"></div>
+        <div class="dialog-buttons">
+            <button class="dialog-btn secondary" onclick="closeDialog()">キャンセル</button>
+            <button class="dialog-btn primary" id="dialogConfirmBtn">確定</button>
+        </div>
+    </div>
+    
     <script>
         // データ構造
         let books = {};
@@ -1035,6 +1089,7 @@
         let currentChartView = 'day';
         let currentHeatmapView = 'wrong';
         let expandedNodes = new Set();
+        let savedQuestionStates = {};
         
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1042,6 +1097,7 @@
             initializeSampleData();
             renderBookCards();
             loadAllRecords();
+            loadSavedQuestionStates();
             updateChartBars();
             updateHeatmap();
         });
@@ -1145,6 +1201,49 @@
             }
         }
         
+        function loadSavedQuestionStates() {
+            const saved = localStorage.getItem('savedQuestionStates');
+            if (saved) {
+                savedQuestionStates = JSON.parse(saved);
+            }
+        }
+        
+        function saveQuestionStatesForPath() {
+            if (currentBook && currentPath.length > 0) {
+                const key = `${currentBook.id}_${currentPath.join('/')}`;
+                savedQuestionStates[key] = questionStates;
+                localStorage.setItem('savedQuestionStates', JSON.stringify(savedQuestionStates));
+            }
+        }
+        
+        function loadQuestionStatesForPath() {
+            if (currentBook && currentPath.length > 0) {
+                const key = `${currentBook.id}_${currentPath.join('/')}`;
+                if (savedQuestionStates[key]) {
+                    questionStates = savedQuestionStates[key];
+                    applyQuestionStates();
+                }
+            }
+        }
+        
+        function applyQuestionStates() {
+            Object.entries(questionStates).forEach(([num, state]) => {
+                const cell = document.querySelector(`[data-number="${num}"]`);
+                if (cell) {
+                    cell.classList.remove('correct', 'wrong', 'bookmarked');
+                    if (state.state === 'correct') {
+                        cell.classList.add('correct');
+                    } else if (state.state === 'wrong') {
+                        cell.classList.add('wrong');
+                    }
+                    if (state.bookmarked) {
+                        cell.classList.add('bookmarked');
+                    }
+                }
+            });
+            updateStats();
+        }
+        
         // 問題集カード表示
         function renderBookCards() {
             const container = document.getElementById('bookCardsContainer');
@@ -1155,7 +1254,7 @@
             Object.values(books).forEach(book => {
                 const questionCount = countQuestionsInBook(book);
                 html += `
-                    <div class="book-card" onclick="selectBook('${book.id}')">
+                    <div class="book-card" id="book-card-${book.id}" onclick="selectBook('${book.id}')">
                         <div class="book-card-title">📚 ${book.name}</div>
                         <div class="book-card-meta">
                             ${Object.keys(book.structure).length}科目 | ${questionCount}問
@@ -1176,9 +1275,10 @@
             document.querySelectorAll('.book-card').forEach(card => {
                 card.classList.remove('selected');
             });
-            event.currentTarget.classList.add('selected');
+            document.getElementById(`book-card-${bookId}`).classList.add('selected');
             
             document.getElementById('breadcrumb').style.display = 'flex';
+            document.getElementById('questionSection').style.display = 'none';
             updateBreadcrumb();
             renderRecordHierarchy();
         }
@@ -1188,20 +1288,31 @@
             const container = document.getElementById('recordHierarchyContainer');
             if (!container || !currentBook) return;
             
+            container.style.display = 'block';
+            
+            let structure = currentBook.structure;
+            // パスがある場合は該当箇所まで移動
+            if (currentPath.length > 0) {
+                for (let i = 0; i < currentPath.length; i++) {
+                    if (structure[currentPath[i]]) {
+                        structure = structure[currentPath[i]].children || {};
+                    }
+                }
+            }
+            
             let html = '<div class="hierarchy-list">';
-            html += renderRecordLevel(currentBook.structure, []);
+            html += renderRecordLevel(structure, currentPath);
             html += '</div>';
             
             container.innerHTML = html;
-            document.getElementById('questionSection').style.display = 'none';
         }
         
         // 記録用階層レベル表示
-        function renderRecordLevel(structure, path) {
+        function renderRecordLevel(structure, basePath) {
             let html = '';
             
             Object.entries(structure).forEach(([name, item]) => {
-                const currentPath = [...path, name];
+                const currentPath = [...basePath, name];
                 const pathStr = currentPath.join('/');
                 const hasChildren = item.children && Object.keys(item.children).length > 0;
                 const isExpanded = expandedNodes.has(pathStr);
@@ -1268,66 +1379,31 @@
             breadcrumb.innerHTML = html;
         }
         
-        // パンくずナビゲーション
+        // パンくずナビゲーション（修正版）
         function navigateTo(index) {
             if (index === -1) {
+                // 問題集レベルに戻る
                 currentPath = [];
-                renderRecordHierarchy();
+                document.getElementById('recordHierarchyContainer').style.display = 'block';
                 document.getElementById('questionSection').style.display = 'none';
-            } else {
-                currentPath = currentPath.slice(0, index + 1);
                 renderRecordHierarchy();
-                
-                // 該当パスの問題を表示
-                const targetPath = currentPath.join('/');
-                const item = getItemByPath(currentBook.structure, currentPath);
-                if (item && item.questions) {
-                    showQuestionsByPath(targetPath);
-                } else {
-                    document.getElementById('questionSection').style.display = 'none';
-                }
+            } else {
+                // 指定パスに移動
+                currentPath = currentPath.slice(0, index);
+                document.getElementById('recordHierarchyContainer').style.display = 'block';
+                document.getElementById('questionSection').style.display = 'none';
+                renderRecordHierarchy();
             }
             updateBreadcrumb();
         }
         
-        // パスからアイテム取得
-        function getItemByPath(structure, path) {
-            let current = structure;
-            for (let i = 0; i < path.length; i++) {
-                if (current[path[i]]) {
-                    if (i === path.length - 1) {
-                        return current[path[i]];
-                    }
-                    current = current[path[i]].children || {};
-                } else {
-                    return null;
-                }
-            }
-            return null;
-        }
-        
-        // 問題表示（パス指定）
+        // 問題表示
         function showQuestions(pathStr) {
             const pathArray = pathStr.split('/');
             currentPath = pathArray;
             updateBreadcrumb();
             
             let current = currentBook.structure;
-            for (let i = 0; i < pathArray.length; i++) {
-                if (current[pathArray[i]]) {
-                    if (i === pathArray.length - 1) {
-                        showQuestionsByPath(pathStr);
-                        return;
-                    }
-                    current = current[pathArray[i]].children || {};
-                }
-            }
-        }
-        
-        function showQuestionsByPath(pathStr) {
-            const pathArray = pathStr.split('/');
-            let current = currentBook.structure;
-            
             for (let i = 0; i < pathArray.length; i++) {
                 if (current[pathArray[i]]) {
                     if (i === pathArray.length - 1 && current[pathArray[i]].questions) {
@@ -1354,6 +1430,8 @@
                             };
                         });
                         
+                        // 保存された状態を読み込み
+                        loadQuestionStatesForPath();
                         return;
                     }
                     current = current[pathArray[i]].children || {};
@@ -1419,7 +1497,7 @@
             document.getElementById('footerModal').classList.remove('active');
         }
         
-        // 問題集登録コンテンツ（画像2形式）
+        // 問題集登録コンテンツ
         function getRegisterContent() {
             let html = `
                 <div class="card">
@@ -1447,17 +1525,20 @@
             let html = '<div class="hierarchy-list">';
             
             Object.values(books).forEach(book => {
+                const nodeId = `book_${book.id}`;
+                const isExpanded = expandedNodes.has(nodeId);
+                
                 html += `
                     <div class="hierarchy-item">
-                        <div class="hierarchy-row" onclick="toggleRegisterNode('book_${book.id}', event)">
-                            <span class="hierarchy-toggle">▶</span>
+                        <div class="hierarchy-row" onclick="toggleRegisterNode('${nodeId}', event)">
+                            <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
                             <span class="hierarchy-icon">📚</span>
                             <span class="hierarchy-label">${book.name}</span>
                             <div class="hierarchy-actions">
-                                <button class="hierarchy-action" onclick="addHierarchy('${book.id}', null, 'subject', event)">+科目</button>
+                                <button class="hierarchy-action" onclick="addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
                             </div>
                         </div>
-                        <div class="hierarchy-children">
+                        <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
                             ${renderRegisterLevel(book.structure, book.id, [])}
                         </div>
                     </div>
@@ -1466,17 +1547,6 @@
             
             html += '</div>';
             container.innerHTML = html;
-            
-            // 展開状態を復元
-            expandedNodes.forEach(nodeId => {
-                const node = document.querySelector(`[data-node-id="${nodeId}"]`);
-                if (node) {
-                    const toggle = node.querySelector('.hierarchy-toggle');
-                    const children = node.nextElementSibling;
-                    if (toggle) toggle.classList.add('expanded');
-                    if (children) children.classList.add('expanded');
-                }
-            });
         }
         
         // 登録階層レベル表示
@@ -1487,35 +1557,38 @@
                 const currentPath = [...path, name];
                 const nodeId = `${bookId}_${currentPath.join('_')}`;
                 const hasChildren = item.children && Object.keys(item.children).length > 0;
+                const isExpanded = expandedNodes.has(nodeId);
                 
                 html += `
                     <div class="hierarchy-item">
-                        <div class="hierarchy-row" data-node-id="${nodeId}" ${hasChildren ? `onclick="toggleRegisterNode('${nodeId}', event)"` : ''}>
-                            ${hasChildren ? '<span class="hierarchy-toggle">▶</span>' : '<span style="width: 20px; display: inline-block;"></span>'}
+                        <div class="hierarchy-row" ${hasChildren ? `onclick="toggleRegisterNode('${nodeId}', event)"` : ''}>
+                            ${hasChildren ? `<span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>` : '<span style="width: 20px; display: inline-block;"></span>'}
                             <span class="hierarchy-icon">${getHierarchyIcon(item.type)}</span>
                             <span class="hierarchy-label">${name}</span>
-                            <div class="hierarchy-actions">
                 `;
                 
-                // アクションボタン
-                if (item.type === 'subject') {
-                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)">+章</button>`;
-                } else if (item.type === 'chapter') {
-                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)">+節</button>`;
-                } else if (item.type === 'section' && !item.questions) {
-                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)">+項</button>`;
-                }
-                
+                // 問題数表示
                 if (item.questions) {
-                    html += `<span style="margin-left: 5px; font-size: 12px; color: var(--gray);">${item.questions.length}問</span>`;
+                    html += `<span style="margin-left: auto; margin-right: 10px; font-size: 12px; color: var(--gray);">${item.questions.length}問</span>`;
                 }
                 
-                html += `<button class="hierarchy-action delete" onclick="deleteHierarchy('${bookId}', '${currentPath.join('/')}', event)">🗑️</button>`;
+                // アクションボタン
+                html += '<div class="hierarchy-actions">';
+                
+                if (item.type === 'subject') {
+                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)" title="章追加">+</button>`;
+                } else if (item.type === 'chapter') {
+                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)" title="節追加">+</button>`;
+                } else if (item.type === 'section' && !item.questions) {
+                    html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)" title="項追加">+</button>`;
+                }
+                
+                html += `<button class="hierarchy-action delete" onclick="deleteHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="削除">🗑️</button>`;
                 html += '</div></div>';
                 
                 if (hasChildren) {
                     html += `
-                        <div class="hierarchy-children">
+                        <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
                             ${renderRegisterLevel(item.children, bookId, currentPath)}
                         </div>
                     `;
@@ -1527,27 +1600,17 @@
             return html;
         }
         
-        // 登録ノード展開/折りたたみ（展開状態を保持）
+        // 登録ノード展開/折りたたみ
         function toggleRegisterNode(nodeId, event) {
             event.stopPropagation();
             
-            const node = document.querySelector(`[data-node-id="${nodeId}"]`);
-            if (!node) return;
-            
-            const toggle = node.querySelector('.hierarchy-toggle');
-            const children = node.nextElementSibling;
-            
-            if (toggle && children) {
-                toggle.classList.toggle('expanded');
-                children.classList.toggle('expanded');
-                
-                // 展開状態を保存
-                if (toggle.classList.contains('expanded')) {
-                    expandedNodes.add(nodeId);
-                } else {
-                    expandedNodes.delete(nodeId);
-                }
+            if (expandedNodes.has(nodeId)) {
+                expandedNodes.delete(nodeId);
+            } else {
+                expandedNodes.add(nodeId);
             }
+            
+            renderRegisterHierarchy();
         }
         
         // 階層アイコン取得
@@ -1561,53 +1624,90 @@
             return icons[type] || '📄';
         }
         
-        // 階層追加（番号入力付き）
+        // ダイアログ表示
+        function showDialog(title, body, onConfirm) {
+            document.getElementById('dialogTitle').textContent = title;
+            document.getElementById('dialogBody').innerHTML = body;
+            document.getElementById('dialogConfirmBtn').onclick = onConfirm;
+            document.getElementById('dialogOverlay').style.display = 'block';
+            document.getElementById('inputDialog').style.display = 'block';
+        }
+        
+        function closeDialog() {
+            document.getElementById('dialogOverlay').style.display = 'none';
+            document.getElementById('inputDialog').style.display = 'none';
+        }
+        
+        // 階層追加（修正版）
         function addHierarchy(bookId, parentPath, type, event) {
             event.stopPropagation();
             
-            const name = prompt(`${getTypeLabel(type)}の名前を入力してください:`);
-            if (!name) return;
+            let dialogBody = `
+                <div class="form-group">
+                    <label class="form-label">${getTypeLabel(type)}の名前</label>
+                    <input type="text" class="form-control" id="hierarchyName" placeholder="名前を入力">
+                </div>
+            `;
             
-            let questions = null;
             if (type === 'section' || type === 'subsection') {
-                const count = prompt('問題数を入力してください（なしの場合は空欄）:');
-                if (count && !isNaN(count) && parseInt(count) > 0) {
-                    questions = [];
-                    for (let i = 1; i <= parseInt(count); i++) {
-                        questions.push(i);
+                dialogBody += `
+                    <div class="form-group">
+                        <label class="form-label">問題数（任意）</label>
+                        <input type="number" class="form-control" id="questionCount" min="0" placeholder="問題数を入力（空欄可）">
+                    </div>
+                `;
+            }
+            
+            showDialog(`${getTypeLabel(type)}を追加`, dialogBody, () => {
+                const name = document.getElementById('hierarchyName').value;
+                if (!name) {
+                    alert('名前を入力してください');
+                    return;
+                }
+                
+                let questions = null;
+                if (type === 'section' || type === 'subsection') {
+                    const count = document.getElementById('questionCount').value;
+                    if (count && !isNaN(count) && parseInt(count) > 0) {
+                        questions = [];
+                        for (let i = 1; i <= parseInt(count); i++) {
+                            questions.push(i);
+                        }
                     }
                 }
-            }
-            
-            const book = books[bookId];
-            let target = book.structure;
-            
-            if (parentPath) {
-                const pathArray = parentPath.split('/');
-                pathArray.forEach(p => {
-                    if (target[p]) {
-                        if (!target[p].children) {
-                            target[p].children = {};
+                
+                const book = books[bookId];
+                let target = book.structure;
+                
+                if (parentPath) {
+                    const pathArray = parentPath.split('/');
+                    pathArray.forEach(p => {
+                        if (target[p]) {
+                            if (!target[p].children) {
+                                target[p].children = {};
+                            }
+                            target = target[p].children;
                         }
-                        target = target[p].children;
-                    }
-                });
-            }
-            
-            if (questions) {
-                target[name] = {
-                    type: type,
-                    questions: questions
-                };
-            } else {
-                target[name] = {
-                    type: type,
-                    children: {}
-                };
-            }
-            
-            saveBooksToStorage();
-            renderRegisterHierarchy();
+                    });
+                }
+                
+                if (questions) {
+                    target[name] = {
+                        type: type,
+                        questions: questions
+                    };
+                } else {
+                    target[name] = {
+                        type: type,
+                        children: {}
+                    };
+                }
+                
+                saveBooksToStorage();
+                renderBookCards();
+                renderRegisterHierarchy();
+                closeDialog();
+            });
         }
         
         // 階層削除
@@ -1635,6 +1735,7 @@
             }
             
             saveBooksToStorage();
+            renderBookCards();
             renderRegisterHierarchy();
         }
         
@@ -1659,7 +1760,7 @@
             return html;
         }
         
-        // 実績コンテンツ（4列バッジ）
+        // 実績コンテンツ
         function getResultsContent() {
             const stats = calculateOverallProgress();
             const streakDays = localStorage.getItem('streakDays') || '0';
@@ -1758,7 +1859,7 @@
             updateChartBars();
         }
         
-        // チャート更新（縦棒グラフ）
+        // チャート更新
         function updateChartBars() {
             const container = document.getElementById('chartBars');
             if (!container) return;
@@ -1871,7 +1972,7 @@
             updateHeatmap();
         }
         
-        // ヒートマップ更新（全階層表示）
+        // ヒートマップ更新
         function updateHeatmap() {
             const container = document.getElementById('heatmapGrid');
             if (!container) return;
@@ -1883,7 +1984,7 @@
                 let currentLabel = '';
                 
                 allQuestions.forEach(q => {
-                    // ラベル表示（詰めて表示）
+                    // ラベル表示
                     const label = `${q.subject} › ${q.chapter}${q.section ? ' › ' + q.section : ''}${q.subsection ? ' › ' + q.subsection : ''}`;
                     if (label !== currentLabel) {
                         currentLabel = label;
@@ -2080,6 +2181,7 @@
                 }
             }
             
+            saveQuestionStatesForPath();
             updateStats();
         }
         
@@ -2094,6 +2196,7 @@
                     }
                 }
             });
+            saveQuestionStatesForPath();
             updateStats();
         }
         
@@ -2108,6 +2211,7 @@
                     }
                 }
             });
+            saveQuestionStatesForPath();
             updateStats();
         }
         
@@ -2156,13 +2260,7 @@
             updateDailyStreak();
             loadAllRecords();
             
-            // 記録後、元の画面に戻る
-            document.getElementById('questionSection').style.display = 'none';
-            document.getElementById('recordHierarchyContainer').style.display = 'block';
-            renderRecordHierarchy();
-            currentPath = [];
-            updateBreadcrumb();
-            
+            // 保存後も同じページに留まる
             alert('保存しました！');
         }
         
@@ -2233,7 +2331,7 @@
             content.classList.toggle('active');
         }
         
-        // 全体進捗計算（修正版）
+        // 全体進捗計算
         function calculateOverallProgress() {
             let totalQuestions = 0;
             let uniqueAnswered = new Set();
@@ -2245,7 +2343,7 @@
                 totalQuestions += countQuestionsInBook(book);
             });
             
-            // 解答済み問題を集計（重複を考慮）
+            // 解答済み問題を集計
             allRecords.forEach(record => {
                 totalAnswered += record.stats.total || 0;
                 totalCorrect += record.stats.correct || 0;
