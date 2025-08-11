@@ -236,8 +236,8 @@
         
         .hierarchy-action {
             padding: 4px;
-            background: var(--gray-light);
-            color: white;
+            background: transparent;
+            color: var(--gray-light);
             border: none;
             border-radius: 4px;
             font-size: 14px;
@@ -251,11 +251,11 @@
         }
         
         .hierarchy-action:hover {
-            background: var(--gray);
+            color: var(--gray);
+            background: rgba(107, 114, 128, 0.1);
         }
         
         .hierarchy-action.edit {
-            background: transparent;
             color: var(--gray-light);
         }
         
@@ -265,7 +265,6 @@
         }
         
         .hierarchy-action.delete {
-            background: transparent;
             color: var(--danger);
         }
         
@@ -862,7 +861,7 @@
             width: 100%;
             height: 100vh;
             overflow-y: auto;
-            padding: 20px 10px 80px 10px;
+            padding: 20px 10px 100px 10px;
         }
         
         .modal-header {
@@ -883,6 +882,35 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        /* モーダル下部閉じるボタン */
+        .modal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 2001;
+        }
+        
+        .modal-close-bottom {
+            width: 100%;
+            padding: 15px;
+            background: var(--gray);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-close-bottom:hover {
+            background: var(--dark);
         }
         
         /* 入力ダイアログ */
@@ -1127,6 +1155,9 @@
                 <button class="modal-close" onclick="closeFooterModal()">×</button>
             </div>
             <div id="modalBody"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="modal-close-bottom" onclick="closeFooterModal()">閉じる</button>
         </div>
     </div>
     
@@ -1699,13 +1730,13 @@
             renderRegisterHierarchy();
         }
         
-        // 階層アイコン取得
+        // 階層アイコン取得（項のアイコンを削除）
         function getHierarchyIcon(type) {
             const icons = {
                 'subject': '📂',
                 'chapter': '📄',
                 'section': '📑',
-                'subsection': '📝'
+                'subsection': ''  // 項のアイコンは空に
             };
             return icons[type] || '📄';
         }
@@ -2168,7 +2199,7 @@
             container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
         }
         
-        // レーダーチャート描画（教材ごと）
+        // レーダーチャート描画（実際の学習データと連動）
         function drawRadarChart() {
             const canvas = document.getElementById('radarChart');
             const select = document.getElementById('radarBookSelect');
@@ -2194,7 +2225,7 @@
             
             // 選択された問題集の科目別統計を計算
             const subjectStats = calculateBookSubjectStats(bookId);
-            const subjects = Object.keys(subjectStats);
+            const subjects = Object.keys(book.structure);
             
             if (subjects.length === 0) {
                 ctx.clearRect(0, 0, 300, 300);
@@ -2250,7 +2281,7 @@
             
             ctx.beginPath();
             subjects.forEach((subject, i) => {
-                const stats = subjectStats[subject];
+                const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
                 const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
                 const angle = i * angleStep - Math.PI / 2;
                 const x = centerX + Math.cos(angle) * (radius * percentage);
@@ -2276,7 +2307,18 @@
                 const x = centerX + Math.cos(angle) * (radius + 20);
                 const y = centerY + Math.sin(angle) * (radius + 20);
                 
-                ctx.fillText(subject, x, y);
+                // 短い科目名表示
+                const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
+                ctx.fillText(shortName, x, y);
+                
+                // 正答率を表示
+                const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
+                const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(`${rate}%`, x, y + 12);
+                ctx.font = '12px sans-serif';
+                ctx.fillStyle = '#1f2937';
             });
         }
         
@@ -2296,12 +2338,21 @@
             
             // 該当する記録を集計
             allRecords.forEach(record => {
-                if (record.bookId === bookId) {
+                if (record.bookId === bookId && record.path && record.path.length > 0) {
                     const subject = record.path[0];
                     if (subject && subjectStats[subject]) {
-                        subjectStats[subject].total += record.stats.total || 0;
-                        subjectStats[subject].correct += record.stats.correct || 0;
-                        subjectStats[subject].wrong += record.stats.wrong || 0;
+                        // 各問題の状態を集計
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    subjectStats[subject].correct++;
+                                    subjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    subjectStats[subject].wrong++;
+                                    subjectStats[subject].total++;
+                                }
+                            });
+                        }
                     }
                 }
             });
