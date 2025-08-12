@@ -1121,6 +1121,10 @@
                     <select class="radar-chart-select" id="radarBookSelect" onchange="drawRadarChart()">
                         <option value="">問題集を選択</option>
                     </select>
+                    <div style="display: flex; gap: 10px; margin: 10px 0; justify-content: center;">
+                        <button class="chart-btn active" id="radarModeSubject" onclick="setRadarMode('subject', this)">科目別</button>
+                        <button class="chart-btn" id="radarModeCompare" onclick="setRadarMode('compare', this)">問題集比較</button>
+                    </div>
                     <canvas id="radarChart" width="300" height="300"></canvas>
                 </div>
             </div>
@@ -1184,6 +1188,7 @@
         let expandedNodes = new Set();
         let savedQuestionStates = {};
         let selectedBookCard = null;
+        let radarChartMode = 'subject';  // 'subject' or 'compare'
         
         // 初期化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1200,15 +1205,16 @@
         // サンプルデータ
         function initializeSampleData() {
             if (Object.keys(books).length === 0) {
-                const sampleBook = {
+                // サンプル1: 肢別過去問集（階層構造）
+                const sampleBook1 = {
                     id: 'sample-2024',
                     name: '合格革命 肢別過去問集 2024年版',
                     examType: 'gyousei',
                     structure: {
-                        '総則': {
+                        '民法': {
                             type: 'subject',
                             children: {
-                                '権利の主体・客体': {
+                                '総則': {
                                     type: 'chapter',
                                     children: {
                                         '権利能力': {
@@ -1216,23 +1222,6 @@
                                             questions: [1, 2, 3, 4, 5]
                                         },
                                         '意思能力': {
-                                            type: 'section',
-                                            questions: [1, 2, 3, 4, 5]
-                                        },
-                                        '行為能力': {
-                                            type: 'section',
-                                            questions: [1, 2, 3, 4, 5, 6, 7, 8]
-                                        }
-                                    }
-                                },
-                                '意思表示': {
-                                    type: 'chapter',
-                                    children: {
-                                        '法律行為': {
-                                            type: 'section',
-                                            questions: [1, 2, 3]
-                                        },
-                                        '意思表示': {
                                             type: 'section',
                                             questions: [1, 2, 3, 4, 5]
                                         }
@@ -1246,23 +1235,9 @@
                                 '行政主体': {
                                     type: 'chapter',
                                     children: {
-                                        'たん': {
+                                        '国と地方': {
                                             type: 'section',
                                             questions: [1, 2, 3, 4, 5]
-                                        }
-                                    }
-                                },
-                                '憲法': {
-                                    type: 'chapter',
-                                    children: {
-                                        '総論': {
-                                            type: 'section',
-                                            children: {
-                                                '特色': {
-                                                    type: 'subsection',
-                                                    questions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-                                                }
-                                            }
                                         }
                                     }
                                 }
@@ -1272,7 +1247,104 @@
                     createdAt: new Date().toISOString()
                 };
                 
-                books[sampleBook.id] = sampleBook;
+                // サンプル2: 年度別過去問（章に直接問題）
+                const sampleBook2 = {
+                    id: 'sample-kakomond-2024',
+                    name: '行政書士試験 過去問集',
+                    examType: 'gyousei',
+                    structure: {
+                        '年度別過去問': {
+                            type: 'subject',
+                            children: {
+                                '令和6年度': {
+                                    type: 'chapter',
+                                    questions: Array.from({length: 60}, (_, i) => i + 1),
+                                    children: {}
+                                },
+                                '令和5年度': {
+                                    type: 'chapter',
+                                    questions: Array.from({length: 60}, (_, i) => i + 1),
+                                    children: {}
+                                }
+                            }
+                        }
+                    },
+                    createdAt: new Date().toISOString()
+                };
+                
+                // サンプル3: 科目別に整理された年度別過去問（推奨構造）
+                const sampleBook3 = {
+                    id: 'r6-kakomon',
+                    name: '令和6年度 行政書士試験',
+                    examType: 'gyousei',
+                    structure: {
+                        '基礎法学': {
+                            type: 'subject',
+                            children: {
+                                '問1-2': {
+                                    type: 'chapter',
+                                    questions: [1, 2],
+                                    children: {}
+                                }
+                            }
+                        },
+                        '憲法': {
+                            type: 'subject',
+                            children: {
+                                '問3-7': {
+                                    type: 'chapter',
+                                    questions: [3, 4, 5, 6, 7],
+                                    children: {}
+                                }
+                            }
+                        },
+                        '行政法': {
+                            type: 'subject',
+                            children: {
+                                '問8-26': {
+                                    type: 'chapter',
+                                    questions: Array.from({length: 19}, (_, i) => i + 8),
+                                    children: {}
+                                }
+                            }
+                        },
+                        '民法': {
+                            type: 'subject',
+                            children: {
+                                '問27-35': {
+                                    type: 'chapter',
+                                    questions: Array.from({length: 9}, (_, i) => i + 27),
+                                    children: {}
+                                }
+                            }
+                        },
+                        '商法': {
+                            type: 'subject',
+                            children: {
+                                '問36-40': {
+                                    type: 'chapter',
+                                    questions: [36, 37, 38, 39, 40],
+                                    children: {}
+                                }
+                            }
+                        },
+                        '一般知識': {
+                            type: 'subject',
+                            children: {
+                                '問47-60': {
+                                    type: 'chapter',
+                                    questions: Array.from({length: 14}, (_, i) => i + 47),
+                                    children: {}
+                                }
+                            }
+                        }
+                    },
+                    createdAt: new Date().toISOString()
+                };
+                
+                books[sampleBook1.id] = sampleBook1;
+                books[sampleBook2.id] = sampleBook2;
+                books[sampleBook3.id] = sampleBook3;
                 saveBooksToStorage();
             }
         }
@@ -1435,7 +1507,7 @@
                 html += `<div class="hierarchy-item">`;
                 
                 if (item.questions) {
-                    // 問題がある場合はクリック可能
+                    // 章、節、項のいずれでも問題がある場合はクリック可能
                     html += `
                         <div class="hierarchy-row" onclick="showQuestions('${pathStr}')">
                             <span style="width: 28px;"></span>
@@ -1444,6 +1516,15 @@
                             <span class="hierarchy-meta">${item.questions.length}問</span>
                         </div>
                     `;
+                    
+                    // 章や節で問題を持っていても、子要素があれば展開可能
+                    if (hasChildren) {
+                        html += `
+                            <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                                ${renderRecordLevel(item.children, currentPath)}
+                            </div>
+                        `;
+                    }
                 } else if (hasChildren) {
                     // 子要素がある場合（▼を表示）
                     html += `
@@ -1521,7 +1602,8 @@
             let current = currentBook.structure;
             for (let i = 0; i < pathArray.length; i++) {
                 if (current[pathArray[i]]) {
-                    if (i === pathArray.length - 1 && current[pathArray[i]].questions) {
+                    // 最後の要素、または途中でも問題を持っている場合
+                    if (current[pathArray[i]].questions) {
                         const item = current[pathArray[i]];
                         document.getElementById('recordHierarchyContainer').style.display = 'none';
                         document.getElementById('questionSection').style.display = 'block';
@@ -1529,6 +1611,14 @@
                         const grid = document.getElementById('questionGrid');
                         grid.innerHTML = '';
                         questionStates = {};
+                        
+                        // 章レベルで問題が多い場合の注記を追加
+                        if (item.type === 'chapter' && item.questions.length > 50) {
+                            const note = document.createElement('div');
+                            note.style.cssText = 'grid-column: 1 / -1; font-size: 11px; color: var(--gray); padding: 5px;';
+                            note.textContent = `※ ${item.questions.length}問 - 年度別過去問`;
+                            grid.appendChild(note);
+                        }
                         
                         item.questions.forEach(num => {
                             const cell = document.createElement('div');
@@ -1681,7 +1771,7 @@
                             <span class="hierarchy-label">${name}</span>
                 `;
                 
-                // 問題数表示
+                // 問題数表示（章、節、項のいずれでも）
                 if (item.questions) {
                     html += `<span class="hierarchy-meta">${item.questions.length}問</span>`;
                 }
@@ -1695,8 +1785,10 @@
                 if (item.type === 'subject') {
                     html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)" title="章追加">+</button>`;
                 } else if (item.type === 'chapter') {
+                    // 章でも問題を持っていても節を追加可能
                     html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)" title="節追加">+</button>`;
-                } else if (item.type === 'section' && !item.questions) {
+                } else if (item.type === 'section') {
+                    // 節でも問題を持っていても項を追加可能（ただし既に項がある場合のみ）
                     html += `<button class="hierarchy-action" onclick="addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)" title="項追加">+</button>`;
                 }
                 
@@ -1801,13 +1893,23 @@
                 </div>
             `;
             
-            if (type === 'section' || type === 'subsection') {
+            // 章、節、項で問題数を入力可能に
+            if (type === 'chapter' || type === 'section' || type === 'subsection') {
                 dialogBody += `
                     <div class="form-group">
                         <label class="form-label">問題数（任意）</label>
                         <input type="number" class="form-control" id="questionCount" min="0" placeholder="問題数を入力（空欄可）">
                     </div>
                 `;
+                
+                // 章の場合は追加説明
+                if (type === 'chapter') {
+                    dialogBody += `
+                        <div style="font-size: 12px; color: var(--gray); margin-top: -10px; margin-bottom: 10px;">
+                            ※ 章に直接問題を登録する場合（例：年度別過去問）
+                        </div>
+                    `;
+                }
             }
             
             showDialog(`${getTypeLabel(type)}を追加`, dialogBody, () => {
@@ -1818,7 +1920,7 @@
                 }
                 
                 let questions = null;
-                if (type === 'section' || type === 'subsection') {
+                if (type === 'chapter' || type === 'section' || type === 'subsection') {
                     const count = document.getElementById('questionCount').value;
                     if (count && !isNaN(count) && parseInt(count) > 0) {
                         questions = [];
@@ -1848,6 +1950,10 @@
                         type: type,
                         questions: questions
                     };
+                    // 章や節で問題を持つ場合でも、さらに下位階層を追加可能にする
+                    if (type === 'chapter' || type === 'section') {
+                        target[name].children = {};
+                    }
                 } else {
                     target[name] = {
                         type: type,
@@ -1888,6 +1994,7 @@
                 </div>
             `;
             
+            // 章、節、項で問題を持っている場合
             if (item.questions) {
                 dialogBody += `
                     <div class="form-group">
@@ -1895,6 +2002,14 @@
                         <input type="number" class="form-control" id="editQuestionCount" value="${item.questions.length}" min="1">
                     </div>
                 `;
+                
+                if (item.type === 'chapter') {
+                    dialogBody += `
+                        <div style="font-size: 12px; color: var(--gray); margin-top: -10px;">
+                            ※ 章に直接登録された問題（例：年度別過去問）
+                        </div>
+                    `;
+                }
             }
             
             showDialog('編集', dialogBody, () => {
@@ -2199,8 +2314,32 @@
             container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
         }
         
+        // レーダーチャートモード切り替え
+        function setRadarMode(mode, btn) {
+            radarChartMode = mode;
+            document.querySelectorAll('#radarModeSubject, #radarModeCompare').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const select = document.getElementById('radarBookSelect');
+            
+            if (mode === 'compare') {
+                // 比較モードでは全問題集の科目別平均を表示
+                select.style.display = 'none';
+                drawRadarChartCompare();
+            } else {
+                // 科目別モードでは選択した問題集の科目を表示
+                select.style.display = 'block';
+                drawRadarChart();
+            }
+        }
+        
         // レーダーチャート描画（実際の学習データと連動）
         function drawRadarChart() {
+            if (radarChartMode === 'compare') {
+                drawRadarChartCompare();
+                return;
+            }
+            
             const canvas = document.getElementById('radarChart');
             const select = document.getElementById('radarBookSelect');
             if (!canvas || !select) return;
@@ -2227,7 +2366,13 @@
             const subjectStats = calculateBookSubjectStats(bookId);
             const subjects = Object.keys(book.structure);
             
-            if (subjects.length === 0) {
+            // 科目が6個を超える場合は最初の6個のみ表示
+            const displaySubjects = subjects.slice(0, 6);
+            if (subjects.length > 6) {
+                console.log(`注意: ${subjects.length}科目中、最初の6科目のみ表示`);
+            }
+            
+            if (displaySubjects.length === 0) {
                 ctx.clearRect(0, 0, 300, 300);
                 ctx.fillStyle = '#6b7280';
                 ctx.font = '14px sans-serif';
@@ -2236,7 +2381,7 @@
                 return;
             }
             
-            const angleStep = (Math.PI * 2) / subjects.length;
+            const angleStep = (Math.PI * 2) / displaySubjects.length;
             
             // Clear canvas
             ctx.clearRect(0, 0, 300, 300);
@@ -2247,7 +2392,7 @@
             
             for (let i = 1; i <= 5; i++) {
                 ctx.beginPath();
-                for (let j = 0; j < subjects.length; j++) {
+                for (let j = 0; j < displaySubjects.length; j++) {
                     const angle = j * angleStep - Math.PI / 2;
                     const x = centerX + Math.cos(angle) * (radius * i / 5);
                     const y = centerY + Math.sin(angle) * (radius * i / 5);
@@ -2263,7 +2408,7 @@
             }
             
             // Draw lines from center
-            for (let i = 0; i < subjects.length; i++) {
+            for (let i = 0; i < displaySubjects.length; i++) {
                 const angle = i * angleStep - Math.PI / 2;
                 const x = centerX + Math.cos(angle) * radius;
                 const y = centerY + Math.sin(angle) * radius;
@@ -2280,7 +2425,7 @@
             ctx.lineWidth = 2;
             
             ctx.beginPath();
-            subjects.forEach((subject, i) => {
+            displaySubjects.forEach((subject, i) => {
                 const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
                 const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
                 const angle = i * angleStep - Math.PI / 2;
@@ -2302,7 +2447,7 @@
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
             
-            subjects.forEach((subject, i) => {
+            displaySubjects.forEach((subject, i) => {
                 const angle = i * angleStep - Math.PI / 2;
                 const x = centerX + Math.cos(angle) * (radius + 20);
                 const y = centerY + Math.sin(angle) * (radius + 20);
@@ -2320,6 +2465,135 @@
                 ctx.font = '12px sans-serif';
                 ctx.fillStyle = '#1f2937';
             });
+        }
+        
+        // 問題集比較モードのレーダーチャート
+        function drawRadarChartCompare() {
+            const canvas = document.getElementById('radarChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = 150;
+            const centerY = 150;
+            const radius = 100;
+            
+            // 主要科目を定義（行政書士試験の場合）
+            const mainSubjects = ['基礎法学', '憲法', '行政法', '民法', '商法', '一般知識'];
+            
+            // 全問題集から科目別データを集計
+            const allSubjectStats = {};
+            mainSubjects.forEach(subject => {
+                allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
+            });
+            
+            // 全記録から主要科目のデータを集計
+            allRecords.forEach(record => {
+                if (record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (mainSubjects.includes(subject)) {
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    allSubjectStats[subject].correct++;
+                                    allSubjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    allSubjectStats[subject].wrong++;
+                                    allSubjectStats[subject].total++;
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+            
+            const angleStep = (Math.PI * 2) / mainSubjects.length;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, 300, 300);
+            
+            // Draw grid
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            
+            for (let i = 1; i <= 5; i++) {
+                ctx.beginPath();
+                for (let j = 0; j < mainSubjects.length; j++) {
+                    const angle = j * angleStep - Math.PI / 2;
+                    const x = centerX + Math.cos(angle) * (radius * i / 5);
+                    const y = centerY + Math.sin(angle) * (radius * i / 5);
+                    
+                    if (j === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            
+            // Draw lines from center
+            for (let i = 0; i < mainSubjects.length; i++) {
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            // Draw data
+            ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
+            ctx.strokeStyle = '#8b5cf6';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            mainSubjects.forEach((subject, i) => {
+                const stats = allSubjectStats[subject];
+                const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius * percentage);
+                const y = centerY + Math.sin(angle) * (radius * percentage);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw labels
+            ctx.fillStyle = '#1f2937';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            
+            mainSubjects.forEach((subject, i) => {
+                const angle = i * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius + 20);
+                const y = centerY + Math.sin(angle) * (radius + 20);
+                
+                ctx.fillText(subject, x, y);
+                
+                // 正答率を表示
+                const stats = allSubjectStats[subject];
+                const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(`${rate}%`, x, y + 12);
+                ctx.font = '12px sans-serif';
+                ctx.fillStyle = '#1f2937';
+            });
+            
+            // タイトル表示
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('全問題集の統合データ', centerX, 20);
         }
         
         // 特定の問題集の科目別統計を計算
