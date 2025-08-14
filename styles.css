@@ -1,8 +1,3 @@
-/* ===================================
-   学習トラッカー スタイルシート
-   =================================== */
-
-/* リセット & 基本設定 */
 * {
     margin: 0;
     padding: 0;
@@ -10,7 +5,6 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-/* CSS変数定義 */
 :root {
     --primary: #2c3e50;
     --primary-light: #34495e;
@@ -39,9 +33,7 @@ body {
     position: relative;
 }
 
-/* ===================================
-   ヘッダー
-   =================================== */
+/* ヘッダー */
 .app-header {
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
     padding: 20px;
@@ -126,9 +118,434 @@ body {
     font-size: 16px;
 }
 
-/* ===================================
-   メインタブ
-   =================================== */
+/* タイマーモーダル */
+.timer-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer-modal.active {
+    display: flex;
+}
+
+.timer-modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.timer-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.timer-tab {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.timer-tab.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.timer-display-large {
+    font-size: 48px;
+    font-weight: 700;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--primary);
+}
+
+.timer-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.timer-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.timer-btn.start {
+    background: var(--success);
+    color: white;
+}
+
+.timer-btn.pause {
+    background: var(--warning);
+    color: white;
+}
+
+.timer-btn.reset {
+    background: var(--gray);
+    color: white;
+}
+
+.timer-input-group {
+    margin: 15px 0;
+}
+
+.timer-input-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--dark);
+}
+
+.timer-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.timer-input {
+    width: 80px;
+    padding: 8px;
+    border: 1px solid var(--light);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 16px;
+}
+
+/* カレンダー */
+.calendar-container {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px;
+    box-shadow: var(--shadow);
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.calendar-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.calendar-nav-btn {
+    background: var(--light);
+    border: none;
+    border-radius: 5px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.calendar-nav-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-month {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray);
+    padding: 5px;
+}
+
+.calendar-weekday.weekend {
+    color: var(--danger);
+}
+
+.calendar-day {
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--light);
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    font-size: 14px;
+    padding: 3px;
+}
+
+.calendar-day:hover {
+    background: var(--light);
+}
+
+.calendar-day.weekend {
+    background: var(--weekend-bg);
+}
+
+.calendar-day.other-month {
+    color: var(--gray-light);
+}
+
+.calendar-day.today {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-day.selected {
+    background: var(--secondary);
+    color: white;
+}
+
+.calendar-day-number {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.calendar-day-plans {
+    font-size: 9px;
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    color: inherit;
+}
+
+.calendar-plan-text {
+    margin: 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-plan-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.calendar-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.calendar-btn.add-plan {
+    background: var(--primary);
+    color: white;
+}
+
+.calendar-btn.view-plans {
+    background: var(--light);
+    color: var(--dark);
+}
+
+/* 学習計画モーダル */
+.plan-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2500;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-modal.active {
+    display: flex;
+}
+
+.plan-modal-content {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.plan-form-group {
+    margin-bottom: 15px;
+}
+
+.plan-form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: var(--dark);
+}
+
+.plan-form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.plan-display-type {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.plan-display-type label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.date-range-inputs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.date-range-inputs input {
+    flex: 1;
+}
+
+.color-picker {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    border-color: var(--dark);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.plan-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.plan-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--light);
+}
+
+.plan-item-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.plan-item-content {
+    flex: 1;
+}
+
+.plan-item-title {
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.plan-item-date {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+.plan-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.plan-item-edit, .plan-item-delete {
+    padding: 5px 10px;
+    background: transparent;
+    color: var(--gray);
+    border: 1px solid var(--gray-light);
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.plan-item-edit:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.plan-item-delete:hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+/* メインタブ */
 .main-tabs {
     display: flex;
     background: white;
@@ -165,26 +582,14 @@ body {
     background: var(--primary);
 }
 
-/* ===================================
-   コンテンツエリア
-   =================================== */
+/* コンテンツエリア */
 .content-area {
     flex: 1;
     padding-bottom: 80px;
     overflow-y: auto;
 }
 
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ===================================
-   カード
-   =================================== */
+/* カード */
 .card {
     background: white;
     border-radius: 15px;
@@ -213,6 +618,7 @@ body {
     color: var(--dark);
 }
 
+/* カード並び替えボタン */
 .card-sort-btn {
     position: absolute;
     right: 15px;
@@ -227,6 +633,7 @@ body {
     z-index: 10;
 }
 
+/* ドラッグ可能なカード */
 .sortable-card {
     cursor: move;
 }
@@ -235,9 +642,7 @@ body {
     opacity: 0.5;
 }
 
-/* ===================================
-   問題集カード
-   =================================== */
+/* 問題集カード選択 */
 .book-cards-wrapper {
     position: relative;
 }
@@ -307,9 +712,7 @@ body {
     margin-left: 20px;
 }
 
-/* ===================================
-   階層リスト
-   =================================== */
+/* 階層リスト表示 */
 .hierarchy-list {
     padding: 10px;
 }
@@ -420,9 +823,7 @@ body {
     display: block;
 }
 
-/* ===================================
-   パンくずリスト
-   =================================== */
+/* パンくずリスト */
 .breadcrumb {
     display: flex;
     align-items: center;
@@ -455,9 +856,360 @@ body {
     font-size: 10px;
 }
 
-/* ===================================
-   問題グリッド
-   =================================== */
+/* ヒートマップ */
+.heatmap-container {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.heatmap-controls {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.heatmap-select {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.heatmap-toggle-btn {
+    padding: 8px 15px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.heatmap-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(25px, 1fr));
+    gap: 1px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.heatmap-label {
+    grid-column: 1 / -1;
+    font-size: 9px;
+    color: var(--gray);
+    padding: 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.heatmap-cell {
+    aspect-ratio: 1;
+    background: var(--light);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.heatmap-cell.correct {
+    background: var(--success);
+    color: white;
+}
+
+.heatmap-cell.wrong {
+    background: var(--danger);
+    color: white;
+}
+
+.heatmap-cell.bookmarked::after {
+    content: '★';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    font-size: 8px;
+    color: var(--warning);
+}
+
+/* レーダーチャート */
+.radar-chart-container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.radar-chart-controls {
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 20px;
+}
+
+.radar-chart-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.radar-toggle-btn {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+}
+
+.radar-toggle-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.radar-chart {
+    width: 300px;
+    height: 300px;
+    position: relative;
+}
+
+/* 学習グラフ */
+.chart-container {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.chart-btn {
+    padding: 8px 15px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.chart-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.chart-wrapper {
+    height: 200px;
+    position: relative;
+    padding: 10px 0;
+}
+
+.chart-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 100%;
+}
+
+.chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+}
+
+.chart-bar-value {
+    font-size: 10px;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.chart-bar-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.chart-bar {
+    width: 60%;
+    max-width: 30px;
+    background: linear-gradient(to top, var(--primary), var(--secondary));
+    border-radius: 3px 3px 0 0;
+    transition: all 0.3s;
+}
+
+.chart-bar.today {
+    background: linear-gradient(to top, var(--warning), var(--secondary));
+}
+
+.chart-bar-label {
+    font-size: 11px;
+    color: var(--gray);
+    margin-top: 5px;
+}
+
+/* 実績バッジ */
+.achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.achievement-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.achievement-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.achievement-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.achievement-icon.disabled {
+    filter: grayscale(100%);
+    opacity: 0.5;
+}
+
+.achievement-label {
+    font-size: 10px;
+    color: var(--gray);
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+.achievement-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+/* 統計グリッド */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.stat-card {
+    padding: 15px;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 3px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+/* 進捗バー */
+.progress-bar-container {
+    height: 12px;
+    background: var(--light);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), #34d399);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+/* アクションボタン */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.action-btn.correct {
+    background: var(--success);
+}
+
+.action-btn.wrong {
+    background: var(--danger);
+}
+
+.action-btn.bookmark {
+    background: var(--warning);
+}
+
+.action-btn.bookmark.active {
+    background: linear-gradient(135deg, var(--warning), var(--secondary));
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+/* 問題グリッド */
 .question-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
@@ -505,113 +1257,177 @@ body {
     color: var(--warning);
 }
 
-/* ===================================
-   統計・進捗
-   =================================== */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin: 15px 0;
+/* 一問一答カード */
+.qa-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px;
+    box-shadow: var(--shadow);
+    min-height: 200px;
 }
 
-.stat-card {
-    padding: 15px;
-    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-    border-radius: 10px;
-    text-align: center;
-}
-
-.stat-value {
-    font-size: 24px;
-    font-weight: 700;
+.qa-question {
+    font-size: 18px;
+    font-weight: 600;
     color: var(--dark);
-    margin-bottom: 3px;
+    margin-bottom: 20px;
+    line-height: 1.5;
 }
 
-.stat-label {
-    font-size: 12px;
-    color: var(--gray);
-}
-
-.progress-bar-container {
-    height: 12px;
+.qa-answer {
     background: var(--light);
     border-radius: 10px;
-    overflow: hidden;
-    margin: 10px 0;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: none;
 }
 
-.progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--success), #34d399);
-    border-radius: 10px;
-    transition: width 0.5s ease;
+.qa-answer.show {
+    display: block;
 }
 
-/* ===================================
-   アクションボタン
-   =================================== */
-.action-buttons {
+.qa-controls {
     display: flex;
     gap: 10px;
-    margin: 15px 0;
+    margin-top: 20px;
 }
 
-.action-btn {
+.qa-btn {
     flex: 1;
     padding: 12px;
     border: none;
-    border-radius: 10px;
-    font-weight: 700;
-    color: white;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    font-size: 13px;
     transition: all 0.3s;
 }
 
-.action-btn.correct {
+.qa-btn.show-answer {
+    background: var(--primary);
+    color: white;
+}
+
+.qa-btn.correct {
     background: var(--success);
+    color: white;
 }
 
-.action-btn.wrong {
+.qa-btn.wrong {
     background: var(--danger);
+    color: white;
 }
 
-.action-btn.bookmark {
-    background: var(--warning);
+.qa-btn.next {
+    background: var(--secondary);
+    color: white;
 }
 
-.action-btn.bookmark.active {
-    background: linear-gradient(135deg, var(--warning), var(--secondary));
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+.qa-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
-.save-button {
-    width: 100%;
-    padding: 15px;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
+.qa-selector select {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.qa-selector button {
+    padding: 10px 20px;
+    background: var(--primary);
     color: white;
     border: none;
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.qa-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0;
+    padding: 10px;
+    background: var(--light);
+    border-radius: 8px;
+}
+
+.qa-progress-text {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.qa-stats {
+    display: flex;
+    gap: 15px;
+}
+
+.qa-stat {
+    font-size: 12px;
+}
+
+.qa-stat-value {
     font-weight: 700;
+    color: var(--primary);
+}
+
+/* アコーディオン */
+.accordion {
+    margin-bottom: 10px;
+}
+
+.accordion-header {
+    background: white;
+    border: 1px solid var(--light);
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     cursor: pointer;
     transition: all 0.3s;
 }
 
-.save-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
+.accordion-header:hover {
+    background: var(--light);
 }
 
-/* ===================================
-   フォーム
-   =================================== */
+.accordion-header.active {
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.accordion-content {
+    display: none;
+    background: white;
+    border: 1px solid var(--light);
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    padding: 15px;
+}
+
+.accordion-content.active {
+    display: block;
+}
+
+.accordion-arrow {
+    transition: transform 0.3s;
+    font-size: 10px;
+    color: var(--gray-lighter);
+}
+
+.accordion-header.active .accordion-arrow {
+    transform: rotate(180deg);
+    color: white;
+}
+
+/* フォーム */
 .form-group {
     margin-bottom: 15px;
 }
@@ -632,9 +1448,205 @@ body {
     font-size: 14px;
 }
 
-/* ===================================
-   モーダル
-   =================================== */
+/* CSVインポート */
+.import-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--lighter);
+    border-radius: 10px;
+}
+
+.import-textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.import-help {
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--white);
+    border-left: 3px solid var(--primary);
+    border-radius: 5px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* 削除リスト */
+.delete-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--light);
+}
+
+.delete-list-item:hover {
+    background: var(--lighter);
+}
+
+.delete-btn {
+    padding: 5px 10px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* 保存ボタン */
+.save-button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.save-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
+}
+
+/* CSVリスト */
+.csv-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.csv-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+}
+
+.csv-item-info {
+    flex: 1;
+}
+
+.csv-item-name {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.csv-item-meta {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+.csv-item-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.csv-btn {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.csv-btn.edit {
+    background: var(--primary);
+    color: white;
+}
+
+.csv-btn.apply {
+    background: var(--success);
+    color: white;
+}
+
+.csv-btn.delete {
+    background: var(--danger);
+    color: white;
+}
+
+/* 番号タイプセレクタ */
+.numbering-type {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+}
+
+.numbering-type label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+/* フッタータブ */
+.footer-tabs {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    padding: 5px 0;
+    z-index: 100;
+}
+
+.footer-tab {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    border: none;
+    background: none;
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.footer-tab.active {
+    color: var(--primary);
+}
+
+.footer-tab-icon {
+    font-size: 20px;
+}
+
+.footer-tab-label {
+    font-size: 11px;
+}
+
+/* タブコンテンツ */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* モーダル */
 .modal {
     display: none;
     position: fixed;
@@ -681,6 +1693,7 @@ body {
     justify-content: center;
 }
 
+/* モーダル下部閉じるボタン */
 .modal-footer {
     position: fixed;
     bottom: 0;
@@ -709,239 +1722,88 @@ body {
     background: var(--dark);
 }
 
-/* ===================================
-   フッタータブ
-   =================================== */
-.footer-tabs {
+/* 入力ダイアログ */
+.input-dialog {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background: white;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    display: flex;
-    padding: 5px 0;
-    z-index: 100;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow-lg);
+    z-index: 3000;
+    width: 90%;
+    max-width: 400px;
 }
 
-.footer-tab {
+.input-dialog h3 {
+    margin-bottom: 15px;
+    color: var(--dark);
+}
+
+.dialog-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.dialog-btn {
     flex: 1;
     padding: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
     border: none;
-    background: none;
-    color: var(--gray);
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
 }
 
-.footer-tab.active {
-    color: var(--primary);
+.dialog-btn.primary {
+    background: var(--primary);
+    color: white;
 }
 
-.footer-tab-icon {
-    font-size: 20px;
+.dialog-btn.secondary {
+    background: var(--light);
+    color: var(--dark);
 }
 
-.footer-tab-label {
-    font-size: 11px;
-}
-
-/* ===================================
-   タイマー関連
-   =================================== */
-.timer-modal {
-    display: none;
+.dialog-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 3000;
-    align-items: center;
-    justify-content: center;
+    z-index: 2999;
 }
 
-.timer-modal.active {
-    display: flex;
-}
-
-.timer-modal-content {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.timer-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.timer-tab {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid var(--light);
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.3s;
-}
-
-.timer-tab.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.timer-display-large {
-    font-size: 48px;
-    font-weight: 700;
-    text-align: center;
-    margin: 20px 0;
-    color: var(--primary);
-}
-
-.timer-controls {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin: 20px 0;
-}
-
-.timer-btn {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.timer-btn.start {
-    background: var(--success);
-    color: white;
-}
-
-.timer-btn.pause {
-    background: var(--warning);
-    color: white;
-}
-
-.timer-btn.reset {
-    background: var(--gray);
-    color: white;
-}
-
-/* ===================================
-   カレンダー
-   =================================== */
-.calendar-container {
-    background: white;
-    border-radius: 15px;
-    padding: 15px;
-    margin: 10px;
-    box-shadow: var(--shadow);
-}
-
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.calendar-nav {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.calendar-nav-btn {
-    background: var(--light);
-    border: none;
-    border-radius: 5px;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-}
-
-.calendar-nav-btn:hover {
-    background: var(--primary);
-    color: white;
-}
-
-.calendar-month {
-    font-weight: 700;
-    font-size: 16px;
-}
-
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
-}
-
-.calendar-weekday {
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--gray);
-    padding: 5px;
-}
-
-.calendar-weekday.weekend {
-    color: var(--danger);
-}
-
-.calendar-day {
-    min-height: 60px;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--light);
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
-    font-size: 14px;
-    padding: 3px;
-}
-
-.calendar-day:hover {
-    background: var(--light);
-}
-
-.calendar-day.weekend {
-    background: var(--weekend-bg);
-}
-
-.calendar-day.other-month {
-    color: var(--gray-light);
-}
-
-.calendar-day.today {
-    background: var(--primary);
-    color: white;
-}
-
-/* ===================================
-   レスポンシブ
-   =================================== */
+/* レスポンシブ対応 */
 @media (max-width: 768px) {
     .achievement-grid {
         grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .question-grid {
+        grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .app-title {
+        font-size: 18px;
+    }
+    
+    .main-tab {
+        padding: 12px 5px;
+        font-size: 14px;
+    }
+    
+    .footer-tab-icon {
+        font-size: 18px;
+    }
+    
+    .footer-tab-label {
+        font-size: 10px;
     }
 }
