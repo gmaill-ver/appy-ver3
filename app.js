@@ -13,6 +13,8 @@ const App = {
     
     // 初期化
     init() {
+        console.log('App initializing...');
+        
         // データマネージャー初期化
         DataManager.init();
         
@@ -48,6 +50,8 @@ const App = {
         
         // 一問一答初期化
         QAModule.init();
+        
+        console.log('App initialized');
     },
     
     // 問題集カード表示
@@ -421,6 +425,8 @@ const App = {
     
     // メインタブ切り替え
     switchMainTab(tabName, event) {
+        console.log('Switching to tab:', tabName);
+        
         document.querySelectorAll('.main-tab').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -444,6 +450,8 @@ const App = {
     
     // フッタータブ処理
     switchFooterTab(tabName, event) {
+        console.log('Opening footer tab:', tabName);
+        
         const modal = document.getElementById('footerModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalBody = document.getElementById('modalBody');
@@ -553,20 +561,28 @@ const App = {
             }
         ];
         
-        return `
+        let html = `
             <div class="card" style="margin: 10px;">
                 <h4 style="text-align: center; margin-bottom: 20px;">獲得バッジ</h4>
                 <div class="achievement-grid">
-                    ${badges.map(badge => `
-                        <div class="achievement-card">
-                            <div class="achievement-icon ${!badge.unlocked ? 'disabled' : ''}">${badge.icon}</div>
-                            <div class="achievement-label">${badge.label}</div>
-                            <div class="achievement-value">${badge.value}</div>
-                        </div>
-                    `).join('')}
+        `;
+        
+        badges.forEach(badge => {
+            html += `
+                <div class="achievement-card">
+                    <div class="achievement-icon ${!badge.unlocked ? 'disabled' : ''}">${badge.icon}</div>
+                    <div class="achievement-label">${badge.label}</div>
+                    <div class="achievement-value">${badge.value}</div>
+                </div>
+            `;
+        });
+        
+        html += `
                 </div>
             </div>
         `;
+        
+        return html;
     },
     
     // 設定画面コンテンツ
@@ -654,7 +670,7 @@ const App = {
         });
     },
     
-    // その他のメソッド実装...
+    // 各種メソッド
     saveExamDate() {
         const input = document.getElementById('examDateInput');
         if (input && input.value) {
@@ -670,10 +686,563 @@ const App = {
             DataManager.clearAllData();
             location.reload();
         }
+    },
+    
+    // 登録階層表示（続き）
+    renderRegisterHierarchy() {
+        const container = document.getElementById('registerHierarchy');
+        if (!container) return;
+        
+        let html = '<div class="hierarchy-list">';
+        
+        Object.values(DataManager.books).forEach(book => {
+            const nodeId = `book_${book.id}`;
+            const isExpanded = DataManager.expandedNodes.has(nodeId);
+            
+            html += `
+                <div class="hierarchy-item">
+                    <div class="hierarchy-row" onclick="App.toggleRegisterNode('${nodeId}', event)">
+                        <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
+                        <span class="hierarchy-icon">📚</span>
+                        <span class="hierarchy-label">${book.name}</span>
+                        <div class="hierarchy-actions">
+                            <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
+                            <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                        ${this.renderRegisterLevel(book.structure, book.id, [])}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+    },
+    
+    renderRegisterLevel(structure, bookId, path) {
+        let html = '';
+        
+        Object.entries(structure).forEach(([name, item]) => {
+            const currentPath = [...path, name];
+            const nodeId = `${bookId}_${currentPath.join('_')}`;
+            const hasChildren = item.children && Object.keys(item.children).length > 0;
+            const isExpanded = DataManager.expandedNodes.has(nodeId);
+            
+            html += `
+                <div class="hierarchy-item">
+                    <div class="hierarchy-row" ${hasChildren ? `onclick="App.toggleRegisterNode('${nodeId}', event)"` : ''}>
+                        ${hasChildren ? `<span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>` : '<span style="width: 28px; display: inline-block;"></span>'}
+                        <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
+                        <span class="hierarchy-label">${name}</span>
+            `;
+            
+            if (item.questions) {
+                html += `<span class="hierarchy-meta">${item.questions.length}問</span>`;
+            }
+            
+            html += '<div class="hierarchy-actions">';
+            html += `<button class="hierarchy-action edit" onclick="App.editHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="編集">✏️</button>`;
+            
+            if (item.type === 'subject') {
+                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)" title="章追加">+</button>`;
+            } else if (item.type === 'chapter') {
+                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)" title="節追加">+</button>`;
+            } else if (item.type === 'section') {
+                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)" title="項追加">+</button>`;
+            }
+            
+            html += `<button class="hierarchy-action delete" onclick="App.deleteHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="削除">🗑️</button>`;
+            html += '</div></div>';
+            
+            if (hasChildren) {
+                html += `
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                        ${this.renderRegisterLevel(item.children, bookId, currentPath)}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+        });
+        
+        return html;
+    },
+    
+    toggleRegisterNode(nodeId, event) {
+        event.stopPropagation();
+        
+        if (DataManager.expandedNodes.has(nodeId)) {
+            DataManager.expandedNodes.delete(nodeId);
+        } else {
+            DataManager.expandedNodes.add(nodeId);
+        }
+        
+        this.renderRegisterHierarchy();
+    },
+    
+    // CSVテンプレートリスト表示
+    renderCSVTemplateList() {
+        const container = document.getElementById('csvTemplateList');
+        if (!container) return;
+        
+        if (Object.keys(DataManager.csvTemplates).length === 0) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center;">保存済みテンプレートはありません</p>';
+            return;
+        }
+        
+        let html = '';
+        Object.values(DataManager.csvTemplates).forEach(template => {
+            const date = new Date(template.createdAt);
+            const lines = template.data.trim().split('\n').length - 1;
+            
+            html += `
+                <div class="csv-item">
+                    <div class="csv-item-info">
+                        <div class="csv-item-name">${template.name}</div>
+                        <div class="csv-item-meta">
+                            ${date.toLocaleDateString('ja-JP')} | ${lines}行
+                        </div>
+                    </div>
+                    <div class="csv-item-actions">
+                        <button class="csv-btn edit" onclick="App.editCSVTemplate('${template.id}')">編集</button>
+                        <button class="csv-btn apply" onclick="App.applyCSVTemplate('${template.id}')">適用</button>
+                        <button class="csv-btn delete" onclick="App.deleteCSVTemplate('${template.id}')">削除</button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    },
+    
+    // ダイアログ表示関連
+    showNewBookDialog() {
+        const dialogBody = `
+            <div class="form-group">
+                <label class="form-label">問題集名</label>
+                <input type="text" class="form-control" id="newBookName" placeholder="問題集名を入力">
+            </div>
+            <div class="form-group">
+                <label class="form-label">問題番号タイプ</label>
+                <div class="numbering-type">
+                    <label>
+                        <input type="radio" name="numberingType" value="reset" checked>
+                        <span>項目ごとリセット</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="numberingType" value="continuous">
+                        <span>連番</span>
+                    </label>
+                </div>
+            </div>
+        `;
+        
+        UIComponents.showDialog('新規問題集作成', dialogBody, () => {
+            const name = document.getElementById('newBookName').value;
+            const numberingType = document.querySelector('input[name="numberingType"]:checked').value;
+            
+            if (!name) {
+                alert('問題集名を入力してください');
+                return;
+            }
+            
+            DataManager.createBook(name, numberingType);
+            this.renderBookCards();
+            this.renderRegisterHierarchy();
+            this.updateHeatmapBookSelect();
+            this.updateRadarBookSelect();
+            UIComponents.closeDialog();
+            alert('作成しました');
+        });
+    },
+    
+    showBookListDialog() {
+        let dialogBody = `
+            <div style="max-height: 400px; overflow-y: auto;">
+        `;
+        
+        Object.values(DataManager.books).forEach(book => {
+            const questionCount = DataManager.countQuestionsInBook(book);
+            const numberingText = book.numberingType === 'continuous' ? '連番' : 'リセット';
+            dialogBody += `
+                <div style="padding: 10px; border-bottom: 1px solid var(--light);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600;">${book.name}</div>
+                            <div style="font-size: 12px; color: var(--gray);">
+                                ${Object.keys(book.structure).length}科目 | ${questionCount}問 | ${numberingText}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="hierarchy-action edit" onclick="App.editBookProperties('${book.id}')" title="編集">✏️</button>
+                            <button class="hierarchy-action delete" onclick="App.deleteBookFromList('${book.id}')" title="削除">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        dialogBody += '</div>';
+        
+        UIComponents.showDialog('問題集一覧', dialogBody, () => {
+            UIComponents.closeDialog();
+        });
+    },
+    
+    editBookProperties(bookId) {
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        const dialogBody = `
+            <div class="form-group">
+                <label class="form-label">問題集名</label>
+                <input type="text" class="form-control" id="editBookName" value="${book.name}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">問題番号タイプ</label>
+                <div class="numbering-type">
+                    <label>
+                        <input type="radio" name="editNumberingType" value="reset" ${book.numberingType === 'reset' ? 'checked' : ''}>
+                        <span>項目ごとリセット</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="editNumberingType" value="continuous" ${book.numberingType === 'continuous' ? 'checked' : ''}>
+                        <span>連番</span>
+                    </label>
+                </div>
+            </div>
+        `;
+        
+        UIComponents.showDialog('問題集を編集', dialogBody, () => {
+            const newName = document.getElementById('editBookName').value;
+            const newNumberingType = document.querySelector('input[name="editNumberingType"]:checked').value;
+            
+            if (newName) {
+                DataManager.updateBook(bookId, {
+                    name: newName,
+                    numberingType: newNumberingType
+                });
+                this.renderBookCards();
+                this.updateHeatmapBookSelect();
+                this.updateRadarBookSelect();
+                UIComponents.closeDialog();
+                this.showBookListDialog();
+            }
+        });
+    },
+    
+    deleteBookFromList(bookId) {
+        if (!confirm('この問題集を削除しますか？')) return;
+        DataManager.deleteBook(bookId);
+        this.renderBookCards();
+        this.updateHeatmapBookSelect();
+        this.updateRadarBookSelect();
+        UIComponents.closeDialog();
+        this.showBookListDialog();
+    },
+    
+    // 階層操作メソッド
+    addHierarchy(bookId, parentPath, type, event) {
+        event.stopPropagation();
+        
+        const labels = {
+            'subject': '科目',
+            'chapter': '章',
+            'section': '節',
+            'subsection': '項'
+        };
+        
+        let dialogBody = `
+            <div class="form-group">
+                <label class="form-label">${labels[type]}の名前</label>
+                <input type="text" class="form-control" id="hierarchyName" placeholder="名前を入力">
+            </div>
+        `;
+        
+        if (type === 'chapter' || type === 'section' || type === 'subsection') {
+            dialogBody += `
+                <div class="form-group">
+                    <label class="form-label">問題番号範囲（任意）</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" class="form-control" id="questionStart" min="1" placeholder="開始番号" style="width: 100px;">
+                        <span>〜</span>
+                        <input type="number" class="form-control" id="questionEnd" min="1" placeholder="終了番号" style="width: 100px;">
+                    </div>
+                </div>
+            `;
+        }
+        
+        UIComponents.showDialog(`${labels[type]}を追加`, dialogBody, () => {
+            const name = document.getElementById('hierarchyName').value;
+            if (!name) {
+                alert('名前を入力してください');
+                return;
+            }
+            
+            let questions = null;
+            if (type === 'chapter' || type === 'section' || type === 'subsection') {
+                const start = parseInt(document.getElementById('questionStart').value);
+                const end = parseInt(document.getElementById('questionEnd').value);
+                
+                if (start && end && start <= end) {
+                    questions = [];
+                    for (let i = start; i <= end; i++) {
+                        questions.push(i);
+                    }
+                }
+            }
+            
+            DataManager.addHierarchy(bookId, parentPath, type, name, questions);
+            this.renderBookCards();
+            this.renderRegisterHierarchy();
+            UIComponents.closeDialog();
+        });
+    },
+    
+    editHierarchy(bookId, path, event) {
+        event.stopPropagation();
+        
+        const book = DataManager.books[bookId];
+        const pathArray = path.split('/');
+        let current = book.structure;
+        let lastKey = pathArray[pathArray.length - 1];
+        
+        for (let i = 0; i < pathArray.length - 1; i++) {
+            current = current[pathArray[i]].children || {};
+        }
+        
+        const item = current[lastKey];
+        if (!item) return;
+        
+        let dialogBody = `
+            <div class="form-group">
+                <label class="form-label">名称</label>
+                <input type="text" class="form-control" id="editName" value="${lastKey}">
+            </div>
+        `;
+        
+        if (item.type === 'chapter' || item.type === 'section' || item.type === 'subsection') {
+            const start = item.questions ? Math.min(...item.questions) : '';
+            const end = item.questions ? Math.max(...item.questions) : '';
+            
+            dialogBody += `
+                <div class="form-group">
+                    <label class="form-label">問題番号範囲</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="number" class="form-control" id="editQuestionStart" value="${start}" min="1" placeholder="開始番号" style="width: 100px;">
+                        <span>〜</span>
+                        <input type="number" class="form-control" id="editQuestionEnd" value="${end}" min="1" placeholder="終了番号" style="width: 100px;">
+                    </div>
+                </div>
+            `;
+        }
+        
+        UIComponents.showDialog('編集', dialogBody, () => {
+            const newName = document.getElementById('editName').value;
+            if (!newName) {
+                alert('名前を入力してください');
+                return;
+            }
+            
+            let newQuestions = null;
+            if (item.type === 'chapter' || item.type === 'section' || item.type === 'subsection') {
+                const start = parseInt(document.getElementById('editQuestionStart').value);
+                const end = parseInt(document.getElementById('editQuestionEnd').value);
+                
+                if (start && end && start <= end) {
+                    newQuestions = [];
+                    for (let i = start; i <= end; i++) {
+                        newQuestions.push(i);
+                    }
+                }
+            }
+            
+            DataManager.editHierarchy(bookId, path, newName, newQuestions);
+            this.renderBookCards();
+            this.renderRegisterHierarchy();
+            UIComponents.closeDialog();
+        });
+    },
+    
+    deleteHierarchy(bookId, path, event) {
+        event.stopPropagation();
+        if (!confirm('この項目を削除しますか？')) return;
+        DataManager.deleteHierarchy(bookId, path);
+        this.renderBookCards();
+        this.renderRegisterHierarchy();
+    },
+    
+    deleteBook(bookId, event) {
+        event.stopPropagation();
+        if (!confirm('この問題集を削除しますか？')) return;
+        DataManager.deleteBook(bookId);
+        this.renderBookCards();
+        this.renderRegisterHierarchy();
+        this.updateHeatmapBookSelect();
+        this.updateRadarBookSelect();
+    },
+    
+    // CSV関連
+    saveCSVTemplate() {
+        const csvData = document.getElementById('importCsvData').value;
+        const bookName = document.getElementById('importBookName').value || '未命名テンプレート';
+        
+        if (!csvData) {
+            alert('CSVデータを入力してください');
+            return;
+        }
+        
+        const templateId = 'template_' + Date.now();
+        DataManager.csvTemplates[templateId] = {
+            id: templateId,
+            name: bookName,
+            data: csvData,
+            createdAt: new Date().toISOString()
+        };
+        
+        DataManager.saveCSVTemplates();
+        this.renderCSVTemplateList();
+        alert('テンプレートを保存しました');
+    },
+    
+    editCSVTemplate(templateId) {
+        const template = DataManager.csvTemplates[templateId];
+        if (!template) return;
+        
+        document.getElementById('importBookName').value = template.name;
+        document.getElementById('importCsvData').value = template.data;
+    },
+    
+    applyCSVTemplate(templateId) {
+        const template = DataManager.csvTemplates[templateId];
+        if (!template) return;
+        
+        const bookName = prompt('問題集名を入力してください', template.name);
+        if (!bookName) return;
+        
+        const numberingType = confirm('連番モードにしますか？（OKで連番、キャンセルでリセット）') ? 'continuous' : 'reset';
+        
+        document.getElementById('importBookName').value = bookName;
+        document.querySelector(`input[name="importNumberingType"][value="${numberingType}"]`).checked = true;
+        document.getElementById('importCsvData').value = template.data;
+        
+        this.importCSV();
+    },
+    
+    deleteCSVTemplate(templateId) {
+        if (confirm('このテンプレートを削除しますか？')) {
+            delete DataManager.csvTemplates[templateId];
+            DataManager.saveCSVTemplates();
+            this.renderCSVTemplateList();
+        }
+    },
+    
+    importCSV() {
+        const bookName = document.getElementById('importBookName').value;
+        const csvData = document.getElementById('importCsvData').value;
+        const numberingType = document.querySelector('input[name="importNumberingType"]:checked').value;
+        
+        if (!bookName || !csvData) {
+            alert('問題集名とCSVデータを入力してください');
+            return;
+        }
+        
+        try {
+            const lines = csvData.trim().split('\n');
+            const bookId = DataManager.createBook(bookName, numberingType);
+            const book = DataManager.books[bookId];
+            
+            let startIndex = 0;
+            if (lines[0].includes('科目') || lines[0].includes('章')) {
+                startIndex = 1;
+            }
+            
+            for (let i = startIndex; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(p => p.trim());
+                const [subject, chapter, section, subsection, startNum, endNum] = parts;
+                
+                if (!subject) continue;
+                
+                // 階層構造を構築
+                if (!book.structure[subject]) {
+                    book.structure[subject] = {
+                        type: 'subject',
+                        children: {}
+                    };
+                }
+                
+                if (chapter) {
+                    if (!book.structure[subject].children[chapter]) {
+                        book.structure[subject].children[chapter] = {
+                            type: 'chapter',
+                            children: {}
+                        };
+                    }
+                    
+                    if (section) {
+                        if (!book.structure[subject].children[chapter].children[section]) {
+                            book.structure[subject].children[chapter].children[section] = {
+                                type: 'section',
+                                children: {}
+                            };
+                        }
+                        
+                        if (subsection) {
+                            if (!book.structure[subject].children[chapter].children[section].children[subsection]) {
+                                book.structure[subject].children[chapter].children[section].children[subsection] = {
+                                    type: 'subsection'
+                                };
+                            }
+                            
+                            if (startNum && endNum) {
+                                const questions = [];
+                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
+                                    questions.push(j);
+                                }
+                                book.structure[subject].children[chapter].children[section].children[subsection].questions = questions;
+                            }
+                        } else {
+                            if (startNum && endNum) {
+                                const questions = [];
+                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
+                                    questions.push(j);
+                                }
+                                book.structure[subject].children[chapter].children[section].questions = questions;
+                            }
+                        }
+                    } else {
+                        if (startNum && endNum) {
+                            const questions = [];
+                            for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
+                                questions.push(j);
+                            }
+                            book.structure[subject].children[chapter].questions = questions;
+                        }
+                    }
+                }
+            }
+            
+            DataManager.saveBooksToStorage();
+            this.renderBookCards();
+            this.updateHeatmapBookSelect();
+            this.updateRadarBookSelect();
+            
+            alert('CSVデータをインポートしました');
+            this.closeFooterModal();
+        } catch (error) {
+            alert('CSVの解析に失敗しました。形式を確認してください。');
+            console.error(error);
+        }
     }
 };
 
+// グローバルに公開
+window.App = App;
+
 // DOMContentLoaded時に初期化
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing app...');
     App.init();
 });
