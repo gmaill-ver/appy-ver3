@@ -129,47 +129,55 @@ class Application {
     }
 
     /**
-     * フッタータブ切り替え
-     */
-    switchFooterTab(tabName, event) {
-        const modal = document.getElementById('footerModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        
-        if (!modal || !modalTitle || !modalBody) return;
+ * フッタータブ切り替え（要点確認追加版）
+ */
+switchFooterTab(tabName, event) {
+    const modal = document.getElementById('footerModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    if (!modal || !modalTitle || !modalBody) return;
 
-        const titles = {
-            'register': '📝 問題集登録',
-            'qa': '❓ 一問一答',
-            'results': '🏆 獲得バッジ',
-            'settings': '⚙️ 設定'
-        };
-        
-        modalTitle.textContent = titles[tabName] || 'タイトル';
-        
-        switch(tabName) {
-            case 'register':
-                modalBody.innerHTML = this.getRegisterContent();
-                setTimeout(() => this.renderRegisterHierarchy(), 100);
-                break;
-            case 'qa':
-                if (window.QAModule && typeof QAModule.renderQAContent === 'function') {
-                    modalBody.innerHTML = QAModule.renderQAContent();
-                } else {
-                    modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
-                }
-                break;
-            case 'results':
-                modalBody.innerHTML = this.getResultsContent();
-                break;
-            case 'settings':
-                modalBody.innerHTML = this.getSettingsContent();
-                setTimeout(() => this.renderCSVTemplateList(), 100);
-                break;
-        }
-        
-        modal.classList.add('active');
+    const titles = {
+        'register': '📝 問題集登録',
+        'qa': '❓ 一問一答',
+        'keypoints': '📚 要点確認',  // 追加
+        'results': '🏆 獲得バッジ',
+        'settings': '⚙️ 設定'
+    };
+    
+    modalTitle.textContent = titles[tabName] || 'タイトル';
+    
+    switch(tabName) {
+        case 'register':
+            modalBody.innerHTML = this.getRegisterContent();
+            setTimeout(() => this.renderRegisterHierarchy(), 100);
+            break;
+        case 'qa':
+            if (window.QAModule && typeof QAModule.renderQAContent === 'function') {
+                modalBody.innerHTML = QAModule.renderQAContent();
+            } else {
+                modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
+            }
+            break;
+        case 'keypoints':  // 追加
+            if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
+                modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
+            } else {
+                modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
+            }
+            break;
+        case 'results':
+            modalBody.innerHTML = this.getResultsContent();
+            break;
+        case 'settings':
+            modalBody.innerHTML = this.getSettingsContent();
+            setTimeout(() => this.renderCSVTemplateList(), 100);
+            break;
     }
+    
+    modal.classList.add('active');
+}
 
     /**
      * 試験日保存（修正版）
