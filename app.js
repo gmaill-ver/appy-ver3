@@ -129,24 +129,34 @@ class Application {
     }
 
     /**
- * フッタータブ切り替え（要点確認追加版）
+ * フッタータブ切り替え（戻るボタン対応版）
  */
 switchFooterTab(tabName, event) {
     const modal = document.getElementById('footerModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
+    const modalBackBtn = document.getElementById('modalBackBtn');
     
     if (!modal || !modalTitle || !modalBody) return;
 
     const titles = {
         'register': '📝 問題集登録',
         'qa': '❓ 一問一答',
-        'keypoints': '📚 要点確認',  // 追加
+        'keypoints': '📚 要点確認',
         'results': '🏆 獲得バッジ',
         'settings': '⚙️ 設定'
     };
     
     modalTitle.textContent = titles[tabName] || 'タイトル';
+    
+    // 戻るボタンの表示制御
+    if (modalBackBtn) {
+        if (tabName === 'keypoints') {
+            modalBackBtn.style.display = 'block';
+        } else {
+            modalBackBtn.style.display = 'none';
+        }
+    }
     
     switch(tabName) {
         case 'register':
@@ -160,7 +170,7 @@ switchFooterTab(tabName, event) {
                 modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
             }
             break;
-        case 'keypoints':  // 追加
+        case 'keypoints':
             if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
                 modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
             } else {
