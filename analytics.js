@@ -208,32 +208,49 @@ class AnalyticsClass {
         }
 
         const book = DataManager.books[bookId];
-        if (!book) return;
+        if (!book) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center;">問題集が見つかりません</p>';
+            return;
+        }
 
         let html = '';
-        const allQuestions = DataManager.getAllQuestionsFromBook(book);
-        let currentLabel = '';
         
-        allQuestions.forEach(q => {
-            const label = `${q.subject} › ${q.chapter}${q.section ? ' › ' + q.section : ''}${q.subsection ? ' › ' + q.subsection : ''}`;
-            if (label !== currentLabel) {
-                currentLabel = label;
-                html += `<div class="heatmap-label">${label}</div>`;
+        try {
+            const allQuestions = DataManager.getAllQuestionsFromBook(book);
+            
+            if (!allQuestions || allQuestions.length === 0) {
+                container.innerHTML = '<p style="color: var(--gray); text-align: center;">問題がありません</p>';
+                return;
             }
             
-            const state = this.getQuestionStateFromRecords(book.id, q);
-            let cellClass = '';
+            let currentLabel = '';
             
-            if (state.wrong) cellClass = 'wrong';
-            else if (state.correct) cellClass = 'correct';
-            
-            if (state.bookmarked) {
-                cellClass += ' bookmarked';
-            }
-            
-            html += `<div class="heatmap-cell ${cellClass}" 
-                     onclick="Analytics.toggleHeatmapQuestion('${book.id}', '${q.path.join('/')}', '${q.number}')">${q.number}</div>`;
-        });
+            allQuestions.forEach(q => {
+                if (!q || !q.path) return;
+                
+                const label = `${q.subject || ''} › ${q.chapter || ''}${q.section ? ' › ' + q.section : ''}${q.subsection ? ' › ' + q.subsection : ''}`;
+                if (label !== currentLabel) {
+                    currentLabel = label;
+                    html += `<div class="heatmap-label">${label}</div>`;
+                }
+                
+                const state = this.getQuestionStateFromRecords(book.id, q);
+                let cellClass = '';
+                
+                if (state.wrong) cellClass = 'wrong';
+                else if (state.correct) cellClass = 'correct';
+                
+                if (state.bookmarked) {
+                    cellClass += ' bookmarked';
+                }
+                
+                html += `<div class="heatmap-cell ${cellClass}" 
+                         onclick="Analytics.toggleHeatmapQuestion('${book.id}', '${q.path.join('/')}', '${q.number}')">${q.number}</div>`;
+            });
+        } catch (error) {
+            console.error('Error updating heatmap:', error);
+            html = '<p style="color: var(--gray); text-align: center;">エラーが発生しました</p>';
+        }
         
         container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
     }
