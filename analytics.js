@@ -5,46 +5,60 @@ class AnalyticsClass {
     constructor() {
         this.currentChartView = 'day';
         this.radarChartMode = 'subject';
+        this.initialized = false;
     }
 
     /**
      * 初期化
      */
     initialize() {
+        // 二重初期化を防ぐ
+        if (this.initialized) {
+            console.log('Analytics already initialized');
+            return;
+        }
+
         // DataManagerが初期化されるまで待つ
         if (!window.DataManager) {
             setTimeout(() => this.initialize(), 100);
             return;
         }
 
-        this.updateChartBars();
-        this.updateHeatmapBookSelect();
-        this.updateRadarBookSelect();
-        this.updateHistoryContent();
-        
-        // ピン固定設定を適用
-        if (DataManager.heatmapPinnedBook) {
-            const select = document.getElementById('heatmapBookSelect');
-            if (select) {
-                select.value = DataManager.heatmapPinnedBook;
-                document.getElementById('heatmapToggleBtn')?.classList.add('active');
-                this.updateHeatmap();
+        try {
+            this.updateChartBars();
+            this.updateHeatmapBookSelect();
+            this.updateRadarBookSelect();
+            this.updateHistoryContent();
+            
+            // ピン固定設定を適用
+            if (DataManager.heatmapPinnedBook) {
+                const select = document.getElementById('heatmapBookSelect');
+                if (select) {
+                    select.value = DataManager.heatmapPinnedBook;
+                    const btn = document.getElementById('heatmapToggleBtn');
+                    if (btn) btn.classList.add('active');
+                    this.updateHeatmap();
+                }
             }
-        }
-        
-        if (DataManager.radarPinnedBook) {
-            const select = document.getElementById('radarBookSelect');
-            if (select) {
-                select.value = DataManager.radarPinnedBook;
-                document.getElementById('radarToggleBtn')?.classList.add('active');
-                this.drawRadarChart();
+            
+            if (DataManager.radarPinnedBook) {
+                const select = document.getElementById('radarBookSelect');
+                if (select) {
+                    select.value = DataManager.radarPinnedBook;
+                    const btn = document.getElementById('radarToggleBtn');
+                    if (btn) btn.classList.add('active');
+                    this.drawRadarChart();
+                }
             }
+            
+            this.initialized = true;
+            console.log('Analytics initialized successfully');
+        } catch (error) {
+            console.error('Analytics initialization error:', error);
         }
     }
 
-    /**
-     * チャートビュー切り替え
-     */
+    // 以降のメソッドは変更なし（元のコードと同じ）
     switchChartView(view, btn) {
         this.currentChartView = view;
         
@@ -58,9 +72,6 @@ class AnalyticsClass {
         this.updateChartBars();
     }
 
-    /**
-     * チャートバー更新
-     */
     updateChartBars() {
         const container = document.getElementById('chartBars');
         if (!container) return;
@@ -70,7 +81,6 @@ class AnalyticsClass {
         const today = new Date();
         
         if (this.currentChartView === 'day') {
-            // 過去7日間
             for (let i = 6; i >= 0; i--) {
                 const date = new Date();
                 date.setDate(today.getDate() - i);
@@ -79,13 +89,11 @@ class AnalyticsClass {
                 labels.push(date.getDate() + '日');
             }
         } else if (this.currentChartView === 'week') {
-            // 週間
             const days = ['月', '火', '水', '木', '金', '土', '日'];
             const weekData = this.getWeekData();
             data = weekData;
             labels = days;
         } else if (this.currentChartView === 'month') {
-            // 月間（4週分）
             for (let i = 3; i >= 0; i--) {
                 const weekStart = new Date();
                 weekStart.setDate(today.getDate() - (i * 7 + 6));
@@ -118,42 +126,38 @@ class AnalyticsClass {
         container.innerHTML = html;
     }
 
-    /**
-     * 日付別問題数取得
-     */
     getQuestionCountByDate(date) {
         let count = 0;
         const dateStr = date.toDateString();
         
-        DataManager.allRecords.forEach(record => {
-            const recordDate = new Date(record.timestamp);
-            if (recordDate.toDateString() === dateStr) {
-                count += record.stats?.total || 0;
-            }
-        });
+        // DataManagerのrecordsが存在するか確認
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                const recordDate = new Date(record.timestamp);
+                if (recordDate.toDateString() === dateStr) {
+                    count += record.stats?.total || 0;
+                }
+            });
+        }
         
         return count;
     }
 
-    /**
-     * 日付範囲別問題数取得
-     */
     getQuestionCountByDateRange(startDate, endDate) {
         let count = 0;
         
-        DataManager.allRecords.forEach(record => {
-            const recordDate = new Date(record.timestamp);
-            if (recordDate >= startDate && recordDate <= endDate) {
-                count += record.stats?.total || 0;
-            }
-        });
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                const recordDate = new Date(record.timestamp);
+                if (recordDate >= startDate && recordDate <= endDate) {
+                    count += record.stats?.total || 0;
+                }
+            });
+        }
         
         return count;
     }
 
-    /**
-     * 週間データ取得
-     */
     getWeekData() {
         const weekData = [0, 0, 0, 0, 0, 0, 0];
         const today = new Date();
@@ -162,40 +166,38 @@ class AnalyticsClass {
         const diff = todayDay === 0 ? 6 : todayDay - 1;
         startOfWeek.setDate(today.getDate() - diff);
         
-        DataManager.allRecords.forEach(record => {
-            const recordDate = new Date(record.timestamp);
-            if (recordDate >= startOfWeek) {
-                let dayIndex = recordDate.getDay();
-                dayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
-                if (dayIndex >= 0 && dayIndex < 7) {
-                    weekData[dayIndex] += record.stats?.total || 0;
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                const recordDate = new Date(record.timestamp);
+                if (recordDate >= startOfWeek) {
+                    let dayIndex = recordDate.getDay();
+                    dayIndex = dayIndex === 0 ? 6 : dayIndex - 1;
+                    if (dayIndex >= 0 && dayIndex < 7) {
+                        weekData[dayIndex] += record.stats?.total || 0;
+                    }
                 }
-            }
-        });
+            });
+        }
         
         return weekData;
     }
 
-    /**
-     * ヒートマップ問題集選択更新
-     */
     updateHeatmapBookSelect() {
         const select = document.getElementById('heatmapBookSelect');
         if (!select) return;
 
         select.innerHTML = '<option value="">問題集を選択</option>';
         
-        Object.values(DataManager.books).forEach(book => {
-            const option = document.createElement('option');
-            option.value = book.id;
-            option.textContent = book.name;
-            select.appendChild(option);
-        });
+        if (DataManager && DataManager.books) {
+            Object.values(DataManager.books).forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.name;
+                select.appendChild(option);
+            });
+        }
     }
 
-    /**
-     * ヒートマップ更新
-     */
     updateHeatmap() {
         const container = document.getElementById('heatmapGrid');
         const select = document.getElementById('heatmapBookSelect');
@@ -255,13 +257,9 @@ class AnalyticsClass {
         container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">データがありません</p>';
     }
 
-    /**
-     * ヒートマップの問題状態切り替え
-     */
     toggleHeatmapQuestion(bookId, pathStr, questionNum) {
         const pathArray = pathStr.split('/');
         
-        // 既存の記録を探す
         let existingRecordIndex = -1;
         for (let i = DataManager.allRecords.length - 1; i >= 0; i--) {
             if (DataManager.allRecords[i].bookId === bookId && 
@@ -275,7 +273,6 @@ class AnalyticsClass {
         if (existingRecordIndex !== -1) {
             record = DataManager.allRecords[existingRecordIndex];
         } else {
-            // 新しい記録を作成
             record = {
                 bookId: bookId,
                 bookName: DataManager.books[bookId].name,
@@ -287,7 +284,6 @@ class AnalyticsClass {
             DataManager.allRecords.push(record);
         }
         
-        // 問題の状態を切り替え
         if (!record.questions[questionNum]) {
             record.questions[questionNum] = { state: 'correct', bookmarked: false };
         } else if (record.questions[questionNum].state === 'correct') {
@@ -299,7 +295,6 @@ class AnalyticsClass {
             record.questions[questionNum].state = 'correct';
         }
         
-        // 統計を更新
         let total = 0, correct = 0, wrong = 0;
         Object.values(record.questions).forEach(q => {
             if (q.state) {
@@ -316,16 +311,11 @@ class AnalyticsClass {
             rate: total > 0 ? Math.round((correct / total) * 100) + '%' : '0%'
         };
         
-        // 保存
         localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
         
-        // ヒートマップを更新
         this.updateHeatmap();
     }
 
-    /**
-     * ヒートマップピン固定切り替え
-     */
     toggleHeatmapPinned() {
         const select = document.getElementById('heatmapBookSelect');
         const btn = document.getElementById('heatmapToggleBtn');
@@ -345,47 +335,42 @@ class AnalyticsClass {
         }
     }
 
-    /**
-     * 記録から問題の状態を取得
-     */
     getQuestionStateFromRecords(bookId, question) {
         let state = { correct: false, wrong: false, bookmarked: false };
         
-        DataManager.allRecords.forEach(record => {
-            if (record.bookId === bookId) {
-                const pathMatch = record.path.join('/') === question.path.join('/');
-                if (pathMatch && record.questions && record.questions[question.number]) {
-                    const qState = record.questions[question.number];
-                    if (qState.state === 'correct') state.correct = true;
-                    if (qState.state === 'wrong') state.wrong = true;
-                    if (qState.bookmarked) state.bookmarked = true;
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.bookId === bookId) {
+                    const pathMatch = record.path.join('/') === question.path.join('/');
+                    if (pathMatch && record.questions && record.questions[question.number]) {
+                        const qState = record.questions[question.number];
+                        if (qState.state === 'correct') state.correct = true;
+                        if (qState.state === 'wrong') state.wrong = true;
+                        if (qState.bookmarked) state.bookmarked = true;
+                    }
                 }
-            }
-        });
+            });
+        }
         
         return state;
     }
 
-    /**
-     * レーダーチャート問題集選択更新
-     */
     updateRadarBookSelect() {
         const select = document.getElementById('radarBookSelect');
         if (!select) return;
 
         select.innerHTML = '<option value="">問題集を選択</option>';
         
-        Object.values(DataManager.books).forEach(book => {
-            const option = document.createElement('option');
-            option.value = book.id;
-            option.textContent = book.name;
-            select.appendChild(option);
-        });
+        if (DataManager && DataManager.books) {
+            Object.values(DataManager.books).forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.name;
+                select.appendChild(option);
+            });
+        }
     }
 
-    /**
-     * レーダーチャートモード設定
-     */
     setRadarMode(mode, btn) {
         this.radarChartMode = mode;
         
@@ -410,9 +395,6 @@ class AnalyticsClass {
         }
     }
 
-    /**
-     * レーダーチャート描画
-     */
     drawRadarChart() {
         if (this.radarChartMode === 'compare') {
             this.drawRadarChartCompare();
@@ -456,10 +438,8 @@ class AnalyticsClass {
 
         const angleStep = (Math.PI * 2) / displaySubjects.length;
         
-        // Clear canvas
         ctx.clearRect(0, 0, 300, 300);
         
-        // Draw grid
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 1;
         
@@ -480,7 +460,6 @@ class AnalyticsClass {
             ctx.stroke();
         }
         
-        // Draw lines from center
         for (let i = 0; i < displaySubjects.length; i++) {
             const angle = i * angleStep - Math.PI / 2;
             const x = centerX + Math.cos(angle) * radius;
@@ -492,7 +471,6 @@ class AnalyticsClass {
             ctx.stroke();
         }
         
-        // Draw data
         ctx.fillStyle = 'rgba(52, 152, 219, 0.3)';
         ctx.strokeStyle = '#3498db';
         ctx.lineWidth = 2;
@@ -515,7 +493,6 @@ class AnalyticsClass {
         ctx.fill();
         ctx.stroke();
         
-        // Draw labels
         ctx.fillStyle = '#1f2937';
         ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
@@ -528,7 +505,6 @@ class AnalyticsClass {
             const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
             ctx.fillText(shortName, x, y);
             
-            // 正答率を表示
             const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
             const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
             ctx.font = '10px sans-serif';
@@ -539,9 +515,6 @@ class AnalyticsClass {
         });
     }
 
-    /**
-     * 問題集比較モードのレーダーチャート
-     */
     drawRadarChartCompare() {
         const canvas = document.getElementById('radarChart');
         if (!canvas) return;
@@ -553,37 +526,36 @@ class AnalyticsClass {
         
         const mainSubjects = ['基礎法学', '憲法', '行政法', '民法', '商法', '一般知識'];
         
-        // 全問題集から科目別データを集計
         const allSubjectStats = {};
         mainSubjects.forEach(subject => {
             allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
         });
         
-        DataManager.allRecords.forEach(record => {
-            if (record.path && record.path.length > 0) {
-                const subject = record.path[0];
-                if (mainSubjects.includes(subject)) {
-                    if (record.questions) {
-                        Object.values(record.questions).forEach(q => {
-                            if (q.state === 'correct') {
-                                allSubjectStats[subject].correct++;
-                                allSubjectStats[subject].total++;
-                            } else if (q.state === 'wrong') {
-                                allSubjectStats[subject].wrong++;
-                                allSubjectStats[subject].total++;
-                            }
-                        });
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (mainSubjects.includes(subject)) {
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    allSubjectStats[subject].correct++;
+                                    allSubjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    allSubjectStats[subject].wrong++;
+                                    allSubjectStats[subject].total++;
+                                }
+                            });
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         
         const angleStep = (Math.PI * 2) / mainSubjects.length;
         
-        // Clear canvas
         ctx.clearRect(0, 0, 300, 300);
         
-        // Draw grid
         ctx.strokeStyle = '#e5e7eb';
         ctx.lineWidth = 1;
         
@@ -604,7 +576,6 @@ class AnalyticsClass {
             ctx.stroke();
         }
         
-        // Draw lines from center
         for (let i = 0; i < mainSubjects.length; i++) {
             const angle = i * angleStep - Math.PI / 2;
             const x = centerX + Math.cos(angle) * radius;
@@ -616,7 +587,6 @@ class AnalyticsClass {
             ctx.stroke();
         }
         
-        // Draw data
         ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
         ctx.strokeStyle = '#8b5cf6';
         ctx.lineWidth = 2;
@@ -639,7 +609,6 @@ class AnalyticsClass {
         ctx.fill();
         ctx.stroke();
         
-        // Draw labels
         ctx.fillStyle = '#1f2937';
         ctx.font = '12px sans-serif';
         ctx.textAlign = 'center';
@@ -651,7 +620,6 @@ class AnalyticsClass {
             
             ctx.fillText(subject, x, y);
             
-            // 正答率を表示
             const stats = allSubjectStats[subject];
             const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
             ctx.font = '10px sans-serif';
@@ -661,16 +629,12 @@ class AnalyticsClass {
             ctx.fillStyle = '#1f2937';
         });
         
-        // タイトル表示
         ctx.fillStyle = '#6b7280';
         ctx.font = '11px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('全問題集の統合データ', centerX, 20);
     }
 
-    /**
-     * レーダーチャートピン固定切り替え
-     */
     toggleRadarPinned() {
         const select = document.getElementById('radarBookSelect');
         const btn = document.getElementById('radarToggleBtn');
@@ -690,16 +654,12 @@ class AnalyticsClass {
         }
     }
 
-    /**
-     * 特定の問題集の科目別統計を計算
-     */
     calculateBookSubjectStats(bookId) {
         const subjectStats = {};
         const book = DataManager.books[bookId];
         
         if (!book) return subjectStats;
 
-        // 問題集の科目を初期化
         Object.keys(book.structure).forEach(subject => {
             subjectStats[subject] = {
                 total: 0,
@@ -708,58 +668,55 @@ class AnalyticsClass {
             };
         });
         
-        // 該当する記録を集計
-        DataManager.allRecords.forEach(record => {
-            if (record.bookId === bookId && record.path && record.path.length > 0) {
-                const subject = record.path[0];
-                if (subject && subjectStats[subject]) {
-                    if (record.questions) {
-                        Object.values(record.questions).forEach(q => {
-                            if (q.state === 'correct') {
-                                subjectStats[subject].correct++;
-                                subjectStats[subject].total++;
-                            } else if (q.state === 'wrong') {
-                                subjectStats[subject].wrong++;
-                                subjectStats[subject].total++;
-                            }
-                        });
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.bookId === bookId && record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (subject && subjectStats[subject]) {
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    subjectStats[subject].correct++;
+                                    subjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    subjectStats[subject].wrong++;
+                                    subjectStats[subject].total++;
+                                }
+                            });
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         
         return subjectStats;
     }
 
-    /**
-     * 学習履歴コンテンツ更新
-     */
     updateHistoryContent() {
         const container = document.getElementById('historyContent');
         if (!container) return;
 
         let html = '';
         
-        const recentRecords = DataManager.allRecords.slice(-20).reverse();
-        recentRecords.forEach(record => {
-            const date = new Date(record.timestamp);
-            html += `
-                <div style="padding: 10px; border-bottom: 1px solid var(--light);">
-                    <div style="font-weight: 600;">${record.path.join(' › ')}</div>
-                    <div style="font-size: 12px; color: var(--gray);">
-                        ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
-                        | 正答率: ${record.stats?.rate || '0%'}
+        if (DataManager && DataManager.allRecords && DataManager.allRecords.length > 0) {
+            const recentRecords = DataManager.allRecords.slice(-20).reverse();
+            recentRecords.forEach(record => {
+                const date = new Date(record.timestamp);
+                html += `
+                    <div style="padding: 10px; border-bottom: 1px solid var(--light);">
+                        <div style="font-weight: 600;">${record.path.join(' › ')}</div>
+                        <div style="font-size: 12px; color: var(--gray);">
+                            ${date.toLocaleDateString('ja-JP')} ${date.toLocaleTimeString('ja-JP', {hour: '2-digit', minute: '2-digit'})}
+                            | 正答率: ${record.stats?.rate || '0%'}
+                        </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
         
         container.innerHTML = html || '<p style="color: var(--gray); text-align: center;">履歴がありません</p>';
     }
 
-    /**
-     * 弱点分析更新
-     */
     updateWeaknessAnalysis() {
         const container = document.getElementById('weaknessAnalysis');
         if (!container) return;
@@ -794,63 +751,62 @@ class AnalyticsClass {
         }
     }
 
-    /**
-     * 科目別統計計算
-     */
     calculateSubjectStats() {
         const subjectStats = {};
         
-        DataManager.allRecords.forEach(record => {
-            if (record.path && record.path.length > 0) {
-                const subject = record.path[0];
-                if (!subject) return;
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (!subject) return;
 
-                if (!subjectStats[subject]) {
-                    subjectStats[subject] = {
-                        total: 0,
-                        correct: 0,
-                        wrong: 0
-                    };
+                    if (!subjectStats[subject]) {
+                        subjectStats[subject] = {
+                            total: 0,
+                            correct: 0,
+                            wrong: 0
+                        };
+                    }
+                    
+                    subjectStats[subject].total += record.stats?.total || 0;
+                    subjectStats[subject].correct += record.stats?.correct || 0;
+                    subjectStats[subject].wrong += record.stats?.wrong || 0;
                 }
-                
-                subjectStats[subject].total += record.stats?.total || 0;
-                subjectStats[subject].correct += record.stats?.correct || 0;
-                subjectStats[subject].wrong += record.stats?.wrong || 0;
-            }
-        });
+            });
+        }
         
         return subjectStats;
     }
 
-    /**
-     * 全体進捗計算
-     */
     calculateOverallProgress() {
         let totalQuestions = 0;
         let uniqueAnswered = new Set();
         let totalAnswered = 0;
         let totalCorrect = 0;
         
-        // 全問題数をカウント
-        Object.values(DataManager.books).forEach(book => {
-            totalQuestions += DataManager.countQuestionsInBook(book);
-        });
+        // 全問題数をカウント（DataManagerが存在するか確認）
+        if (DataManager && DataManager.books) {
+            Object.values(DataManager.books).forEach(book => {
+                totalQuestions += DataManager.countQuestionsInBook(book);
+            });
+        }
         
         // 解答済み問題を集計
-        DataManager.allRecords.forEach(record => {
-            totalAnswered += record.stats?.total || 0;
-            totalCorrect += record.stats?.correct || 0;
-            
-            // ユニークな解答済み問題を記録
-            if (record.questions) {
-                Object.entries(record.questions).forEach(([num, state]) => {
-                    if (state.state !== null) {
-                        const key = `${record.bookId}_${record.path.join('/')}_${num}`;
-                        uniqueAnswered.add(key);
-                    }
-                });
-            }
-        });
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                totalAnswered += record.stats?.total || 0;
+                totalCorrect += record.stats?.correct || 0;
+                
+                if (record.questions) {
+                    Object.entries(record.questions).forEach(([num, state]) => {
+                        if (state.state !== null) {
+                            const key = `${record.bookId}_${record.path.join('/')}_${num}`;
+                            uniqueAnswered.add(key);
+                        }
+                    });
+                }
+            });
+        }
         
         const uniqueAnsweredCount = uniqueAnswered.size;
         const overallRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
@@ -868,9 +824,6 @@ class AnalyticsClass {
         };
     }
 
-    /**
-     * 進捗コンテンツ更新
-     */
     updateProgressContent() {
         const overallContainer = document.getElementById('overallProgress');
         if (!overallContainer) return;
@@ -909,5 +862,8 @@ window.Analytics = new AnalyticsClass();
 
 // 初期化
 document.addEventListener('DOMContentLoaded', () => {
-    Analytics.initialize();
+    // 少し遅延させてDataManagerの初期化を待つ
+    setTimeout(() => {
+        Analytics.initialize();
+    }, 100);
 });
