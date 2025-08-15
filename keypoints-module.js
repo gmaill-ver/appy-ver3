@@ -402,7 +402,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 科目選択（章一覧表示）
+     * 科目選択（章一覧表示・折りたたみ機能付き）
      */
     selectSubject(subjectKey) {
         this.currentSubject = subjectKey;
@@ -432,15 +432,19 @@ class KeyPointsModuleClass {
                 </div>
             `;
         } else {
-            html += `<div class="table-of-contents" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">`;
-            
+            // 折りたたみ可能な編構造
             Object.entries(chapters).forEach(([chapterName, chapterData]) => {
+                const chapterId = `chapter-${subjectKey}-${chapterName.replace(/\s+/g, '-')}`;
+                
                 html += `
-                    <div class="chapter" style="background: white; border-radius: 6px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div class="chapter-header" style="background: #4a5568; color: white; padding: 12px 15px; font-size: 16px; font-weight: bold;">
-                            ${chapterName}
+                    <div class="collapsible-chapter" style="margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <div class="chapter-header-collapsible" style="background: #4a5568; color: white; padding: 12px 15px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;"
+                             onclick="KeyPointsModule.toggleChapter('${chapterId}')">
+                            <span style="font-size: 16px; font-weight: bold;">${chapterName}</span>
+                            <span class="chapter-arrow" id="arrow-${chapterId}" style="font-size: 12px; transition: transform 0.3s;">▼</span>
                         </div>
-                        <div class="chapter-content" style="padding: 15px;">
+                        <div class="chapter-content-collapsible" id="${chapterId}" style="display: block; background: white;">
+                            <div style="padding: 15px;">
                 `;
                 
                 if (chapterData.sections) {
@@ -476,12 +480,11 @@ class KeyPointsModuleClass {
                 }
                 
                 html += `
+                            </div>
                         </div>
                     </div>
                 `;
             });
-            
-            html += `</div>`;
         }
 
         html += `</div>`;
@@ -496,6 +499,26 @@ class KeyPointsModuleClass {
         // 難易度バッジのスタイルを追加
         this.addDifficultyStyles();
         this.addKeyPointStyles();
+    }
+
+    /**
+     * 編の折りたたみ切り替え
+     */
+    toggleChapter(chapterId) {
+        const content = document.getElementById(chapterId);
+        const arrow = document.getElementById(`arrow-${chapterId}`);
+        
+        if (!content || !arrow) return;
+
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            arrow.style.transform = 'rotate(0deg)';
+            arrow.textContent = '▼';
+        } else {
+            content.style.display = 'none';
+            arrow.style.transform = 'rotate(-90deg)';
+            arrow.textContent = '▶';
+        }
     }
 
     /**
@@ -543,20 +566,19 @@ class KeyPointsModuleClass {
         if (!content) return;
 
         const html = `
-            <div style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: #2d3748;">📄 ${title}</h3>
+            <div style="padding: 0; margin: 0;">
+                <!-- ヘッダー部分 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 15px 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e2e8f0;">
                     <button class="save-button" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')" 
-                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️</button>
-                </div>
-                
-                <!-- 暗記カード機能ボタン -->
-                <div style="text-align: center; margin: 15px 0;">
+                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto; margin-right: auto;">↩️ 戻る</button>
+                    <h3 style="margin: 0; color: #2d3748; flex-grow: 1; text-align: center; padding: 0 15px;">📄 ${title}</h3>
+                    <!-- 暗記カード機能ボタン -->
                     <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" 
                             style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
                 </div>
                 
-                <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;" id="keyPointContent">
+                <!-- コンテンツ部分（横幅いっぱい） -->
+                <div style="padding: 20px;" id="keyPointContent">
                     ${htmlContent}
                 </div>
             </div>
