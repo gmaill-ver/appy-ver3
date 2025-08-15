@@ -456,36 +456,83 @@ class QAModuleClass {
      */
     handleStart() {
         const select = document.getElementById('qaSetSelect');
-        if (select && select.value) {
-            this.startSession(select.value);
-        } else {
+        if (!select || !select.value) {
             alert('問題集を選択してください');
+            return;
         }
+        
+        // DataManager.qaQuestionsが初期化されているか確認
+        if (!DataManager.qaQuestions || Object.keys(DataManager.qaQuestions).length === 0) {
+            alert('問題が登録されていません。先に問題を追加してください。');
+            return;
+        }
+        
+        if (!DataManager.qaQuestions[select.value]) {
+            alert('選択した問題集に問題がありません。');
+            return;
+        }
+        
+        this.startSession(select.value);
     }
 
     /**
      * 問題追加のハンドラ
      */
     handleAddQuestion() {
-        const setName = document.getElementById('qaNewSetName');
-        const question = document.getElementById('qaNewQuestion');
-        const answer = document.getElementById('qaNewAnswer');
+        const setNameEl = document.getElementById('qaNewSetName');
+        const questionEl = document.getElementById('qaNewQuestion');
+        const answerEl = document.getElementById('qaNewAnswer');
         
-        if (!setName || !question || !answer) return;
+        if (!setNameEl || !questionEl || !answerEl) {
+            console.error('Required elements not found');
+            return;
+        }
         
-        if (this.addQuestion(
-            setName.value || 'その他',
-            question.value,
-            answer.value
-        )) {
+        const setName = setNameEl.value.trim() || 'その他';
+        const question = questionEl.value.trim();
+        const answer = answerEl.value.trim();
+        
+        if (!question || !answer) {
+            alert('問題文と答えを入力してください');
+            return;
+        }
+        
+        // DataManager.qaQuestionsが初期化されているか確認
+        if (!DataManager.qaQuestions) {
+            DataManager.qaQuestions = {};
+        }
+        
+        if (this.addQuestion(setName, question, answer)) {
             // フォームをクリア
-            question.value = '';
-            answer.value = '';
+            questionEl.value = '';
+            answerEl.value = '';
             
             // リストを更新
             const listContent = document.getElementById('qaListContent');
             if (listContent) {
                 listContent.innerHTML = this.renderQAList();
+            }
+            
+            // セレクトボックスも更新
+            const select = document.getElementById('qaSetSelect');
+            if (select) {
+                // 新しいセットが追加された場合、セレクトボックスを更新
+                const currentValue = select.value;
+                const sets = this.getSetList();
+                
+                select.innerHTML = '<option value="">問題集を選択</option>';
+                sets.forEach(name => {
+                    const count = this.getQuestions(name).length;
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = `${name} (${count}問)`;
+                    select.appendChild(option);
+                });
+                
+                // 元の選択を復元
+                if (currentValue) {
+                    select.value = currentValue;
+                }
             }
             
             alert('問題を追加しました');
