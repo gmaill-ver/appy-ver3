@@ -135,7 +135,7 @@ switchFooterTab(tabName, event) {
     const modal = document.getElementById('footerModal');
     const modalTitle = document.getElementById('modalTitle');
     const modalBody = document.getElementById('modalBody');
-    const modalBackBtn = document.getElementById('modalBackBtn');
+    const modalFooter = modal.querySelector('.modal-footer');
     
     if (!modal || !modalTitle || !modalBody) return;
 
@@ -149,12 +149,40 @@ switchFooterTab(tabName, event) {
     
     modalTitle.textContent = titles[tabName] || 'タイトル';
     
-    // 戻るボタンの表示制御
-    if (modalBackBtn) {
+    // モーダルヘッダーを動的に再構築
+    const modalHeader = modal.querySelector('.modal-header');
+    if (modalHeader) {
         if (tabName === 'keypoints') {
-            modalBackBtn.style.display = 'block';
+            // 要点確認の場合：重要語句ボタン付きヘッダー
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+                <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
+                <button class="modal-close" style="width: 20px; height: 20px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
+            `;
         } else {
-            modalBackBtn.style.display = 'none';
+            // その他の場合：通常ヘッダー
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
+            `;
+        }
+    }
+    
+    // モーダルフッターを動的に再構築
+    if (modalFooter) {
+        if (tabName === 'keypoints') {
+            // 要点確認の場合：戻るボタン + 閉じるボタン
+            modalFooter.innerHTML = `
+                <div style="display: flex; gap: 10px;">
+                    <button id="modalBackBtn" style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.backToSubjectList()">↩️ 戻る</button>
+                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
+                </div>
+            `;
+        } else {
+            // その他の場合：閉じるボタンのみ
+            modalFooter.innerHTML = `
+                <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
+            `;
         }
     }
     
