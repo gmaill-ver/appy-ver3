@@ -163,11 +163,37 @@ class DataManager {
         try {
             const stored = localStorage.getItem('studyTrackerBooks');
             if (stored) {
-                this.books = JSON.parse(stored);
+                const parsedData = JSON.parse(stored);
+                // データ形式の妥当性チェック
+                if (parsedData && typeof parsedData === 'object') {
+                    this.books = parsedData;
+                    // 古いデータ形式の変換（必要に応じて）
+                    this.migrateOldDataFormat();
+                } else {
+                    this.books = {};
+                }
             }
         } catch (error) {
             console.error('Error loading books:', error);
             this.books = {};
+        }
+    }
+
+    /**
+     * 古いデータ形式の変換
+     */
+    migrateOldDataFormat() {
+        try {
+            Object.values(this.books).forEach(book => {
+                // 必須プロパティが欠けている場合は追加
+                if (!book.id) book.id = 'book_' + Date.now() + Math.random();
+                if (!book.structure) book.structure = {};
+                if (!book.numberingType) book.numberingType = 'reset';
+                if (!book.examType) book.examType = 'gyousei';
+                if (!book.createdAt) book.createdAt = new Date().toISOString();
+            });
+        } catch (error) {
+            console.error('Error migrating data:', error);
         }
     }
 
@@ -395,13 +421,21 @@ class DataManager {
      */
     saveExamDate(date) {
         try {
+            // 日付オブジェクトの妥当性チェック
+            if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+                console.error('Invalid date provided');
+                return false;
+            }
+            
             this.examDate = date;
             localStorage.setItem('examDate', date.toISOString());
             if (this.firebaseEnabled) {
                 this.saveToFirebase();
             }
+            return true;
         } catch (error) {
             console.error('Error saving exam date:', error);
+            return false;
         }
     }
 
@@ -520,14 +554,24 @@ class DataManager {
      * 問題集内の問題数をカウント
      */
     countQuestionsInBook(book) {
+        if (!book || !book.structure) {
+            return 0;
+        }
+        
         let count = 0;
         
         function traverse(structure) {
+            if (!structure || typeof structure !== 'object') {
+                return;
+            }
+            
             Object.values(structure).forEach(item => {
-                if (item.questions) {
+                if (!item) return;
+                
+                if (item.questions && Array.isArray(item.questions)) {
                     count += item.questions.length;
                 }
-                if (item.children) {
+                if (item.children && typeof item.children === 'object') {
                     traverse(item.children);
                 }
             });
