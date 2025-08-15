@@ -94,7 +94,7 @@ class TimerModuleClass {
     }
 
     /**
-     * ストップウォッチ表示更新
+     * ストップウォッチ表示更新（DOM要素チェック追加）
      */
     updateStopwatchDisplay() {
         const hours = Math.floor(this.stopwatchTime / 3600);
@@ -167,7 +167,7 @@ class TimerModuleClass {
     }
 
     /**
-     * カウントダウン表示更新
+     * カウントダウン表示更新（DOM要素チェック追加）
      */
     updateCountdownDisplay() {
         const hours = Math.floor(this.countdownTime / 3600);
@@ -257,7 +257,7 @@ class TimerModuleClass {
     }
 
     /**
-     * インターバル表示更新
+     * インターバル表示更新（DOM要素チェック追加）
      */
     updateIntervalDisplay() {
         const minutes = Math.floor(this.intervalTime / 60);
@@ -275,7 +275,7 @@ class TimerModuleClass {
     }
 
     /**
-     * インターバルステータス更新
+     * インターバルステータス更新（DOM要素チェック追加）
      */
     updateIntervalStatus() {
         const statusEl = document.getElementById('intervalStatus');
@@ -291,28 +291,40 @@ class TimerModuleClass {
     }
 
     /**
-     * ヘッダータイマー表示更新
+     * ヘッダータイマー表示更新（DOM要素チェック強化）
      */
     updateHeaderDisplay(display) {
         const timerDisplay = document.getElementById('timerDisplay');
-        if (timerDisplay) {
-            if (display) {
-                timerDisplay.textContent = display;
-            } else {
-                // 現在のモードに応じて表示を更新
+        if (!timerDisplay) return; // 要素がなければ早期リターン
+        
+        if (display) {
+            timerDisplay.textContent = display;
+        } else {
+            // 現在のモードに応じて表示を更新
+            try {
                 if (this.timerMode === 'stopwatch') {
-                    this.updateStopwatchDisplay();
+                    const hours = Math.floor(this.stopwatchTime / 3600);
+                    const minutes = Math.floor((this.stopwatchTime % 3600) / 60);
+                    const seconds = this.stopwatchTime % 60;
+                    timerDisplay.textContent = `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
                 } else if (this.timerMode === 'countdown') {
-                    this.updateCountdownDisplay();
+                    const hours = Math.floor(this.countdownTime / 3600);
+                    const minutes = Math.floor((this.countdownTime % 3600) / 60);
+                    const seconds = this.countdownTime % 60;
+                    timerDisplay.textContent = `${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`;
                 } else if (this.timerMode === 'interval') {
-                    this.updateIntervalDisplay();
+                    const minutes = Math.floor(this.intervalTime / 60);
+                    const seconds = this.intervalTime % 60;
+                    timerDisplay.textContent = `${this.pad(minutes)}:${this.pad(seconds)}`;
                 }
+            } catch (error) {
+                console.error('Error updating header display:', error);
             }
         }
     }
 
     /**
-     * ヘッダータイマー表示
+     * ヘッダータイマー表示（DOM要素チェック追加）
      */
     showHeaderTimer() {
         const timerDisplay = document.getElementById('timerDisplay');
@@ -322,7 +334,7 @@ class TimerModuleClass {
     }
 
     /**
-     * ヘッダータイマー非表示
+     * ヘッダータイマー非表示（DOM要素チェック追加）
      */
     hideHeaderTimer() {
         const timerDisplay = document.getElementById('timerDisplay');
@@ -339,22 +351,26 @@ class TimerModuleClass {
     }
 
     /**
-     * 音を鳴らす（ブラウザのNotification APIを使用）
+     * 音を鳴らす（エラーハンドリング追加）
      */
     playSound() {
-        // ビープ音の代わりに振動やNotificationを使用
-        if ('vibrate' in navigator) {
-            navigator.vibrate(200);
-        }
-        
-        // Notification APIが使用可能な場合
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('タイマー通知', {
-                body: this.timerMode === 'interval' 
-                    ? (this.isWorkTime ? '休憩時間です' : '作業時間です')
-                    : 'タイマーが終了しました',
-                icon: '⏰'
-            });
+        try {
+            // ビープ音の代わりに振動やNotificationを使用
+            if ('vibrate' in navigator) {
+                navigator.vibrate(200);
+            }
+            
+            // Notification APIが使用可能な場合
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('タイマー通知', {
+                    body: this.timerMode === 'interval' 
+                        ? (this.isWorkTime ? '休憩時間です' : '作業時間です')
+                        : 'タイマーが終了しました',
+                    icon: '⏰'
+                });
+            }
+        } catch (error) {
+            console.error('Error playing sound:', error);
         }
     }
 
@@ -362,8 +378,12 @@ class TimerModuleClass {
      * 通知許可をリクエスト
      */
     async requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission === 'default') {
-            await Notification.requestPermission();
+        try {
+            if ('Notification' in window && Notification.permission === 'default') {
+                await Notification.requestPermission();
+            }
+        } catch (error) {
+            console.error('Error requesting notification permission:', error);
         }
     }
 }
