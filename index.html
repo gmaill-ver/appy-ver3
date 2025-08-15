@@ -204,25 +204,29 @@
         </div>
     </div>
     
-    <!-- フッタータブ -->
-    <div class="footer-tabs">
-        <button class="footer-tab active" onclick="App.switchFooterTab('register', event)">
-            <span class="footer-tab-icon">📝</span>
-            <span class="footer-tab-label">登録</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('qa', event)">
-            <span class="footer-tab-icon">❓</span>
-            <span class="footer-tab-label">一問一答</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('results', event)">
-            <span class="footer-tab-icon">🏆</span>
-            <span class="footer-tab-label">実績</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('settings', event)">
-            <span class="footer-tab-icon">⚙️</span>
-            <span class="footer-tab-label">設定</span>
-        </button>
-    </div>
+    <!-- フッタータブ（要点確認タブ追加版） -->
+<div class="footer-tabs">
+    <button class="footer-tab active" onclick="App.switchFooterTab('register', event)">
+        <span class="footer-tab-icon">📝</span>
+        <span class="footer-tab-label">登録</span>
+    </button>
+    <button class="footer-tab" onclick="App.switchFooterTab('qa', event)">
+        <span class="footer-tab-icon">❓</span>
+        <span class="footer-tab-label">一問一答</span>
+    </button>
+    <button class="footer-tab" onclick="App.switchFooterTab('keypoints', event)">
+        <span class="footer-tab-icon">📚</span>
+        <span class="footer-tab-label">要点確認</span>
+    </button>
+    <button class="footer-tab" onclick="App.switchFooterTab('results', event)">
+        <span class="footer-tab-icon">🏆</span>
+        <span class="footer-tab-label">実績</span>
+    </button>
+    <button class="footer-tab" onclick="App.switchFooterTab('settings', event)">
+        <span class="footer-tab-icon">⚙️</span>
+        <span class="footer-tab-label">設定</span>
+    </button>
+</div>
     
     <!-- タイマーモーダル -->
     <div id="timerModal" class="timer-modal">
