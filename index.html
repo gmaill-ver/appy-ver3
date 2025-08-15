@@ -5,24 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>学習トラッカー - 行政書士試験対策</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <!-- ヘッダー -->
     <header class="app-header">
-        <button class="timer-icon-btn" onclick="TimerModule.openModal()" title="タイマー">
-            ⏰
-        </button>
+        <button class="timer-icon-btn" onclick="App.openTimerModal()" title="タイマー">⏰</button>
         <div class="timer-display" id="timerDisplay">00:00:00</div>
         <div class="app-logo">
             <span class="app-logo-icon">📚</span>
             <span class="app-title">学習トラッカー</span>
         </div>
-        <div class="exam-countdown" id="examCountdown">
-            試験日まで <span class="days">--</span> 日
-        </div>
+        <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
     </header>
     
-    <!-- メインタブ（3つ） -->
+    <!-- メインタブ -->
     <div class="main-tabs">
         <button class="main-tab active" onclick="App.switchMainTab('record', event)">記録入力</button>
         <button class="main-tab" onclick="App.switchMainTab('analysis', event)">分析</button>
@@ -33,16 +34,16 @@
     <div class="content-area">
         <!-- 記録入力タブ -->
         <div id="record-tab" class="tab-content active">
-            <!-- 問題集選択（開閉式カード） -->
+            <!-- 問題集選択 -->
             <div class="book-cards-wrapper">
-                <button class="book-order-btn" onclick="UIComponents.toggleBookSort()">並替え</button>
+                <button class="book-order-btn" onclick="App.toggleBookSort()">並替え</button>
                 <div id="bookCardsContainer"></div>
             </div>
             
             <!-- パンくずリスト -->
             <div class="breadcrumb" id="breadcrumb" style="display: none;"></div>
             
-            <!-- 階層リスト（記録用） -->
+            <!-- 階層リスト -->
             <div id="recordHierarchyContainer" style="display: none;"></div>
             
             <!-- 問題入力 -->
@@ -54,16 +55,13 @@
                 
                 <div class="action-buttons">
                     <button class="action-btn correct" onclick="App.markCorrect()">
-                        <span>⭕</span>
-                        <span>正解</span>
+                        <span>⭕</span><span>正解</span>
                     </button>
                     <button class="action-btn wrong" onclick="App.markWrong()">
-                        <span>❌</span>
-                        <span>不正解</span>
+                        <span>❌</span><span>不正解</span>
                     </button>
                     <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()">
-                        <span>⭐</span>
-                        <span>マーク</span>
+                        <span>⭐</span><span>マーク</span>
                     </button>
                 </div>
                 
@@ -91,7 +89,7 @@
                 <button class="save-button" onclick="App.saveRecord()">学習記録を保存</button>
             </div>
             
-            <!-- カレンダー（最下部） -->
+            <!-- カレンダー -->
             <div class="calendar-container">
                 <div class="calendar-header">
                     <div class="calendar-nav">
@@ -111,11 +109,11 @@
         
         <!-- 分析タブ -->
         <div id="analysis-tab" class="tab-content">
-            <button class="card-sort-btn" onclick="Analytics.toggleAnalysisSort()">並替え</button>
+            <button class="card-sort-btn" onclick="App.toggleAnalysisSort()">並替え</button>
             <div id="analysisCardsContainer">
                 <!-- 学習グラフ -->
                 <div class="accordion card" data-card-id="chart">
-                    <div class="accordion-header" onclick="UIComponents.toggleAccordion(this)">
+                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
                         <span>📊 学習グラフ</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
@@ -133,7 +131,7 @@
                 
                 <!-- 学習履歴 -->
                 <div class="accordion card" data-card-id="history">
-                    <div class="accordion-header" onclick="UIComponents.toggleAccordion(this)">
+                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
                         <span>📅 学習履歴</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
@@ -144,7 +142,7 @@
                 
                 <!-- ヒートマップ -->
                 <div class="accordion card" data-card-id="heatmap">
-                    <div class="accordion-header" onclick="UIComponents.toggleAccordion(this)">
+                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
                         <span>🗺️ 問題ヒートマップ</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
@@ -161,7 +159,7 @@
                 
                 <!-- 弱点分析 -->
                 <div class="accordion card" data-card-id="weakness">
-                    <div class="accordion-header" onclick="UIComponents.toggleAccordion(this)">
+                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
                         <span>🎯 弱点分析</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
@@ -225,12 +223,151 @@
     </div>
     
     <!-- タイマーモーダル -->
-    <div id="timerModal" class="timer-modal"></div>
+    <div id="timerModal" class="timer-modal">
+        <div class="timer-modal-content">
+            <div class="modal-header">
+                <h3>⏰ タイマー</h3>
+                <button class="modal-close" onclick="TimerModule.closeModal()">×</button>
+            </div>
+            
+            <div class="timer-tabs">
+                <button class="timer-tab active" onclick="TimerModule.switchTab('stopwatch', this)">ストップウォッチ</button>
+                <button class="timer-tab" onclick="TimerModule.switchTab('countdown', this)">タイマー</button>
+                <button class="timer-tab" onclick="TimerModule.switchTab('interval', this)">インターバル</button>
+            </div>
+            
+            <div id="stopwatchTab" class="timer-tab-content">
+                <div class="timer-display-large" id="stopwatchDisplay">00:00:00</div>
+                <div class="timer-controls">
+                    <button class="timer-btn start" onclick="TimerModule.startStopwatch()">開始</button>
+                    <button class="timer-btn pause" onclick="TimerModule.pauseStopwatch()">一時停止</button>
+                    <button class="timer-btn reset" onclick="TimerModule.resetStopwatch()">リセット</button>
+                </div>
+            </div>
+            
+            <div id="countdownTab" class="timer-tab-content" style="display: none;">
+                <div class="timer-input-group">
+                    <label class="timer-input-label">タイマー設定</label>
+                    <div class="timer-input-row">
+                        <input type="number" class="timer-input" id="countdownHours" placeholder="時" min="0" max="23">
+                        <span>時間</span>
+                        <input type="number" class="timer-input" id="countdownMinutes" placeholder="分" min="0" max="59">
+                        <span>分</span>
+                        <input type="number" class="timer-input" id="countdownSeconds" placeholder="秒" min="0" max="59">
+                        <span>秒</span>
+                    </div>
+                </div>
+                <div class="timer-display-large" id="countdownDisplay">00:00:00</div>
+                <div class="timer-controls">
+                    <button class="timer-btn start" onclick="TimerModule.startCountdown()">開始</button>
+                    <button class="timer-btn pause" onclick="TimerModule.pauseCountdown()">一時停止</button>
+                    <button class="timer-btn reset" onclick="TimerModule.resetCountdown()">リセット</button>
+                </div>
+            </div>
+            
+            <div id="intervalTab" class="timer-tab-content" style="display: none;">
+                <div class="timer-input-group">
+                    <label class="timer-input-label">作業時間</label>
+                    <div class="timer-input-row">
+                        <input type="number" class="timer-input" id="workMinutes" value="25" min="1">
+                        <span>分</span>
+                    </div>
+                </div>
+                <div class="timer-input-group">
+                    <label class="timer-input-label">休憩時間</label>
+                    <div class="timer-input-row">
+                        <input type="number" class="timer-input" id="breakMinutes" value="5" min="1">
+                        <span>分</span>
+                    </div>
+                </div>
+                <div class="timer-input-group">
+                    <label class="timer-input-label">セット数</label>
+                    <div class="timer-input-row">
+                        <input type="number" class="timer-input" id="intervalSets" value="4" min="1">
+                        <span>セット</span>
+                    </div>
+                </div>
+                <div class="timer-display-large" id="intervalDisplay">00:00</div>
+                <div style="text-align: center; margin: 10px 0;">
+                    <span id="intervalStatus">待機中</span> | 
+                    <span id="intervalSetCount">0/0 セット</span>
+                </div>
+                <div class="timer-controls">
+                    <button class="timer-btn start" onclick="TimerModule.startInterval()">開始</button>
+                    <button class="timer-btn pause" onclick="TimerModule.pauseInterval()">一時停止</button>
+                    <button class="timer-btn reset" onclick="TimerModule.resetInterval()">リセット</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- 学習計画モーダル -->
-    <div id="planModal" class="plan-modal"></div>
+    <div id="planModal" class="plan-modal">
+        <div class="plan-modal-content">
+            <div class="modal-header">
+                <h3 id="planModalTitle">📅 学習計画</h3>
+                <button class="modal-close" onclick="UIComponents.closePlanModal()">×</button>
+            </div>
+            
+            <div id="planFormSection">
+                <div class="plan-form-group">
+                    <label class="plan-form-label">計画タイトル</label>
+                    <input type="text" class="plan-form-control" id="planTitle" placeholder="例：民法総則の復習">
+                </div>
+                
+                <div class="plan-form-group">
+                    <label class="plan-form-label">計画内容</label>
+                    <textarea class="plan-form-control" id="planContent" rows="3" placeholder="学習内容の詳細を入力"></textarea>
+                </div>
+                
+                <div class="plan-form-group">
+                    <label class="plan-form-label">表示形式</label>
+                    <div class="plan-display-type">
+                        <label>
+                            <input type="radio" name="displayType" value="bullet" checked>
+                            <span>・</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="displayType" value="text">
+                            <span>通常表示</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="plan-form-group">
+                    <label class="plan-form-label">日付範囲</label>
+                    <div class="date-range-inputs">
+                        <input type="date" class="plan-form-control" id="planStartDate">
+                        <span>〜</span>
+                        <input type="date" class="plan-form-control" id="planEndDate">
+                    </div>
+                </div>
+                
+                <div class="plan-form-group">
+                    <label class="plan-form-label">色設定</label>
+                    <div class="color-picker" id="colorPicker">
+                        <div class="color-option selected" style="background: #3498db;" data-color="#3498db"></div>
+                        <div class="color-option" style="background: #10b981;" data-color="#10b981"></div>
+                        <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                        <div class="color-option" style="background: #ef4444;" data-color="#ef4444"></div>
+                        <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                        <div class="color-option" style="background: #ec4899;" data-color="#ec4899"></div>
+                        <div class="color-option" style="background: #6b7280;" data-color="#6b7280"></div>
+                    </div>
+                </div>
+                
+                <input type="hidden" id="editPlanId" value="">
+                <button class="save-button" onclick="UIComponents.savePlan()">計画を保存</button>
+            </div>
+            
+            <div id="planListSection" style="display: none;">
+                <h4>登録済みの計画</h4>
+                <div class="plan-list" id="planListContent"></div>
+            </div>
+        </div>
+    </div>
     
-    <!-- フッタータブコンテンツ（モーダル表示） -->
+    <!-- フッターモーダル -->
     <div id="footerModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -250,16 +387,35 @@
         <h3 id="dialogTitle">タイトル</h3>
         <div id="dialogBody"></div>
         <div class="dialog-buttons">
-            <button class="dialog-btn secondary" onclick="UIComponents.closeDialog()">キャンセル</button>
+            <button class="dialog-btn secondary" onclick="App.closeDialog()">キャンセル</button>
             <button class="dialog-btn primary" id="dialogConfirmBtn">確定</button>
         </div>
     </div>
     
-    <!-- JavaScriptファイル読み込み -->
+    <!-- Firebase Configuration -->
+    <script>
+        // Firebase設定（デプロイ時に適切な値に変更してください）
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // Firebaseを初期化（設定が完全な場合のみ）
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+        }
+    </script>
+    
+    <!-- JavaScript モジュール読み込み（順序重要） -->
     <script src="data-manager.js"></script>
     <script src="ui-components.js"></script>
     <script src="analytics.js"></script>
     <script src="qa-module.js"></script>
+    <script src="timer-module.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
