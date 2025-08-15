@@ -567,16 +567,6 @@ class KeyPointsModuleClass {
 
         const html = `
             <div style="padding: 0; margin: 0;">
-                <!-- ヘッダー部分 -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 15px 10px 15px; background: #f8f9fa; border-bottom: 1px solid #e2e8f0;">
-                    <button class="save-button" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')" 
-                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto; margin-right: auto;">↩️ 戻る</button>
-                    <h3 style="margin: 0; color: #2d3748; flex-grow: 1; text-align: center; padding: 0 15px;">📄 ${title}</h3>
-                    <!-- 暗記カード機能ボタン -->
-                    <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" 
-                            style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
-                </div>
-                
                 <!-- コンテンツ部分（横幅いっぱい） -->
                 <div style="padding: 20px;" id="keyPointContent">
                     ${htmlContent}
@@ -585,6 +575,27 @@ class KeyPointsModuleClass {
         `;
 
         content.innerHTML = html;
+        
+        // モーダルヘッダーに重要語句ボタンを追加
+        const modalHeader = document.querySelector('.modal-header');
+        if (modalHeader) {
+            modalHeader.innerHTML = `
+                <h3 style="margin: 0; flex-grow: 1; text-align: center;">📄 ${title}</h3>
+                <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
+                <button class="modal-close" style="width: 20px; height: 20px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
+            `;
+        }
+        
+        // モーダルフッターに戻るボタンを追加
+        const modalFooter = document.querySelector('.modal-footer');
+        if (modalFooter) {
+            modalFooter.innerHTML = `
+                <div style="display: flex; gap: 10px;">
+                    <button style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')">↩️ 戻る</button>
+                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
+                </div>
+            `;
+        }
         
         // ページトップにスクロール
         const modalContent = document.querySelector('.modal-content');
