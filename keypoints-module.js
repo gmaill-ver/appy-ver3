@@ -236,19 +236,8 @@ class KeyPointsModuleClass {
      */
     renderKeyPointsContent() {
         return `
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📚</span>
-                    <span class="card-title">要点確認</span>
-                </div>
-                
-                <div class="save-button" style="margin: 15px;" onclick="KeyPointsModule.showSubjectList()">
-                    📋 要点一覧
-                </div>
-                
-                <div id="keyPointsMainContent">
-                    ${this.renderWelcomeContent()}
-                </div>
+            <div id="keyPointsMainContent">
+                ${this.renderSubjectListDirect()}
             </div>
             
             <div class="card" style="margin-top: 20px;">
@@ -310,46 +299,29 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * ウェルカムコンテンツ
+     * 直接科目一覧を表示（カードなし・3列固定）
      */
-    renderWelcomeContent() {
-        return `
-            <div style="text-align: center; padding: 20px;">
-                <h3>📚 要点確認</h3>
-                <p>科目別の要点まとめを確認できます</p>
-                <p style="color: var(--gray); font-size: 14px;">
-                    上の「要点一覧」ボタンから科目を選択してください
-                </p>
-            </div>
-        `;
-    }
-
-    /**
-     * 科目一覧を表示（3列配置）
-     */
-    showSubjectList() {
+    renderSubjectListDirect() {
         this.currentView = 'subjects';
-        const content = document.getElementById('keyPointsMainContent');
-        if (!content) return;
-
         const subjects = this.getSubjectList();
+        
         let html = `
-            <div style="padding: 20px;">
-                <h3 style="text-align: center; margin-bottom: 30px;">📋 科目一覧</h3>
-                <div class="subject-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; max-width: 600px; margin: 0 auto;">
+            <div style="padding: 15px;">
+                <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
+                <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
         `;
 
         subjects.forEach(subject => {
             html += `
-                <div class="subject-card" style="background: white; border: 2px solid var(--light); border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" 
+                <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
                      onclick="KeyPointsModule.selectSubject('${subject.key}')">
-                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
                         ${subject.name}
                     </div>
-                    <div style="font-size: 12px; color: var(--gray);">
+                    <div style="font-size: 11px; color: var(--gray);">
                         ${subject.chapterCount} 章
                     </div>
-                    <div style="font-size: 12px; color: var(--gray);">
+                    <div style="font-size: 11px; color: var(--gray);">
                         ${subject.itemCount} 項目
                     </div>
                 </div>
@@ -358,15 +330,74 @@ class KeyPointsModuleClass {
 
         html += `
                 </div>
-                <div style="text-align: center; margin-top: 30px;">
-                    <button class="save-button" onclick="KeyPointsModule.showWelcome()" 
-                            style="background: var(--gray);">← 戻る</button>
+            </div>
+            
+            <div style="margin: 20px 15px;">
+                <h4 style="margin-bottom: 15px;">要点管理（階層選択式）</h4>
+                
+                <div class="form-group">
+                    <label class="form-label">科目</label>
+                    <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChange()">
+                        <option value="">科目を選択</option>
+                        ${this.getSubjectList().map(subject => 
+                            `<option value="${subject.key}">${subject.name}</option>`
+                        ).join('')}
+                    </select>
                 </div>
+                
+                <div class="form-group" id="chapterSelectGroup" style="display: none;">
+                    <label class="form-label">編</label>
+                    <select class="form-control" id="keyPointChapterSelect" onchange="KeyPointsModule.onChapterChange()">
+                        <option value="">編を選択</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="sectionSelectGroup" style="display: none;">
+                    <label class="form-label">節</label>
+                    <select class="form-control" id="keyPointSectionSelect" onchange="KeyPointsModule.onSectionChange()">
+                        <option value="">節を選択</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="topicSelectGroup" style="display: none;">
+                    <label class="form-label">項目</label>
+                    <select class="form-control" id="keyPointTopicSelect">
+                        <option value="">項目を選択</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">要点まとめタイトル</label>
+                    <input type="text" class="form-control" id="keyPointTitle" 
+                           placeholder="例：権利能力の要点まとめ">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">HTML内容</label>
+                    <textarea class="form-control" id="keyPointHtml" rows="8" 
+                              placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
+                </div>
+                
+                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItem()">
+                    階層に要点を登録
+                </button>
+            </div>
+            
+            <div style="margin: 20px 15px;">
+                <h4>登録済み要点</h4>
+                <div id="keyPointsList">${this.renderKeyPointsList()}</div>
             </div>
         `;
 
-        content.innerHTML = html;
-        this.addKeyPointStyles();
+        return html;
+    }
+
+    /**
+     * 科目一覧を表示（レガシー関数・現在は直接表示のため不使用）
+     */
+    showSubjectList() {
+        // 直接表示されているため、この関数は使用しない
+        return;
     }
 
     /**
@@ -382,11 +413,11 @@ class KeyPointsModuleClass {
         if (!content) return;
 
         let html = `
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h3>📚 ${subject.name} 要点まとめ</h3>
-                    <button class="save-button" onclick="KeyPointsModule.showSubjectList()" 
-                            style="background: var(--gray); padding: 8px 15px; font-size: 14px;">← 一覧に戻る</button>
+            <div style="padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h3 style="margin: 0;">📚 ${subject.name} 要点まとめ</h3>
+                    <button class="save-button" onclick="KeyPointsModule.backToSubjectList()" 
+                            style="background: var(--gray); padding: 6px 12px; font-size: 12px;">← 一覧に戻る</button>
                 </div>
         `;
 
@@ -394,28 +425,28 @@ class KeyPointsModuleClass {
         
         if (Object.keys(chapters).length === 0) {
             html += `
-                <div style="text-align: center; padding: 40px; color: var(--gray);">
+                <div style="text-align: center; padding: 30px; color: var(--gray);">
                     <p>まだ章項目がありません</p>
                     <p style="font-size: 14px;">下の管理画面から項目を追加してください</p>
                 </div>
             `;
         } else {
-            html += `<div class="table-of-contents" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px;">`;
+            html += `<div class="table-of-contents" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">`;
             
             Object.entries(chapters).forEach(([chapterName, chapterData]) => {
                 html += `
                     <div class="chapter" style="background: white; border-radius: 6px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                        <div class="chapter-header" style="background: #4a5568; color: white; padding: 15px 20px; font-size: 18px; font-weight: bold;">
+                        <div class="chapter-header" style="background: #4a5568; color: white; padding: 12px 15px; font-size: 16px; font-weight: bold;">
                             ${chapterName}
                         </div>
-                        <div class="chapter-content" style="padding: 20px;">
+                        <div class="chapter-content" style="padding: 15px;">
                 `;
                 
                 if (chapterData.sections) {
                     Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
                         html += `
-                            <div class="section" style="margin-bottom: 25px;">
-                                <div class="section-title" style="font-size: 16px; font-weight: bold; color: #2d3748; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                            <div class="section" style="margin-bottom: 20px;">
+                                <div class="section-title" style="font-size: 14px; font-weight: bold; color: #2d3748; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0;">
                                     ${sectionName}
                                 </div>
                                 <ul class="topic-list" style="list-style: none;">
@@ -423,16 +454,15 @@ class KeyPointsModuleClass {
                         
                         topics.forEach((topic, index) => {
                             const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                            const topicId = `${subjectKey}_${chapterName}_${sectionName}_${index}`;
                             
                             html += `
-                                <li class="topic-item" style="margin: 8px 0; display: flex; align-items: center; gap: 10px;">
-                                    <a href="#" class="topic-link" style="text-decoration: none; color: #2d3748; padding: 12px 16px; background: #f7fafc; border-radius: 6px; border: 1px solid #e2e8f0; flex-grow: 1; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
+                                <li class="topic-item" style="margin: 6px 0; display: flex; align-items: center; gap: 8px;">
+                                    <a href="#" class="topic-link" style="text-decoration: none; color: #2d3748; padding: 8px 12px; background: #f7fafc; border-radius: 6px; border: 1px solid #e2e8f0; flex-grow: 1; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px;"
                                        onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index}); return false;">
-                                        <span class="topic-number" style="font-size: 12px; color: #718096; min-width: 20px; font-weight: 500;">${index + 1}</span>
-                                        <span class="topic-title" style="flex-grow: 1; font-size: 14px; font-weight: 500;">${topic.title}</span>
+                                        <span class="topic-number" style="font-size: 11px; color: #718096; min-width: 16px; font-weight: 500;">${index + 1}</span>
+                                        <span class="topic-title" style="flex-grow: 1; font-size: 13px; font-weight: 500;">${topic.title}</span>
                                     </a>
-                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 28px; text-align: center; border: 1px solid;">${topic.difficulty}</span>
+                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; min-width: 24px; text-align: center; border: 1px solid;">${topic.difficulty}</span>
                                 </li>
                             `;
                         });
@@ -459,6 +489,17 @@ class KeyPointsModuleClass {
         // 難易度バッジのスタイルを追加
         this.addDifficultyStyles();
         this.addKeyPointStyles();
+    }
+
+    /**
+     * 科目一覧に戻る
+     */
+    backToSubjectList() {
+        const content = document.getElementById('keyPointsMainContent');
+        if (content) {
+            content.innerHTML = this.renderSubjectListDirect();
+            this.addKeyPointStyles();
+        }
     }
 
     /**
@@ -818,10 +859,10 @@ class KeyPointsModuleClass {
         const style = document.createElement('style');
         style.id = 'keypointsStyles';
         style.textContent = `
-            .subject-card:hover {
+            .subject-card-mobile:hover {
                 border-color: var(--secondary) !important;
                 box-shadow: var(--shadow-lg) !important;
-                transform: translateY(-2px) !important;
+                transform: translateY(-1px) !important;
             }
             
             .keypoint-item {
@@ -836,19 +877,56 @@ class KeyPointsModuleClass {
                 background: var(--primary-light) !important;
             }
 
+            /* 3列固定（モバイルでも） */
+            .subject-grid-fixed {
+                display: grid !important;
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 12px !important;
+            }
+
             @media (max-width: 768px) {
                 .table-of-contents {
                     grid-template-columns: 1fr !important;
                 }
                 
-                .subject-grid {
-                    grid-template-columns: 1fr !important;
+                .subject-grid-fixed {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 10px !important;
+                }
+
+                .subject-card-mobile {
+                    padding: 10px !important;
+                    min-height: 70px !important;
+                }
+
+                .subject-card-mobile div:first-child {
+                    font-size: 13px !important;
+                    line-height: 1.2 !important;
+                }
+
+                .subject-card-mobile div:not(:first-child) {
+                    font-size: 10px !important;
                 }
             }
 
             @media (max-width: 480px) {
-                .subject-grid {
-                    grid-template-columns: 1fr !important;
+                .subject-grid-fixed {
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 8px !important;
+                }
+
+                .subject-card-mobile {
+                    padding: 8px !important;
+                    min-height: 65px !important;
+                }
+
+                .subject-card-mobile div:first-child {
+                    font-size: 12px !important;
+                    margin-bottom: 4px !important;
+                }
+
+                .subject-card-mobile div:not(:first-child) {
+                    font-size: 9px !important;
                 }
             }
         `;
