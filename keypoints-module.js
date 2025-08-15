@@ -1,17 +1,161 @@
 /**
- * KeyPointsModule - 要点確認専用モジュール
+ * KeyPointsModule - 要点確認専用モジュール（階層構造対応版）
  */
 class KeyPointsModuleClass {
     constructor() {
         this.subjects = {
-            'constitution': { name: '憲法', items: [] },
-            'administrative': { name: '行政法', items: [] },
-            'civil': { name: '民法', items: [] },
-            'commercial': { name: '商法', items: [] },
-            'basic_knowledge': { name: '基礎知識', items: [] },
-            'basic_law': { name: '基礎法学', items: [] }
+            'constitution': { 
+                name: '憲法', 
+                chapters: {},
+                items: [] 
+            },
+            'administrative': { 
+                name: '行政法', 
+                chapters: {},
+                items: [] 
+            },
+            'civil': { 
+                name: '民法', 
+                chapters: {
+                    '第1編 総則': {
+                        sections: {
+                            '第1節 権利の主体・客体': [
+                                { title: '権利能力', url: '/minpou/kenri-nouryoku/', difficulty: 'B' },
+                                { title: '意思能力', url: '/minpou/ishi-nouryoku/', difficulty: 'B' },
+                                { title: '行為能力', url: '/minpou/koui-nouryoku/', difficulty: 'A' },
+                                { title: '法人', url: '/minpou/houjin/', difficulty: 'C' },
+                                { title: '物', url: '/minpou/mono/', difficulty: 'C' }
+                            ],
+                            '第2節 意思表示': [
+                                { title: '法律行為', url: '/minpou/houtei-koui/', difficulty: 'B' },
+                                { title: '意思表示', url: '/minpou/ishi-hyouji/', difficulty: 'A' }
+                            ],
+                            '第3節 代理': [
+                                { title: '代理とは何か', url: '/minpou/dairi-towa/', difficulty: 'B' },
+                                { title: '代理の成立要件', url: '/minpou/dairi-seirtitu/', difficulty: 'A' },
+                                { title: '復代理', url: '/minpou/hukudairi/', difficulty: 'B' },
+                                { title: '無権代理', url: '/minpou/muken-dairi/', difficulty: 'A' },
+                                { title: '表見代理', url: '/minpou/hyoken-dairi/', difficulty: 'A' },
+                                { title: '代理と使者', url: '/minpou/dairi-to-jihatsu/', difficulty: 'A' }
+                            ],
+                            '第4節 無効・取消し': [
+                                { title: '無効', url: '/minpou/mukou/', difficulty: 'B' },
+                                { title: '取消し', url: '/minpou/torikeshi/', difficulty: 'B' }
+                            ],
+                            '第5節 条件・期限': [
+                                { title: '条件', url: '/minpou/jouken/', difficulty: 'C' },
+                                { title: '期限', url: '/minpou/kigen/', difficulty: 'C' }
+                            ],
+                            '第6節 時効': [
+                                { title: '時効とは何か', url: '/minpou/jikou-towa/', difficulty: 'A' },
+                                { title: '時効の効力', url: '/minpou/jikou-kouryoku/', difficulty: 'A' },
+                                { title: '時効の完成猶予・更新', url: '/minpou/jikou-kansei/', difficulty: 'A' },
+                                { title: '取得時効', url: '/minpou/shutoku-jikou/', difficulty: 'A' },
+                                { title: '消滅時効', url: '/minpou/shometsu-jikou/', difficulty: 'A' }
+                            ]
+                        }
+                    },
+                    '第2編 物権': {
+                        sections: {
+                            '第1節 物権総論': [
+                                { title: '物権とは何か', url: '/minpou/bukken-towa/', difficulty: 'B' },
+                                { title: '物権的請求権', url: '/minpou/bukken-seikyu/', difficulty: 'B' },
+                                { title: '物権変動', url: '/minpou/bukken-hendou/', difficulty: 'C' },
+                                { title: '不動産物権変動①－177条の第三者', url: '/minpou/fudousan-bukken-hendou1/', difficulty: 'A' },
+                                { title: '不動産物権変動②－登記と対抗要件とする物権変動', url: '/minpou/fudousan-bukken-hendou2/', difficulty: 'A' },
+                                { title: '動産物権変動①－対抗要件', url: '/minpou/dousann-bukken-hendou1/', difficulty: 'B' },
+                                { title: '動産物権変動②－即時取得', url: '/minpou/dousann-bukken-hendou2/', difficulty: 'A' },
+                                { title: '混同', url: '/minpou/kondo/', difficulty: 'B' }
+                            ],
+                            '第2節 占有権': [
+                                { title: '占有権とは何か', url: '/minpou/senyuu-towa/', difficulty: 'B' },
+                                { title: '占有の取得', url: '/minpou/senyuu-shutoku/', difficulty: 'B' },
+                                { title: '占有の効力', url: '/minpou/senyuu-kouryoku/', difficulty: 'B' },
+                                { title: '占有の訴え', url: '/minpou/senyuu-sosho/', difficulty: 'A' }
+                            ],
+                            '第3節 所有権': [
+                                { title: '相隣関係', url: '/minpou/soyuu-souran/', difficulty: 'B' },
+                                { title: '所有権の取得', url: '/minpou/soyuu-shutoku/', difficulty: 'B' },
+                                { title: '共有', url: '/minpou/kyoyuu/', difficulty: 'A' },
+                                { title: '土地・建物管理命令', url: '/minpou/tochi-kentiku-kanri/', difficulty: 'B' }
+                            ],
+                            '第4節 用益物権': [
+                                { title: '地上権', url: '/minpou/chijou-ken/', difficulty: 'C' },
+                                { title: '永小作権', url: '/minpou/eisho-saku/', difficulty: 'C' },
+                                { title: '地役権', url: '/minpou/chieki-ken/', difficulty: 'B' }
+                            ],
+                            '第5節 担保物権': [
+                                { title: '担保物権とは何か', url: '/minpou/tanpo-bukken-towa/', difficulty: 'B' },
+                                { title: '留置権', url: '/minpou/ryuuchi-ken/', difficulty: 'A' },
+                                { title: '先取特権', url: '/minpou/sendori-tokken/', difficulty: 'B' },
+                                { title: '質権', url: '/minpou/shichi-ken/', difficulty: 'B' },
+                                { title: '抵当権', url: '/minpou/teitou-ken/', difficulty: 'A' },
+                                { title: '根抵当権', url: '/minpou/konkyu-tanpo/', difficulty: 'C' }
+                            ]
+                        }
+                    },
+                    // 以下、第3編〜第5編も同様に構造化
+                    '第3編 債権': {
+                        sections: {
+                            '第1節 債権の目的': [
+                                { title: '債権とは何か', url: '/minpou/saiken-towa/', difficulty: 'C' },
+                                { title: '特定物債権と種類債権', url: '/minpou/tokutei-bukken-saiken/', difficulty: 'B' },
+                                { title: '選択債権', url: '/minpou/sentaku-saiken/', difficulty: 'C' }
+                            ],
+                            '第2節 債務不履行': [
+                                { title: '債務不履行とは何か', url: '/minpou/saimu-furikou-towa/', difficulty: 'B' },
+                                { title: '債務不履行の要件', url: '/minpou/saimu-furikou-youken/', difficulty: 'A' },
+                                { title: '債務不履行の効果', url: '/minpou/saimu-furikou-kouryoku/', difficulty: 'A' },
+                                { title: '受領遅滞', url: '/minpou/juryou-chisen/', difficulty: 'B' }
+                            ]
+                        }
+                    },
+                    '第4編 親族': {
+                        sections: {
+                            '第1節 夫婦': [
+                                { title: '婚姻', url: '/minpou/kon-in/', difficulty: 'A' },
+                                { title: '離婚', url: '/minpou/rikon/', difficulty: 'B' }
+                            ],
+                            '第2節 親子': [
+                                { title: '実子', url: '/minpou/jisshi/', difficulty: 'A' },
+                                { title: '養子', url: '/minpou/youshi/', difficulty: 'B' },
+                                { title: '親権', url: '/minpou/shinken/', difficulty: 'B' }
+                            ]
+                        }
+                    },
+                    '第5編 相続': {
+                        sections: {
+                            '第1節 相続人': [
+                                { title: '相続人の種類・順位', url: '/minpou/souzokuninz-shurui/', difficulty: 'A' },
+                                { title: '相続欠格の喪失', url: '/minpou/souzoku-ketsuraku/', difficulty: 'B' }
+                            ],
+                            '第2節 相続の効力': [
+                                { title: '相続の効力', url: '/minpou/souzoku-kouryoku/', difficulty: 'B' },
+                                { title: '遺産分割', url: '/minpou/isan-bunkatsu/', difficulty: 'B' }
+                            ]
+                        }
+                    }
+                },
+                items: [] 
+            },
+            'commercial': { 
+                name: '商法', 
+                chapters: {},
+                items: [] 
+            },
+            'basic_knowledge': { 
+                name: '基礎知識', 
+                chapters: {},
+                items: [] 
+            },
+            'basic_law': { 
+                name: '基礎法学', 
+                chapters: {},
+                items: [] 
+            }
         };
         this.currentSubject = null;
+        this.currentView = 'welcome'; // 'welcome', 'subjects', 'chapters', 'content'
         this.initialized = false;
     }
 
@@ -45,7 +189,19 @@ class KeyPointsModuleClass {
             if (saved) {
                 const parsedData = JSON.parse(saved);
                 if (parsedData && typeof parsedData === 'object') {
-                    this.subjects = { ...this.subjects, ...parsedData };
+                    // 既存のstructureを保持しつつ、保存されたitemsをマージ
+                    Object.keys(this.subjects).forEach(key => {
+                        if (parsedData[key] && parsedData[key].items) {
+                            this.subjects[key].items = parsedData[key].items;
+                        }
+                        if (parsedData[key] && parsedData[key].chapters) {
+                            // カスタム追加された章があれば統合
+                            this.subjects[key].chapters = {
+                                ...this.subjects[key].chapters,
+                                ...parsedData[key].chapters
+                            };
+                        }
+                    });
                 }
             }
         } catch (error) {
@@ -71,72 +227,9 @@ class KeyPointsModuleClass {
         return Object.entries(this.subjects).map(([key, data]) => ({
             key,
             name: data.name,
-            itemCount: data.items ? data.items.length : 0
+            itemCount: data.items ? data.items.length : 0,
+            chapterCount: Object.keys(data.chapters || {}).length
         }));
-    }
-
-    /**
-     * 科目の要点項目を取得
-     */
-    getSubjectItems(subjectKey) {
-        return this.subjects[subjectKey]?.items || [];
-    }
-
-    /**
-     * 要点項目を追加
-     */
-    addKeyPointItem(subjectKey, item) {
-        if (!this.subjects[subjectKey]) {
-            return false;
-        }
-
-        const newItem = {
-            id: Date.now(),
-            title: item.title,
-            url: item.url || '',
-            htmlContent: item.htmlContent || '',
-            type: item.type || 'link', // 'link' or 'html'
-            order: item.order || 0,
-            createdAt: new Date().toISOString()
-        };
-
-        this.subjects[subjectKey].items.push(newItem);
-        this.saveKeyPointsData();
-        return true;
-    }
-
-    /**
-     * 要点項目を更新
-     */
-    updateKeyPointItem(subjectKey, itemId, updates) {
-        if (!this.subjects[subjectKey]) {
-            return false;
-        }
-
-        const items = this.subjects[subjectKey].items;
-        const index = items.findIndex(item => item.id === itemId);
-        
-        if (index !== -1) {
-            items[index] = { ...items[index], ...updates };
-            this.saveKeyPointsData();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 要点項目を削除
-     */
-    deleteKeyPointItem(subjectKey, itemId) {
-        if (!this.subjects[subjectKey]) {
-            return false;
-        }
-
-        this.subjects[subjectKey].items = this.subjects[subjectKey].items.filter(
-            item => item.id !== itemId
-        );
-        this.saveKeyPointsData();
-        return true;
     }
 
     /**
@@ -229,6 +322,7 @@ class KeyPointsModuleClass {
      * 科目一覧を表示
      */
     showSubjectList() {
+        this.currentView = 'subjects';
         const content = document.getElementById('keyPointsMainContent');
         if (!content) return;
 
@@ -247,7 +341,7 @@ class KeyPointsModuleClass {
                         ${subject.name}
                     </div>
                     <div style="font-size: 14px; color: var(--gray);">
-                        ${subject.itemCount} 項目
+                        ${subject.chapterCount} 章・${subject.itemCount} 項目
                     </div>
                 </div>
             `;
@@ -263,21 +357,21 @@ class KeyPointsModuleClass {
         `;
 
         content.innerHTML = html;
+        this.addKeyPointStyles();
     }
 
     /**
-     * 科目選択
+     * 科目選択（章一覧表示）
      */
     selectSubject(subjectKey) {
         this.currentSubject = subjectKey;
+        this.currentView = 'chapters';
         const subject = this.subjects[subjectKey];
         if (!subject) return;
 
         const content = document.getElementById('keyPointsMainContent');
         if (!content) return;
 
-        const items = this.getSubjectItems(subjectKey);
-        
         let html = `
             <div style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
@@ -287,32 +381,58 @@ class KeyPointsModuleClass {
                 </div>
         `;
 
-        if (items.length === 0) {
+        const chapters = subject.chapters || {};
+        
+        if (Object.keys(chapters).length === 0) {
             html += `
                 <div style="text-align: center; padding: 40px; color: var(--gray);">
-                    <p>まだ要点項目がありません</p>
+                    <p>まだ章項目がありません</p>
                     <p style="font-size: 14px;">下の管理画面から項目を追加してください</p>
                 </div>
             `;
         } else {
-            html += `<div class="keypoints-items">`;
+            html += `<div class="table-of-contents" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 30px;">`;
             
-            items.sort((a, b) => a.order - b.order).forEach((item, index) => {
+            Object.entries(chapters).forEach(([chapterName, chapterData]) => {
                 html += `
-                    <div class="keypoint-item" style="border: 1px solid var(--light); border-radius: 8px; margin-bottom: 10px; overflow: hidden;">
-                        <div class="keypoint-header" style="background: var(--primary); color: white; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer;"
-                             onclick="KeyPointsModule.toggleKeyPoint(${item.id})">
-                            ${index + 1}. ${item.title}
-                            <span style="float: right;">▼</span>
+                    <div class="chapter" style="background: white; border-radius: 6px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div class="chapter-header" style="background: #4a5568; color: white; padding: 15px 20px; font-size: 18px; font-weight: bold;">
+                            ${chapterName}
                         </div>
-                        <div class="keypoint-content" id="keypoint-${item.id}" style="display: none; padding: 20px;">
-                            ${item.type === 'html' ? item.htmlContent : `
-                                <div style="text-align: center;">
-                                    <a href="${item.url}" target="_blank" style="display: inline-block; padding: 12px 24px; background: var(--secondary); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">
-                                        📖 要点を確認する
-                                    </a>
+                        <div class="chapter-content" style="padding: 20px;">
+                `;
+                
+                if (chapterData.sections) {
+                    Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
+                        html += `
+                            <div class="section" style="margin-bottom: 25px;">
+                                <div class="section-title" style="font-size: 16px; font-weight: bold; color: #2d3748; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                                    ${sectionName}
                                 </div>
-                            `}
+                                <ul class="topic-list" style="list-style: none;">
+                        `;
+                        
+                        topics.forEach((topic, index) => {
+                            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
+                            html += `
+                                <li class="topic-item" style="margin: 8px 0; display: flex; align-items: center; gap: 10px;">
+                                    <a href="${topic.url}" target="_blank" class="topic-link" style="text-decoration: none; color: #2d3748; padding: 12px 16px; background: #f7fafc; border-radius: 6px; border: 1px solid #e2e8f0; flex-grow: 1; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;">
+                                        <span class="topic-number" style="font-size: 12px; color: #718096; min-width: 20px; font-weight: 500;">${index + 1}</span>
+                                        <span class="topic-title" style="flex-grow: 1; font-size: 14px; font-weight: 500;">${topic.title}</span>
+                                    </a>
+                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 28px; text-align: center; border: 1px solid;">${topic.difficulty}</span>
+                                </li>
+                            `;
+                        });
+                        
+                        html += `
+                                </ul>
+                            </div>
+                        `;
+                    });
+                }
+                
+                html += `
                         </div>
                     </div>
                 `;
@@ -324,28 +444,16 @@ class KeyPointsModuleClass {
         html += `</div>`;
         content.innerHTML = html;
 
-        // CSS追加
+        // 難易度バッジのスタイルを追加
+        this.addDifficultyStyles();
         this.addKeyPointStyles();
-    }
-
-    /**
-     * 要点項目の開閉
-     */
-    toggleKeyPoint(itemId) {
-        const content = document.getElementById(`keypoint-${itemId}`);
-        if (!content) return;
-
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-        } else {
-            content.style.display = 'none';
-        }
     }
 
     /**
      * ウェルカム画面に戻る
      */
     showWelcome() {
+        this.currentView = 'welcome';
         const content = document.getElementById('keyPointsMainContent');
         if (content) {
             content.innerHTML = this.renderWelcomeContent();
@@ -389,29 +497,30 @@ class KeyPointsModuleClass {
         }
 
         const item = {
+            id: Date.now(),
             title,
             type,
             url: type === 'link' ? url : '',
             htmlContent: type === 'html' ? htmlContent : '',
-            order: this.getSubjectItems(subjectKey).length
+            order: this.subjects[subjectKey].items.length,
+            createdAt: new Date().toISOString()
         };
 
-        if (this.addKeyPointItem(subjectKey, item)) {
-            // フォームをクリア
-            titleInput.value = '';
-            urlInput.value = '';
-            htmlInput.value = '';
-            
-            // リストを更新
-            const listContainer = document.getElementById('keyPointsList');
-            if (listContainer) {
-                listContainer.innerHTML = this.renderKeyPointsList();
-            }
+        this.subjects[subjectKey].items.push(item);
+        this.saveKeyPointsData();
 
-            alert('項目を追加しました');
-        } else {
-            alert('項目の追加に失敗しました');
+        // フォームをクリア
+        titleInput.value = '';
+        urlInput.value = '';
+        htmlInput.value = '';
+        
+        // リストを更新
+        const listContainer = document.getElementById('keyPointsList');
+        if (listContainer) {
+            listContainer.innerHTML = this.renderKeyPointsList();
         }
+
+        alert('項目を追加しました');
     }
 
     /**
@@ -457,14 +566,53 @@ class KeyPointsModuleClass {
      */
     deleteItem(subjectKey, itemId) {
         if (confirm('この項目を削除しますか？')) {
-            if (this.deleteKeyPointItem(subjectKey, itemId)) {
-                const listContainer = document.getElementById('keyPointsList');
-                if (listContainer) {
-                    listContainer.innerHTML = this.renderKeyPointsList();
-                }
-                alert('項目を削除しました');
+            this.subjects[subjectKey].items = this.subjects[subjectKey].items.filter(
+                item => item.id !== itemId
+            );
+            this.saveKeyPointsData();
+            
+            const listContainer = document.getElementById('keyPointsList');
+            if (listContainer) {
+                listContainer.innerHTML = this.renderKeyPointsList();
             }
+            alert('項目を削除しました');
         }
+    }
+
+    /**
+     * 難易度バッジスタイル追加
+     */
+    addDifficultyStyles() {
+        if (document.getElementById('difficultyStyles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'difficultyStyles';
+        style.textContent = `
+            .difficulty-a {
+                background: #fed7d7 !important;
+                color: #c53030 !important;
+                border-color: #fc8181 !important;
+            }
+            
+            .difficulty-b {
+                background: #feebc8 !important;
+                color: #dd6b20 !important;
+                border-color: #f6ad55 !important;
+            }
+            
+            .difficulty-c {
+                background: #c6f6d5 !important;
+                color: #38a169 !important;
+                border-color: #68d391 !important;
+            }
+
+            .topic-link:hover {
+                background: #edf2f7 !important;
+                border-color: #4a5568 !important;
+                transform: translateX(2px) !important;
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
@@ -493,6 +641,16 @@ class KeyPointsModuleClass {
             .keypoint-header:hover {
                 background: var(--primary-light) !important;
             }
+
+            @media (max-width: 768px) {
+                .table-of-contents {
+                    grid-template-columns: 1fr !important;
+                }
+                
+                .subject-grid {
+                    grid-template-columns: 1fr !important;
+                }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -514,6 +672,37 @@ class KeyPointsModuleClass {
             urlGroup.style.display = 'none';
             htmlGroup.style.display = 'block';
         }
+    }
+
+    /**
+     * カスタム章を追加
+     */
+    addCustomChapter(subjectKey, chapterName, sections) {
+        if (!this.subjects[subjectKey]) return false;
+        
+        if (!this.subjects[subjectKey].chapters) {
+            this.subjects[subjectKey].chapters = {};
+        }
+        
+        this.subjects[subjectKey].chapters[chapterName] = {
+            sections: sections || {}
+        };
+        
+        this.saveKeyPointsData();
+        return true;
+    }
+
+    /**
+     * 章を削除
+     */
+    deleteChapter(subjectKey, chapterName) {
+        if (!this.subjects[subjectKey] || !this.subjects[subjectKey].chapters) {
+            return false;
+        }
+        
+        delete this.subjects[subjectKey].chapters[chapterName];
+        this.saveKeyPointsData();
+        return true;
     }
 }
 
