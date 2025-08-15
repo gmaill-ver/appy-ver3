@@ -21,11 +21,12 @@ class Application {
             // DataManagerの初期化を待つ
             await DataManager.initialize();
             
+            // 他のモジュールが初期化されるまで待つ
+            await this.waitForModules();
+            
             // 初期描画
             this.renderBookCards();
             this.initializeSampleDataIfNeeded();
-            
-            // 他のモジュールの初期化は各モジュールのDOMContentLoadedで実行される
             
             console.log('Application initialized successfully');
             return true;
@@ -33,6 +34,25 @@ class Application {
             console.error('Application initialization error:', error);
             return false;
         }
+    }
+
+    /**
+     * モジュールの初期化を待つ
+     */
+    async waitForModules() {
+        const maxAttempts = 50;
+        let attempts = 0;
+        
+        while (attempts < maxAttempts) {
+            if (window.UIComponents && window.Analytics && window.QAModule && window.TimerModule) {
+                return true;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        console.warn('Some modules may not be initialized');
+        return false;
     }
 
     /**
@@ -846,7 +866,16 @@ class Application {
      */
     renderRegisterHierarchy() {
         const container = document.getElementById('registerHierarchy');
-        if (!container) return;
+        if (!container) {
+            console.warn('registerHierarchy element not found');
+            return;
+        }
+
+        // booksが空の場合の処理
+        if (!DataManager.books || Object.keys(DataManager.books).length === 0) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">問題集がありません</p>';
+            return;
+        }
 
         let html = '<div class="hierarchy-list">';
         
@@ -997,6 +1026,7 @@ class Application {
             
             this.closeDialog();
             alert('作成しました');
+            // closeFooterModal()は削除
         });
     }
 
@@ -1327,7 +1357,27 @@ class Application {
      * 実績コンテンツ生成
      */
     getResultsContent() {
-        const stats = Analytics.calculateOverallProgress();
+        // Analyticsが初期化されているか確認
+        let stats = {
+            totalAnswered: 0,
+            overallRate: 0,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            uniqueAnsweredCount: 0,
+            progressPercentage: 0
+        };
+        
+        let subjectCount = 0;
+        
+        try {
+            if (window.Analytics && typeof Analytics.calculateOverallProgress === 'function') {
+                stats = Analytics.calculateOverallProgress();
+                subjectCount = Object.keys(Analytics.calculateSubjectStats()).length;
+            }
+        } catch (error) {
+            console.error('Error calculating stats:', error);
+        }
+        
         const streakDays = localStorage.getItem('streakDays') || '0';
         
         const badges = [
@@ -1364,8 +1414,8 @@ class Application {
             { 
                 icon: '🚀', 
                 label: '全科目', 
-                unlocked: Object.keys(Analytics.calculateSubjectStats()).length >= 4,
-                value: `${Object.keys(Analytics.calculateSubjectStats()).length}科目`
+                unlocked: subjectCount >= 4,
+                value: `${subjectCount}科目`
             },
             { 
                 icon: '💎', 
@@ -1649,11 +1699,22 @@ class Application {
     saveExamDate() {
         const input = document.getElementById('examDateInput');
         if (input && input.value) {
-            const examDate = new Date(input.value);
-            DataManager.saveExamDate(examDate);
-            UIComponents.updateExamCountdown();
-            alert('試験日を設定しました');
-            this.closeFooterModal();
+            try {
+                const examDate = new Date(input.value);
+                // 日付が有効かチェック
+                if (isNaN(examDate.getTime())) {
+                    alert('有効な日付を入力してください');
+                    return;
+                }
+                DataManager.saveExamDate(examDate);
+                UIComponents.updateExamCountdown();
+                alert('試験日を設定しました');
+                // closeFooterModal()はアラート後に呼ぶ
+                setTimeout(() => this.closeFooterModal(), 100);
+            } catch (error) {
+                console.error('Error saving exam date:', error);
+                alert('試験日の設定に失敗しました');
+            }
         }
     }
 }
