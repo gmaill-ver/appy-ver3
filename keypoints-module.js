@@ -155,6 +155,7 @@ class KeyPointsModuleClass {
         };
         this.currentSubject = null;
         this.currentView = 'welcome'; // 'welcome', 'subjects', 'chapters', 'content'
+        this.keyTermsHidden = false; // 重要語句の表示状態
         this.initialized = false;
     }
 
@@ -417,7 +418,7 @@ class KeyPointsModuleClass {
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
                     <h3 style="margin: 0;">📚 ${subject.name} 要点まとめ</h3>
                     <button class="save-button" onclick="KeyPointsModule.backToSubjectList()" 
-                            style="background: var(--gray); padding: 6px 12px; font-size: 12px;">← 一覧に戻る</button>
+                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️</button>
                 </div>
         `;
 
@@ -486,6 +487,12 @@ class KeyPointsModuleClass {
         html += `</div>`;
         content.innerHTML = html;
 
+        // ページトップにスクロール
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
+
         // 難易度バッジのスタイルを追加
         this.addDifficultyStyles();
         this.addKeyPointStyles();
@@ -499,6 +506,12 @@ class KeyPointsModuleClass {
         if (content) {
             content.innerHTML = this.renderSubjectListDirect();
             this.addKeyPointStyles();
+        }
+        
+        // ページトップにスクロール
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
         }
     }
 
@@ -530,19 +543,103 @@ class KeyPointsModuleClass {
         if (!content) return;
 
         const html = `
-            <div style="padding: 20px;">
+            <div style="padding: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3>📄 ${title}</h3>
+                    <h3 style="margin: 0; color: #2d3748;">📄 ${title}</h3>
                     <button class="save-button" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')" 
-                            style="background: var(--gray); padding: 8px 15px; font-size: 14px;">← 戻る</button>
+                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️</button>
                 </div>
-                <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;">
+                
+                <!-- 暗記カード機能ボタン -->
+                <div style="text-align: center; margin: 15px 0;">
+                    <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" 
+                            style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
+                </div>
+                
+                <div style="background: white; border-radius: 8px; padding: 20px; border: 1px solid #e2e8f0;" id="keyPointContent">
                     ${htmlContent}
                 </div>
             </div>
         `;
 
         content.innerHTML = html;
+        
+        // ページトップにスクロール
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
+        
+        // 重要語句機能を初期化
+        this.initializeKeyTerms();
+    }
+
+    /**
+     * 重要語句機能の初期化
+     */
+    initializeKeyTerms() {
+        // 少し遅延させてDOM要素が確実に生成されてから実行
+        setTimeout(() => {
+            this.keyTermsHidden = false;
+            const keyTerms = document.querySelectorAll('.wp-key-term');
+            
+            // 各用語に個別クリックイベントを追加
+            keyTerms.forEach((term) => {
+                // 初期状態を設定
+                term.dataset.individualState = 'visible';
+                
+                // 個別クリックイベント
+                term.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (term.dataset.individualState === 'visible') {
+                        term.classList.add('wp-hidden');
+                        term.dataset.individualState = 'hidden';
+                    } else {
+                        term.classList.remove('wp-hidden');
+                        term.dataset.individualState = 'visible';
+                    }
+                });
+            });
+            
+            console.log(`Initialized ${keyTerms.length} key terms`);
+        }, 100);
+    }
+
+    /**
+     * 重要語句の表示切り替え
+     */
+    toggleKeyTerms() {
+        const keyTerms = document.querySelectorAll('.wp-key-term');
+        const btn = document.getElementById('keyPointToggleBtn');
+        
+        if (!btn || keyTerms.length === 0) {
+            console.log('No key terms found or button missing');
+            return;
+        }
+        
+        this.keyTermsHidden = !this.keyTermsHidden;
+        
+        if (this.keyTermsHidden) {
+            // 全て隠す
+            keyTerms.forEach((term) => {
+                term.classList.add('wp-hidden');
+                term.dataset.individualState = 'hidden';
+            });
+            btn.textContent = '重要語句を表示';
+            btn.classList.add('wp-active');
+        } else {
+            // 全て表示
+            keyTerms.forEach((term) => {
+                term.classList.remove('wp-hidden');
+                term.dataset.individualState = 'visible';
+            });
+            btn.textContent = '重要語句を隠す';
+            btn.classList.remove('wp-active');
+        }
+        
+        console.log(`Toggled ${keyTerms.length} key terms to ${this.keyTermsHidden ? 'hidden' : 'visible'}`);
     }
 
     /**
@@ -845,6 +942,52 @@ class KeyPointsModuleClass {
                 background: #edf2f7 !important;
                 border-color: #4a5568 !important;
                 transform: translateX(2px) !important;
+            }
+
+            /* 重要語句のスタイル */
+            .wp-key-term {
+                display: inline !important;
+                text-decoration: none !important;
+                border: none !important;
+                outline: none !important;
+                padding: 2px 4px !important;
+                margin: 0 !important;
+                color: #d32f2f !important;
+                font-weight: bold !important;
+                cursor: pointer !important;
+                border-radius: 3px !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .wp-key-term.wp-hidden {
+                background: repeating-linear-gradient(
+                    45deg,
+                    #e8e8e8,
+                    #e8e8e8 1px,
+                    #d0d0d0 1px,
+                    #d0d0d0 2px
+                ) !important;
+                color: transparent !important;
+                text-shadow: none !important;
+                border: none !important;
+                position: relative !important;
+                box-shadow: none !important;
+            }
+            
+            .wp-key-term.wp-hidden:hover {
+                background: repeating-linear-gradient(
+                    45deg,
+                    #f0f0f0,
+                    #f0f0f0 1px,
+                    #d8d8d8 1px,
+                    #d8d8d8 2px
+                ) !important;
+                transform: scale(1.01) !important;
+            }
+            
+            #keyPointToggleBtn.wp-active {
+                background: #f44336 !important;
+                transform: scale(0.98) !important;
             }
         `;
         document.head.appendChild(style);
