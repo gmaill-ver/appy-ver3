@@ -12,6 +12,7 @@ class QAModuleClass {
             wrong: 0
         };
         this.sessionActive = false;
+        this.currentSetName = '';
     }
 
     /**
@@ -23,6 +24,43 @@ class QAModuleClass {
             setTimeout(() => this.initialize(), 100);
             return;
         }
+    }
+
+    /**
+     * セット選択
+     */
+    selectSet(setName) {
+        this.currentSetName = setName;
+        const select = document.getElementById('qaSetSelect');
+        if (select) {
+            select.value = setName;
+        }
+    }
+
+    /**
+     * スタートオプション表示
+     */
+    showStartOptions() {
+        const content = document.getElementById('qaContent');
+        if (!content) return;
+        
+        content.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h3>学習を開始</h3>
+                <p>問題集を選択して開始ボタンを押してください</p>
+                <button class="save-button" style="margin-top: 20px;" onclick="QAModule.handleStart()">
+                    学習開始
+                </button>
+            </div>
+        `;
+    }
+
+    /**
+     * 管理ダイアログ表示
+     */
+    showManageDialog() {
+        // 管理画面は親コンポーネントで表示されるため、ここでは何もしない
+        console.log('Manage dialog requested');
     }
 
     /**
