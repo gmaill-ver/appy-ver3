@@ -1,5 +1,5 @@
 /**
- * App - メインアプリケーションロジック
+ * App - メインアプリケーションロジック（Firebase統合強化版）
  */
 class Application {
     constructor() {
@@ -95,7 +95,7 @@ class Application {
     }
 
     /**
-     * メインタブ切り替え
+     * メインタブ切り替え（進捗タブデータ更新強化）
      */
     switchMainTab(tabName, event) {
         // タブボタンの状態更新
@@ -118,102 +118,112 @@ class Application {
         
         // タブ別の初期化処理（Analyticsが初期化されているか確認）
         if (tabName === 'analysis' && window.Analytics) {
-            Analytics.updateChartBars();
-            Analytics.updateHeatmap();
-            Analytics.updateWeaknessAnalysis();
-            Analytics.updateHistoryContent();
+            // 分析タブ：最新データで更新
+            setTimeout(() => {
+                Analytics.updateChartBars();
+                Analytics.updateHeatmap();
+                Analytics.updateWeaknessAnalysis();
+                Analytics.updateHistoryContent();
+                Analytics.updateHeatmapBookSelect();
+                Analytics.updateRadarBookSelect();
+            }, 100);
         } else if (tabName === 'progress' && window.Analytics) {
-            Analytics.updateProgressContent();
-            Analytics.drawRadarChart();
+            // 進捗タブ：最新データで強制更新
+            setTimeout(() => {
+                Analytics.updateProgressContent();
+                Analytics.drawRadarChart();
+                Analytics.updateRadarBookSelect();
+                Analytics.updateHeatmapBookSelect();
+            }, 100);
         }
     }
 
     /**
- * フッタータブ切り替え（重要語句ボタン重複修正版）
- */
-switchFooterTab(tabName, event) {
-    const modal = document.getElementById('footerModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalBody = document.getElementById('modalBody');
-    const modalFooter = modal.querySelector('.modal-footer');
-    
-    if (!modal || !modalTitle || !modalBody) return;
+     * フッタータブ切り替え（カレンダー予定保存強化版）
+     */
+    switchFooterTab(tabName, event) {
+        const modal = document.getElementById('footerModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalFooter = modal.querySelector('.modal-footer');
+        
+        if (!modal || !modalTitle || !modalBody) return;
 
-    const titles = {
-        'register': '📝 問題集登録',
-        'qa': '❓ 一問一答',
-        'keypoints': '📚 要点確認',
-        'results': '🏆 獲得バッジ',
-        'settings': '⚙️ 設定'
-    };
-    
-    modalTitle.textContent = titles[tabName] || 'タイトル';
-    
-    // モーダルヘッダーを動的に再構築（要点確認以外の場合のみ）
-    const modalHeader = modal.querySelector('.modal-header');
-    if (modalHeader && tabName !== 'keypoints') {
-        // 要点確認以外の場合：通常ヘッダー
-        modalHeader.innerHTML = `
-            <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-            <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-        `;
-    } else if (modalHeader && tabName === 'keypoints') {
-        // 要点確認の場合：初期状態は通常ヘッダー（重要語句ボタンはコンテンツ表示時のみ追加）
-        modalHeader.innerHTML = `
-            <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-            <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-        `;
-    }
-    
-    // モーダルフッターを動的に再構築
-    if (modalFooter) {
-        if (tabName === 'keypoints') {
-            // 要点確認の場合：戻るボタン + 閉じるボタン
-            modalFooter.innerHTML = `
-                <div style="display: flex; gap: 10px;">
-                    <button id="modalBackBtn" style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.backToSubjectList()">↩️ 戻る</button>
-                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
-                </div>
+        const titles = {
+            'register': '📝 問題集登録',
+            'qa': '❓ 一問一答',
+            'keypoints': '📚 要点確認',
+            'results': '🏆 獲得バッジ',
+            'settings': '⚙️ 設定'
+        };
+        
+        modalTitle.textContent = titles[tabName] || 'タイトル';
+        
+        // モーダルヘッダーを動的に再構築（要点確認以外の場合のみ）
+        const modalHeader = modal.querySelector('.modal-header');
+        if (modalHeader && tabName !== 'keypoints') {
+            // 要点確認以外の場合：通常ヘッダー
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
             `;
-        } else {
-            // その他の場合：閉じるボタンのみ
-            modalFooter.innerHTML = `
-                <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
+        } else if (modalHeader && tabName === 'keypoints') {
+            // 要点確認の場合：初期状態は通常ヘッダー（重要語句ボタンはコンテンツ表示時のみ追加）
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
             `;
         }
-    }
-    
-    switch(tabName) {
-        case 'register':
-            modalBody.innerHTML = this.getRegisterContent();
-            setTimeout(() => this.renderRegisterHierarchy(), 100);
-            break;
-        case 'qa':
-            if (window.QAModule && typeof QAModule.renderQAContent === 'function') {
-                modalBody.innerHTML = QAModule.renderQAContent();
+        
+        // モーダルフッターを動的に再構築
+        if (modalFooter) {
+            if (tabName === 'keypoints') {
+                // 要点確認の場合：戻るボタン + 閉じるボタン
+                modalFooter.innerHTML = `
+                    <div style="display: flex; gap: 10px;">
+                        <button id="modalBackBtn" style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.backToSubjectList()">↩️ 戻る</button>
+                        <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
+                    </div>
+                `;
             } else {
-                modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
+                // その他の場合：閉じるボタンのみ
+                modalFooter.innerHTML = `
+                    <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
+                `;
             }
-            break;
-        case 'keypoints':
-            if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
-                modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
-                // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
-            } else {
-                modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
-            }
-            break;
-        case 'results':
-            modalBody.innerHTML = this.getResultsContent();
-            break;
-        case 'settings':
-            modalBody.innerHTML = this.getSettingsContent();
-            setTimeout(() => this.renderCSVTemplateList(), 100);
-            break;
+        }
+        
+        switch(tabName) {
+            case 'register':
+                modalBody.innerHTML = this.getRegisterContent();
+                setTimeout(() => this.renderRegisterHierarchy(), 100);
+                break;
+            case 'qa':
+                if (window.QAModule && typeof QAModule.renderQAContent === 'function') {
+                    modalBody.innerHTML = QAModule.renderQAContent();
+                } else {
+                    modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
+                }
+                break;
+            case 'keypoints':
+                if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
+                    modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
+                    // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
+                } else {
+                    modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
+                }
+                break;
+            case 'results':
+                modalBody.innerHTML = this.getResultsContent();
+                break;
+            case 'settings':
+                modalBody.innerHTML = this.getSettingsContent();
+                setTimeout(() => this.renderCSVTemplateList(), 100);
+                break;
+        }
+        
+        modal.classList.add('active');
     }
-    
-    modal.classList.add('active');
-}
 
     /**
      * 試験日保存（修正版）
@@ -235,6 +245,17 @@ switchFooterTab(tabName, event) {
                 if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
                     UIComponents.updateExamCountdown();
                 }
+                
+                // Firebase保存強化
+                if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                    DataManager.saveToFirestore({
+                        type: 'examDate',
+                        action: 'save',
+                        examDate: examDate.toISOString(),
+                        message: '試験日を設定しました'
+                    });
+                }
+                
                 alert('試験日を設定しました');
                 // モーダルを閉じる
                 setTimeout(() => this.closeFooterModal(), 100);
@@ -353,58 +374,6 @@ switchFooterTab(tabName, event) {
         return html;
     }
 
-    // 残りのメソッドは変更なし（長いので省略）
-    // 以下のメソッドは元のコードから変更なし：
-    // - closeFooterModal()
-    // - renderBookCards()
-    // - toggleBookCard()
-    // - selectBook()
-    // - updateBreadcrumb()
-    // - navigateTo()
-    // - renderRecordHierarchy()
-    // - renderRecordLevel()
-    // - toggleRecordNode()
-    // - showQuestions()
-    // - loadQuestionStatesForPath()
-    // - applyQuestionStates()
-    // - toggleQuestion()
-    // - saveQuestionStatesForPath()
-    // - markCorrect()
-    // - markWrong()
-    // - toggleBookmarkMode()
-    // - updateStats()
-    // - saveRecord()
-    // - toggleBookSort()
-    // - enableBookDragAndDrop()
-    // - toggleAnalysisSort()
-    // - enableAnalysisDragAndDrop()
-    // - toggleAccordion()
-    // - openTimerModal()
-    // - showDialog()
-    // - closeDialog()
-    // - getHierarchyIcon()
-    // - getRegisterContent()
-    // - renderRegisterHierarchy()
-    // - renderRegisterLevel()
-    // - toggleRegisterNode()
-    // - showNewBookDialog()
-    // - showBookListDialog()
-    // - editBookProperties()
-    // - addHierarchy()
-    // - editHierarchy()
-    // - deleteHierarchy()
-    // - deleteBook()
-    // - getTypeLabel()
-    // - getSettingsContent()
-    // - renderCSVTemplateList()
-    // - saveCSVTemplate()
-    // - editCSVTemplate()
-    // - applyCSVTemplate()
-    // - deleteCSVTemplate()
-    // - importCSV()
-    // - importQACSV()
-
-    // 以下、省略されたメソッドの続き（元のコードと同じ）
     closeFooterModal() {
         const modal = document.getElementById('footerModal');
         if (modal) {
@@ -419,11 +388,11 @@ switchFooterTab(tabName, event) {
         let html = '';
         
         const orderedBooks = DataManager.bookOrder
-            .filter(id => DataManager.books[id])
+            .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
             .map(id => DataManager.books[id]);
         
         Object.values(DataManager.books).forEach(book => {
-            if (!DataManager.bookOrder.includes(book.id)) {
+            if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
                 orderedBooks.push(book);
                 DataManager.bookOrder.push(book.id);
             }
@@ -815,6 +784,12 @@ switchFooterTab(tabName, event) {
 
     toggleBookSort() {
         this.sortMode = !this.sortMode;
+        const btn = document.querySelector('.book-order-btn');
+        if (btn) {
+            btn.textContent = this.sortMode ? '完了' : '並替え';
+            btn.style.background = this.sortMode ? 'var(--success)' : 'var(--primary)';
+        }
+        
         this.renderBookCards();
         
         if (this.sortMode) {
@@ -891,24 +866,41 @@ switchFooterTab(tabName, event) {
         }
     }
 
+    /**
+     * 分析タブ並び替え機能（記録入力と同じデザイン・挙動に修正）
+     */
     toggleAnalysisSort() {
         this.analysisSortMode = !this.analysisSortMode;
         
+        // ボタンのテキストと色を更新
+        const btn = document.querySelector('.card-sort-btn');
+        if (btn) {
+            btn.textContent = this.analysisSortMode ? '完了' : '並替え';
+            btn.style.background = this.analysisSortMode ? 'var(--success)' : 'var(--primary)';
+        }
+        
         if (this.analysisSortMode) {
             this.enableAnalysisDragAndDrop();
+        } else {
+            // 並び替えモード終了時にドラッグ機能を無効化
+            this.disableAnalysisDragAndDrop();
         }
     }
 
+    /**
+     * 分析カードのドラッグアンドドロップ機能（記録入力と同じ挙動に修正）
+     */
     enableAnalysisDragAndDrop() {
         const container = document.getElementById('analysisCardsContainer');
         if (!container) return;
 
         let draggedElement = null;
         
-        const cards = container.querySelectorAll('.card');
+        // アコーディオンカードに並び替えクラスを追加
+        const cards = container.querySelectorAll('.accordion');
         cards.forEach(card => {
             card.draggable = true;
-            card.classList.add('sortable-card');
+            card.classList.add('sortable');
             
             card.addEventListener('dragstart', function(e) {
                 draggedElement = this;
@@ -927,6 +919,8 @@ switchFooterTab(tabName, event) {
                 e.dataTransfer.dropEffect = 'move';
                 
                 const draggingCard = container.querySelector('.dragging');
+                if (!draggingCard) return;
+                
                 const afterElement = getDragAfterElement(container, e.clientY);
                 
                 if (afterElement == null) {
@@ -941,20 +935,34 @@ switchFooterTab(tabName, event) {
                     e.stopPropagation();
                 }
                 
+                // 新しい順序を保存
                 const newOrder = [];
-                container.querySelectorAll('.card').forEach(c => {
+                container.querySelectorAll('.accordion').forEach(c => {
                     const cardId = c.dataset.cardId;
                     if (cardId) newOrder.push(cardId);
                 });
-                DataManager.analysisCardOrder = newOrder;
-                DataManager.saveAnalysisCardOrder();
+                
+                if (newOrder.length > 0) {
+                    DataManager.analysisCardOrder = newOrder;
+                    DataManager.saveAnalysisCardOrder();
+                    
+                    // Firebase保存強化
+                    if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                        DataManager.saveToFirestore({
+                            type: 'analysisCardOrder',
+                            action: 'save',
+                            order: newOrder,
+                            message: '分析カード順序を保存しました'
+                        });
+                    }
+                }
                 
                 return false;
             });
         });
         
         function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('.card:not(.dragging)')];
+            const draggableElements = [...container.querySelectorAll('.accordion:not(.dragging)')];
             
             return draggableElements.reduce((closest, child) => {
                 const box = child.getBoundingClientRect();
@@ -969,7 +977,30 @@ switchFooterTab(tabName, event) {
         }
     }
 
+    /**
+     * 分析カードのドラッグアンドドロップ機能を無効化
+     */
+    disableAnalysisDragAndDrop() {
+        const container = document.getElementById('analysisCardsContainer');
+        if (!container) return;
+
+        const cards = container.querySelectorAll('.accordion');
+        cards.forEach(card => {
+            card.draggable = false;
+            card.classList.remove('sortable', 'dragging');
+            
+            // イベントリスナーをクローンして削除
+            const newCard = card.cloneNode(true);
+            card.parentNode.replaceChild(newCard, card);
+        });
+    }
+
     toggleAccordion(header) {
+        // 並び替えモードの時はアコーディオンを開閉しない
+        if (this.analysisSortMode) {
+            return;
+        }
+        
         header.classList.toggle('active');
         const content = header.nextElementSibling;
         if (content) {
@@ -1041,6 +1072,11 @@ switchFooterTab(tabName, event) {
         let html = '<div class="hierarchy-list">';
         
         Object.values(DataManager.books).forEach(book => {
+            // 削除済みの問題集は表示しない
+            if (DataManager.isDeleted('books', book.id)) {
+                return;
+            }
+            
             const nodeId = `book_${book.id}`;
             const isExpanded = this.expandedNodes.has(nodeId);
             
@@ -1189,6 +1225,11 @@ switchFooterTab(tabName, event) {
         let dialogBody = '<div style="max-height: 400px; overflow-y: auto;">';
         
         Object.values(DataManager.books).forEach(book => {
+            // 削除済みの問題集は表示しない
+            if (DataManager.isDeleted('books', book.id)) {
+                return;
+            }
+            
             const questionCount = DataManager.countQuestionsInBook(book);
             const numberingText = book.numberingType === 'continuous' ? '連番' : 'リセット';
             dialogBody += `
@@ -1464,15 +1505,37 @@ switchFooterTab(tabName, event) {
         this.renderRegisterHierarchy();
     }
 
+    /**
+     * 問題集削除（Firebase統合強化版）
+     */
     deleteBook(bookId, event) {
         event.stopPropagation();
         
         if (!confirm('この問題集を削除しますか？')) return;
 
+        const book = DataManager.books[bookId];
+        if (!book) return;
+
+        // 削除済みアイテムとしてマーク（Firebase統合）
+        DataManager.markAsDeleted('books', bookId, {
+            bookName: book.name,
+            bookType: book.examType,
+            questionCount: DataManager.countQuestionsInBook(book)
+        });
+
+        // ローカルから削除
         delete DataManager.books[bookId];
         DataManager.bookOrder = DataManager.bookOrder.filter(id => id !== bookId);
         DataManager.saveBooksToStorage();
         DataManager.saveBookOrder();
+        
+        // ピン固定設定もクリア
+        if (DataManager.heatmapPinnedBook === bookId) {
+            DataManager.saveHeatmapPinned(null);
+        }
+        if (DataManager.radarPinnedBook === bookId) {
+            DataManager.saveRadarPinned(null);
+        }
         
         this.renderBookCards();
         this.renderRegisterHierarchy();
@@ -1482,6 +1545,8 @@ switchFooterTab(tabName, event) {
             Analytics.updateHeatmapBookSelect();
             Analytics.updateRadarBookSelect();
         }
+        
+        alert('問題集を削除しました');
     }
 
     getTypeLabel(type) {
@@ -1588,6 +1653,11 @@ switchFooterTab(tabName, event) {
         
         let html = '';
         Object.values(DataManager.csvTemplates).forEach(template => {
+            // 削除済みテンプレートは表示しない
+            if (DataManager.isDeleted('csvTemplates', template.id)) {
+                return;
+            }
+            
             const date = new Date(template.createdAt);
             const lines = template.data.trim().split('\n').length - 1;
             
@@ -1670,8 +1740,21 @@ switchFooterTab(tabName, event) {
         }
     }
 
+    /**
+     * CSVテンプレート削除（Firebase統合強化版）
+     */
     deleteCSVTemplate(templateId) {
         if (confirm('このテンプレートを削除しますか？')) {
+            const template = DataManager.csvTemplates[templateId];
+            
+            // 削除済みアイテムとしてマーク（Firebase統合）
+            if (template) {
+                DataManager.markAsDeleted('csvTemplates', templateId, {
+                    templateName: template.name,
+                    dataLength: template.data ? template.data.length : 0
+                });
+            }
+            
             delete DataManager.csvTemplates[templateId];
             DataManager.saveCSVTemplates();
             this.renderCSVTemplateList();
