@@ -1,6 +1,6 @@
 /**
  * DataManager - データ管理・LocalStorage操作モジュール
- * Firebase対応版（オプション）
+ * Firebase対応版（削除処理統合）
  */
 class DataManagerClass {
     constructor() {
@@ -18,6 +18,7 @@ class DataManagerClass {
         this.firebaseEnabled = false;
         this.currentUser = null;
         this.initialized = false;
+        this.deletedItems = []; // 削除済みアイテム追跡
     }
 
     /**
@@ -100,7 +101,7 @@ class DataManagerClass {
     }
 
     /**
-     * Firebaseとの同期（エラーハンドリング強化）
+     * Firebaseとの同期（削除済みアイテム対応）
      */
     async syncWithFirebase() {
         if (!this.firebaseEnabled || !this.currentUser) return;
@@ -114,21 +115,25 @@ class DataManagerClass {
             
             if (userDoc.exists) {
                 const data = userDoc.data();
-                // Firebaseからデータを復元（エラーチェック付き）
+                // Firebaseからデータを復元（削除済みアイテムチェック付き）
                 if (data.books && typeof data.books === 'object') {
-                    this.books = data.books;
+                    // 削除済みアイテムを除外して復元
+                    this.books = this.filterDeletedItems(data.books, 'books');
                 }
                 if (data.bookOrder && Array.isArray(data.bookOrder)) {
-                    this.bookOrder = data.bookOrder;
+                    this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
                 }
                 if (data.records && Array.isArray(data.records)) {
                     this.allRecords = data.records;
                 }
                 if (data.studyPlans && Array.isArray(data.studyPlans)) {
-                    this.studyPlans = data.studyPlans;
+                    this.studyPlans = this.filterDeletedItems(data.studyPlans, 'studyPlans');
                 }
                 if (data.qaQuestions && typeof data.qaQuestions === 'object') {
-                    this.qaQuestions = data.qaQuestions;
+                    this.qaQuestions = this.filterDeletedItems(data.qaQuestions, 'qaQuestions');
+                }
+                if (data.csvTemplates && typeof data.csvTemplates === 'object') {
+                    this.csvTemplates = this.filterDeletedItems(data.csvTemplates, 'csvTemplates');
                 }
                 if (data.examDate) {
                     try {
@@ -136,6 +141,9 @@ class DataManagerClass {
                     } catch (e) {
                         console.warn('Invalid exam date from Firebase');
                     }
+                }
+                if (data.deletedItems && Array.isArray(data.deletedItems)) {
+                    this.deletedItems = data.deletedItems;
                 }
                 
                 // ローカルにも保存
@@ -151,7 +159,88 @@ class DataManagerClass {
     }
 
     /**
-     * Firebaseにデータを保存（エラーハンドリング強化）
+     * 削除済みアイテムかチェック
+     */
+    isDeleted(type, id) {
+        return this.deletedItems.some(item => 
+            item.type === type && item.id === id
+        );
+    }
+
+    /**
+     * 削除済みアイテムを除外してフィルタリング
+     */
+    filterDeletedItems(data, type) {
+        if (Array.isArray(data)) {
+            return data.filter(item => !this.isDeleted(type, item.id));
+        } else if (typeof data === 'object') {
+            const filtered = {};
+            Object.keys(data).forEach(key => {
+                if (!this.isDeleted(type, key)) {
+                    filtered[key] = data[key];
+                }
+            });
+            return filtered;
+        }
+        return data;
+    }
+
+    /**
+     * アイテム削除処理（Firebase統合）
+     */
+    markAsDeleted(type, id, additionalData = {}) {
+        const deletedItem = {
+            type: type,
+            id: id,
+            deletedAt: new Date().toISOString(),
+            ...additionalData
+        };
+        
+        this.deletedItems.push(deletedItem);
+        this.saveDeletedItems();
+        
+        // Firebaseにも保存
+        if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
+            this.saveToFirestore({
+                type: 'itemDeleted',
+                deletedType: type,
+                deletedId: id,
+                message: `${type}:${id}を削除しました`,
+                ...additionalData
+            });
+        }
+        
+        console.log(`✅ ${type}:${id} を削除済みとしてマーク`);
+    }
+
+    /**
+     * 削除済みアイテム一覧の保存
+     */
+    saveDeletedItems() {
+        try {
+            localStorage.setItem('deletedItems', JSON.stringify(this.deletedItems));
+        } catch (error) {
+            console.error('Error saving deleted items:', error);
+        }
+    }
+
+    /**
+     * 削除済みアイテム一覧の読み込み
+     */
+    loadDeletedItems() {
+        try {
+            const saved = localStorage.getItem('deletedItems');
+            if (saved) {
+                this.deletedItems = JSON.parse(saved);
+            }
+        } catch (error) {
+            console.error('Error loading deleted items:', error);
+            this.deletedItems = [];
+        }
+    }
+
+    /**
+     * Firebaseにデータを保存（削除済みアイテム含む）
      */
     async saveToFirebase() {
         if (!this.firebaseEnabled || !this.currentUser) return;
@@ -166,7 +255,9 @@ class DataManagerClass {
                 records: (this.allRecords || []).slice(-1000), // 最新1000件のみ
                 studyPlans: this.studyPlans || [],
                 qaQuestions: this.qaQuestions || {},
+                csvTemplates: this.csvTemplates || {},
                 examDate: this.examDate ? this.examDate.toISOString() : null,
+                deletedItems: this.deletedItems || [], // 削除済みアイテムも保存
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
@@ -178,7 +269,7 @@ class DataManagerClass {
     }
 
     /**
-     * 全データの読み込み
+     * 全データの読み込み（削除済みアイテム含む）
      */
     loadAllData() {
         try {
@@ -192,6 +283,7 @@ class DataManagerClass {
             this.loadExamDate();
             this.loadAnalysisCardOrder();
             this.loadPinnedSettings();
+            this.loadDeletedItems(); // 削除済みアイテムも読み込み
         } catch (error) {
             console.error('Error loading data:', error);
             // 個別のエラーがあっても他のデータは読み込む
@@ -199,7 +291,7 @@ class DataManagerClass {
     }
 
     /**
-     * 全データの保存
+     * 全データの保存（削除済みアイテム含む）
      */
     saveAllData() {
         try {
@@ -208,6 +300,7 @@ class DataManagerClass {
             this.saveStudyPlans();
             this.saveCSVTemplates();
             this.saveQAQuestions();
+            this.saveDeletedItems(); // 削除済みアイテムも保存
             
             // Firebaseにも保存（エラーが発生しても継続）
             if (this.firebaseEnabled) {
@@ -230,7 +323,8 @@ class DataManagerClass {
                 const parsedData = JSON.parse(stored);
                 // データ形式の妥当性チェック
                 if (parsedData && typeof parsedData === 'object') {
-                    this.books = parsedData;
+                    // 削除済みアイテムを除外
+                    this.books = this.filterDeletedItems(parsedData, 'books');
                     // 古いデータ形式の変換（必要に応じて）
                     this.migrateOldDataFormat();
                 } else {
@@ -276,13 +370,13 @@ class DataManagerClass {
     }
 
     /**
-     * 問題集順序の読み込み
+     * 問題集順序の読み込み（削除済み除外）
      */
     loadBookOrder() {
         try {
             const saved = localStorage.getItem('bookOrder');
             if (saved) {
-                this.bookOrder = JSON.parse(saved);
+                this.bookOrder = JSON.parse(saved).filter(id => !this.isDeleted('books', id));
             } else {
                 this.bookOrder = Object.keys(this.books);
             }
@@ -384,14 +478,17 @@ class DataManagerClass {
     }
 
     /**
-     * 学習計画の読み込み
+     * 学習計画の読み込み（削除済み除外）
      */
     loadStudyPlans() {
         try {
             const saved = localStorage.getItem('studyPlans');
             if (saved) {
                 const parsed = JSON.parse(saved);
-                this.studyPlans = Array.isArray(parsed) ? parsed : [];
+                this.studyPlans = this.filterDeletedItems(
+                    Array.isArray(parsed) ? parsed : [], 
+                    'studyPlans'
+                );
             } else {
                 this.studyPlans = [];
             }
@@ -418,13 +515,13 @@ class DataManagerClass {
     }
 
     /**
-     * CSVテンプレートの読み込み
+     * CSVテンプレートの読み込み（削除済み除外）
      */
     loadCSVTemplates() {
         try {
             const saved = localStorage.getItem('csvTemplates');
             if (saved) {
-                this.csvTemplates = JSON.parse(saved);
+                this.csvTemplates = this.filterDeletedItems(JSON.parse(saved), 'csvTemplates');
             }
         } catch (error) {
             console.error('Error loading CSV templates:', error);
@@ -444,13 +541,13 @@ class DataManagerClass {
     }
 
     /**
-     * 一問一答問題の読み込み
+     * 一問一答問題の読み込み（削除済み除外）
      */
     loadQAQuestions() {
         try {
             const saved = localStorage.getItem('qaQuestions');
             if (saved) {
-                this.qaQuestions = JSON.parse(saved);
+                this.qaQuestions = this.filterDeletedItems(JSON.parse(saved), 'qaQuestions');
             }
         } catch (error) {
             console.error('Error loading QA questions:', error);
@@ -552,12 +649,12 @@ class DataManagerClass {
     loadPinnedSettings() {
         try {
             const heatmapPinned = localStorage.getItem('heatmapPinnedBook');
-            if (heatmapPinned) {
+            if (heatmapPinned && !this.isDeleted('books', heatmapPinned)) {
                 this.heatmapPinnedBook = heatmapPinned;
             }
             
             const radarPinned = localStorage.getItem('radarPinnedBook');
-            if (radarPinned) {
+            if (radarPinned && !this.isDeleted('books', radarPinned)) {
                 this.radarPinnedBook = radarPinned;
             }
         } catch (error) {
@@ -570,7 +667,7 @@ class DataManagerClass {
      */
     saveHeatmapPinned(bookId) {
         try {
-            if (bookId) {
+            if (bookId && !this.isDeleted('books', bookId)) {
                 this.heatmapPinnedBook = bookId;
                 localStorage.setItem('heatmapPinnedBook', bookId);
             } else {
@@ -587,7 +684,7 @@ class DataManagerClass {
      */
     saveRadarPinned(bookId) {
         try {
-            if (bookId) {
+            if (bookId && !this.isDeleted('books', bookId)) {
                 this.radarPinnedBook = bookId;
                 localStorage.setItem('radarPinnedBook', bookId);
             } else {
@@ -824,7 +921,7 @@ class DataManagerClass {
             let book = null;
             
             for (let id in this.books) {
-                if (this.books[id].name === bookName) {
+                if (this.books[id].name === bookName && !this.isDeleted('books', id)) {
                     bookId = id;
                     book = this.books[id];
                     break;
