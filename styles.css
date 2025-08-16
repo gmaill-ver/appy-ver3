@@ -618,31 +618,7 @@ body {
     color: var(--dark);
 }
 
-/* カード並び替えボタン */
-.card-sort-btn {
-    position: absolute;
-    right: 15px;
-    top: 15px;
-    padding: 5px 10px;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 12px;
-    cursor: pointer;
-    z-index: 10;
-}
-
-/* ドラッグ可能なカード */
-.sortable-card {
-    cursor: move;
-}
-
-.sortable-card.dragging {
-    opacity: 0.5;
-}
-
-/* 問題集カード選択 */
+/* 記録入力タブ - 問題集並び替えボタン */
 .book-cards-wrapper {
     position: relative;
 }
@@ -659,6 +635,48 @@ body {
     font-size: 12px;
     cursor: pointer;
     z-index: 10;
+}
+
+/* 分析タブ - 同じデザインの並び替えボタン */
+.analysis-wrapper {
+    position: relative;
+}
+
+.analysis-order-btn {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    padding: 5px 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* ドラッグ可能なアコーディオン */
+.accordion.sortable {
+    cursor: move;
+}
+
+.accordion.dragging {
+    opacity: 0.5;
+}
+
+.accordion-drag-handle {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: move;
+    display: none;
+    color: var(--gray);
+}
+
+.accordion.sortable .accordion-drag-handle {
+    display: block;
 }
 
 .book-card {
@@ -1376,9 +1394,13 @@ body {
     color: var(--primary);
 }
 
-/* アコーディオン */
+/* アコーディオン（修正版：cardクラス削除対応） */
 .accordion {
     margin-bottom: 10px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
 }
 
 .accordion-header {
@@ -1391,6 +1413,7 @@ body {
     align-items: center;
     cursor: pointer;
     transition: all 0.3s;
+    position: relative;
 }
 
 .accordion-header:hover {
@@ -1425,6 +1448,31 @@ body {
 .accordion-header.active .accordion-arrow {
     transform: rotate(180deg);
     color: white;
+}
+
+/* アコーディオンドラッグハンドル */
+.accordion .accordion-drag-handle {
+    position: absolute;
+    left: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: move;
+    display: none;
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.accordion.sortable .accordion-drag-handle {
+    display: block;
+}
+
+.accordion.sortable .accordion-header {
+    padding-left: 30px;
+}
+
+.accordion.sortable.dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
 }
 
 /* フォーム */
