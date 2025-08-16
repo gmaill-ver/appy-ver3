@@ -129,7 +129,7 @@ class Application {
     }
 
     /**
- * フッタータブ切り替え（戻るボタン対応版）
+ * フッタータブ切り替え（重要語句ボタン重複修正版）
  */
 switchFooterTab(tabName, event) {
     const modal = document.getElementById('footerModal');
@@ -149,23 +149,20 @@ switchFooterTab(tabName, event) {
     
     modalTitle.textContent = titles[tabName] || 'タイトル';
     
-    // モーダルヘッダーを動的に再構築
+    // モーダルヘッダーを動的に再構築（要点確認以外の場合のみ）
     const modalHeader = modal.querySelector('.modal-header');
-    if (modalHeader) {
-        if (tabName === 'keypoints') {
-            // 要点確認の場合：重要語句ボタン付きヘッダー
-            modalHeader.innerHTML = `
-                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-                <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
-                <button class="modal-close" style="width: 20px; height: 20px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
-            `;
-        } else {
-            // その他の場合：通常ヘッダー
-            modalHeader.innerHTML = `
-                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-            `;
-        }
+    if (modalHeader && tabName !== 'keypoints') {
+        // 要点確認以外の場合：通常ヘッダー
+        modalHeader.innerHTML = `
+            <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+            <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
+        `;
+    } else if (modalHeader && tabName === 'keypoints') {
+        // 要点確認の場合：初期状態は通常ヘッダー（重要語句ボタンはコンテンツ表示時のみ追加）
+        modalHeader.innerHTML = `
+            <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
+            <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
+        `;
     }
     
     // モーダルフッターを動的に再構築
@@ -201,6 +198,7 @@ switchFooterTab(tabName, event) {
         case 'keypoints':
             if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
                 modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
+                // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
             } else {
                 modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
             }
