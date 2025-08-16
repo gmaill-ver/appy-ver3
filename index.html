@@ -515,72 +515,219 @@ function manualSaveData() {
 <script src="keypoints-module.js"></script>
 <script src="app.js"></script>
 
-<!-- ⭐ 統合されたFirebase追加機能（重複なし） -->
+<!-- 🔥 統合データ保存・復元版 -->
 <script>
-// データ保存処理をDataManagerに追加（dbは既に定義済み）
+console.log("🚀 統合データ版開始");
+
+// Firebaseオフライン永続化を有効にする
+try {
+    firebase.firestore().enablePersistence({ synchronizeTabs: true })
+        .then(() => {
+            console.log("✅ オフライン永続化有効（タブ同期あり）");
+        })
+        .catch((err) => {
+            console.log("⚠️ 永続化エラー:", err.code);
+        });
+} catch (error) {
+    console.log("⚠️ 永続化設定エラー:", error);
+}
+
+// 統合データ保存処理
 DataManager.saveToFirestore = async function(data) {
     try {
-        const docRef = await db.collection("studyData").add({
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.log("❌ ユーザー未認証");
+            return false;
+        }
+        
+        console.log("📤 統合保存開始 - ユーザー:", user.uid);
+        console.log("📤 保存データ:", data);
+        
+        // ユーザー固有のドキュメントに統合保存
+        const userRef = db.collection('users').doc(user.uid);
+        
+        // 現在のデータを取得
+        const userDoc = await userRef.get();
+        let existingData = userDoc.exists ? userDoc.data() : {};
+        
+        // 学習記録を配列に追加（最新50件まで保持）
+        if (!existingData.studyRecords) {
+            existingData.studyRecords = [];
+        }
+        
+        // 新しい記録を追加
+        const newRecord = {
             ...data,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop'
-        });
-        console.log("Firestore保存成功:", docRef.id);
-        alert("✅ Firestore保存成功: " + docRef.id);
+            timestamp: new Date().toISOString(),
+            deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+            id: Date.now().toString()
+        };
+        
+        existingData.studyRecords.unshift(newRecord); // 先頭に追加
+        
+        // 最新50件まで保持
+        if (existingData.studyRecords.length > 50) {
+            existingData.studyRecords = existingData.studyRecords.slice(0, 50);
+        }
+        
+        // LocalStorageデータも統合
+        existingData.allRecords = DataManager.allRecords || [];
+        existingData.books = DataManager.books || {};
+        existingData.studyPlans = DataManager.studyPlans || [];
+        existingData.qaQuestions = DataManager.qaQuestions || {};
+        existingData.examDate = DataManager.examDate ? DataManager.examDate.toISOString() : null;
+        existingData.lastUpdated = firebase.firestore.FieldValue.serverTimestamp();
+        
+        // Firestoreに保存
+        await userRef.set(existingData, { merge: true });
+        
+        console.log("✅ 統合保存成功 - 記録数:", existingData.studyRecords.length);
+        alert(`✅ 統合保存成功！\n記録数: ${existingData.studyRecords.length}\nユーザー: ${user.uid.substr(0, 8)}...`);
+        
+        // 履歴を即座に更新
+        updateUnifiedHistoryDisplay(existingData.studyRecords);
+        
         return true;
     } catch (error) {
-        console.error("Firestore保存失敗:", error);
+        console.error("❌ 統合保存失敗:", error);
         alert("❌ 保存失敗: " + error.message);
         return false;
     }
 };
 
-// データ読み込み処理をDataManagerに追加
+// 統合データ読み込み・復元処理
 DataManager.loadFromFirestore = function() {
-    db.collection("studyData")
-      .orderBy("timestamp", "desc")
-      .limit(50)
-      .onSnapshot((snapshot) => {
-          console.log("Firestore変更検知:", snapshot.docs.length + "件");
-          
-          snapshot.forEach((doc) => {
-              const data = doc.data();
-              console.log("取得データ:", data);
-              
-              const container = document.getElementById('historyContent');
-              if (container && data) {
-                  updateHistoryDisplay(data);
-              }
-          });
-      }, (error) => {
-          console.error("Firestore読み込みエラー:", error);
-      });
+    console.log("📥 統合データ読み込み開始");
+    
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        console.log("❌ ユーザー未認証のため読み込みスキップ");
+        return;
+    }
+    
+    const userRef = db.collection('users').doc(user.uid);
+    
+    // リアルタイムでユーザーデータを監視
+    userRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            const userData = doc.data();
+            console.log("📥 統合データ取得:", userData);
+            
+            // LocalStorageに復元
+            if (userData.allRecords) {
+                DataManager.allRecords = userData.allRecords;
+                localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
+                console.log("✅ 学習履歴復元:", userData.allRecords.length + "件");
+            }
+            
+            if (userData.books) {
+                DataManager.books = userData.books;
+                localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
+                console.log("✅ 問題集データ復元:", Object.keys(userData.books).length + "冊");
+            }
+            
+            if (userData.studyPlans) {
+                DataManager.studyPlans = userData.studyPlans;
+                localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
+                console.log("✅ 学習計画復元:", userData.studyPlans.length + "件");
+            }
+            
+            if (userData.qaQuestions) {
+                DataManager.qaQuestions = userData.qaQuestions;
+                localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
+                console.log("✅ 一問一答復元:", Object.keys(userData.qaQuestions).length + "セット");
+            }
+            
+            if (userData.examDate) {
+                try {
+                    DataManager.examDate = new Date(userData.examDate);
+                    localStorage.setItem('examDate', userData.examDate);
+                    console.log("✅ 試験日復元:", DataManager.examDate);
+                } catch (e) {
+                    console.log("⚠️ 試験日復元エラー");
+                }
+            }
+            
+            // 学習記録履歴を表示
+            if (userData.studyRecords && userData.studyRecords.length > 0) {
+                updateUnifiedHistoryDisplay(userData.studyRecords);
+                console.log("✅ 学習記録履歴表示:", userData.studyRecords.length + "件");
+            }
+            
+            // 画面を更新
+            if (window.App && App.renderBookCards) {
+                App.renderBookCards();
+            }
+            if (window.Analytics && Analytics.updateHistoryContent) {
+                Analytics.updateHistoryContent();
+            }
+            if (window.UIComponents && UIComponents.updateExamCountdown) {
+                UIComponents.updateExamCountdown();
+            }
+            
+            console.log("✅ 全データ復元完了");
+            
+        } else {
+            console.log("📭 ユーザーデータなし（初回利用）");
+        }
+    }, (error) => {
+        console.error("❌ 統合データ読み込みエラー:", error);
+    });
 };
 
-// 履歴表示更新関数
-function updateHistoryDisplay(data) {
+// 統合履歴表示
+function updateUnifiedHistoryDisplay(studyRecords) {
     const container = document.getElementById('historyContent');
-    if (!container) return;
+    if (!container || !studyRecords) return;
     
-    const item = document.createElement('div');
-    item.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--light); background: linear-gradient(135deg, #e3f2fd, #f0f8ff); margin-bottom: 5px; border-radius: 8px; border-left: 4px solid #2196f3;';
-    item.innerHTML = `
-        <div style="font-weight: 700; color: #1976d2;">📱 ${data.deviceType} から保存</div>
-        <div style="font-size: 12px; color: var(--gray); margin: 5px 0;">
-            ${data.timestamp ? data.timestamp.toDate().toLocaleString('ja-JP') : '時刻不明'}
+    // 既存の統合履歴をクリア
+    const existingItems = container.querySelectorAll('[data-unified-history]');
+    existingItems.forEach(item => item.remove());
+    
+    // 統合ヘッダーを追加
+    const headerItem = document.createElement('div');
+    headerItem.setAttribute('data-unified-history', 'header');
+    headerItem.style.cssText = 'padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 10px; margin-bottom: 10px; text-align: center;';
+    headerItem.innerHTML = `
+        <div style="font-weight: 700; font-size: 16px; margin-bottom: 5px;">
+            🔄 統合データ同期完了
         </div>
-        <div style="font-size: 12px; background: white; padding: 8px; border-radius: 4px;">
-            ${JSON.stringify(data).substring(0, 100)}...
+        <div style="font-size: 13px; opacity: 0.9;">
+            保存記録: ${studyRecords.length}件 | リアルタイム同期中
         </div>
     `;
+    container.insertBefore(headerItem, container.firstChild);
     
-    container.insertBefore(item, container.firstChild);
+    // 最新5件の記録を表示
+    const recentRecords = studyRecords.slice(0, 5);
+    recentRecords.forEach((record, index) => {
+        const item = document.createElement('div');
+        item.setAttribute('data-unified-history', 'record');
+        item.style.cssText = 'padding: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-left: 4px solid #007bff; border-radius: 8px; margin-bottom: 8px;';
+        
+        const timeStr = new Date(record.timestamp).toLocaleString('ja-JP');
+        
+        item.innerHTML = `
+            <div style="font-weight: 600; color: #495057; margin-bottom: 5px;">
+                📱 ${record.deviceType} - ${record.type || 'データ'}
+            </div>
+            <div style="font-size: 12px; color: #6c757d; margin-bottom: 8px;">
+                📅 ${timeStr}
+            </div>
+            <div style="font-size: 12px; background: white; padding: 8px; border-radius: 4px; font-family: monospace;">
+                ${JSON.stringify(record, null, 1).substring(0, 150)}...
+            </div>
+        `;
+        
+        container.insertBefore(item, container.children[1]); // ヘッダーの次に挿入
+    });
 }
 
-// 保存ボタンの動作を拡張
+// 保存ボタンの動作を拡張（統合版）
 const originalSaveRecord = App.saveRecord;
 App.saveRecord = function() {
-    console.log("💾 App.saveRecord 実行");
+    console.log("💾 App.saveRecord 実行（統合版）");
     originalSaveRecord.call(this);
     
     const record = {
@@ -597,30 +744,28 @@ App.saveRecord = function() {
         }
     };
     
-    console.log("💾 Firestoreに学習記録保存:", record);
+    console.log("💾 学習記録を統合保存:", record);
     DataManager.saveToFirestore(record);
 };
 
-// テスト保存ボタンを追加（強化版）
+// 統合テストボタン
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🎯 テストボタン追加処理開始");
+    console.log("🎯 統合テストボタン追加");
     
     const header = document.querySelector('.app-header');
     if (header) {
-        // 既存のテストボタンを削除
+        // 既存ボタンを削除
         const existingBtn = header.querySelector('[data-test-firebase]');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
+        if (existingBtn) existingBtn.remove();
         
         const testBtn = document.createElement('button');
         testBtn.setAttribute('data-test-firebase', 'true');
-        testBtn.textContent = '🔥TEST';
+        testBtn.textContent = '🔄統合';
         testBtn.style.cssText = `
             position: absolute;
             top: 20px;
             left: 20px;
-            background: linear-gradient(135deg, #ff5722, #ff7043);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             border: none;
             border-radius: 8px;
             color: white;
@@ -628,33 +773,38 @@ document.addEventListener('DOMContentLoaded', function() {
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
-            box-shadow: 0 3px 10px rgba(255, 87, 34, 0.4);
+            box-shadow: 0 3px 15px rgba(102, 126, 234, 0.4);
             z-index: 1000;
         `;
         testBtn.onclick = function() {
-            console.log("🔥 TESTボタンクリック");
+            console.log("🔄 統合テストボタンクリック");
             
-            DataManager.saveToFirestore({
-                test: "手動テスト_" + Date.now(),
-                message: "🔥TESTボタンからの保存",
+            const testData = {
+                test: "統合テスト_" + Date.now(),
+                message: "データ統合テスト",
                 userAgent: navigator.userAgent,
-                location: window.location.href
-            });
+                randomValue: Math.random()
+            };
+            
+            console.log("🧪 統合テストデータ:", testData);
+            DataManager.saveToFirestore(testData);
         };
         header.appendChild(testBtn);
-        console.log("✅ 🔥TESTボタン追加完了");
-    } else {
-        console.error("❌ ヘッダーが見つかりません");
+        console.log("✅ 🔄統合ボタン追加完了");
     }
     
-    // Firebase読み込みを開始
-    setTimeout(() => {
-        console.log("📥 Firebase読み込み開始");
-        DataManager.loadFromFirestore();
-    }, 2000);
+    // 起動時データ読み込み（認証完了を待つ）
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            setTimeout(() => {
+                console.log("📥 統合データ読み込み開始（認証後）");
+                DataManager.loadFromFirestore();
+            }, 1000);
+        }
+    });
 });
 
-console.log("🔥 統合Firebase処理が追加されました");
+console.log("🔄 統合データ版が追加されました");
 </script>
 </body>
 </html>
