@@ -283,40 +283,39 @@ class KeyPointsModuleClass {
             </div>
             
             <div style="margin: 20px 15px;">
-                <h4 style="margin-bottom: 15px;">要点管理（階層選択式）</h4>
-                
-                <div class="form-group">
-                    <label class="form-label">科目</label>
-                    <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChange()">
-                        <option value="">科目を選択</option>
-                        ${this.getSubjectList().map(subject => 
-                            `<option value="${subject.key}">${subject.name}</option>`
-                        ).join('')}
-                    </select>
+                <h4 style="margin-bottom: 15px;">要点管理（カード選択式）</h4>
+                <div id="hierarchySelectionArea">
+                    <div class="form-group">
+                        <label class="form-label">科目</label>
+                        <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
+                            <option value="">科目を選択</option>
+                            ${this.getSubjectList().map(subject => 
+                                `<option value="${subject.key}">${subject.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div id="chapterCardsArea" style="display: none;">
+                        <label class="form-label">編を選択</label>
+                        <div id="chapterCards" class="card-grid"></div>
+                    </div>
+                    
+                    <div id="sectionCardsArea" style="display: none;">
+                        <label class="form-label">節を選択</label>
+                        <div id="sectionCards" class="card-grid"></div>
+                    </div>
+                    
+                    <div id="topicCardsArea" style="display: none;">
+                        <label class="form-label">項目を選択</label>
+                        <div id="topicCards" class="card-grid"></div>
+                    </div>
+                    
+                    <div id="selectedPath" style="display: none; margin: 15px 0; padding: 10px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #2196f3;">
+                        <strong>選択パス:</strong> <span id="pathDisplay"></span>
+                    </div>
                 </div>
                 
-                <div class="form-group" id="chapterSelectGroup" style="display: none;">
-                    <label class="form-label">編</label>
-                    <select class="form-control" id="keyPointChapterSelect" onchange="KeyPointsModule.onChapterChange()">
-                        <option value="">編を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="sectionSelectGroup" style="display: none;">
-                    <label class="form-label">節</label>
-                    <select class="form-control" id="keyPointSectionSelect" onchange="KeyPointsModule.onSectionChange()">
-                        <option value="">節を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="topicSelectGroup" style="display: none;">
-                    <label class="form-label">項目</label>
-                    <select class="form-control" id="keyPointTopicSelect">
-                        <option value="">項目を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 20px;">
                     <label class="form-label">要点まとめタイトル</label>
                     <input type="text" class="form-control" id="keyPointTitle" 
                            placeholder="例：権利能力の要点まとめ">
@@ -328,7 +327,7 @@ class KeyPointsModuleClass {
                               placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
                 </div>
                 
-                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItem()">
+                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
                     階層に要点を登録
                 </button>
             </div>
@@ -650,9 +649,280 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 科目選択時のイベント
+     * カード式科目選択時のイベント
      */
-    onSubjectChange() {
+    onSubjectChangeCard() {
+        const subjectSelect = document.getElementById('keyPointSubjectSelect');
+        const chapterCardsArea = document.getElementById('chapterCardsArea');
+        const sectionCardsArea = document.getElementById('sectionCardsArea');
+        const topicCardsArea = document.getElementById('topicCardsArea');
+        const selectedPath = document.getElementById('selectedPath');
+
+        if (!subjectSelect || !chapterCardsArea) return;
+
+        const subjectKey = subjectSelect.value;
+        
+        // 下位の選択をリセット
+        sectionCardsArea.style.display = 'none';
+        topicCardsArea.style.display = 'none';
+        selectedPath.style.display = 'none';
+        this.resetSelectionState();
+
+        if (subjectKey && this.subjects[subjectKey]) {
+            chapterCardsArea.style.display = 'block';
+            this.renderChapterCards(subjectKey);
+        } else {
+            chapterCardsArea.style.display = 'none';
+        }
+    }
+
+    /**
+     * 選択状態をリセット
+     */
+    resetSelectionState() {
+        this.selectedSubject = null;
+        this.selectedChapter = null;
+        this.selectedSection = null;
+        this.selectedTopic = null;
+        this.selectedTopicIndex = null;
+        
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+    }
+
+    /**
+     * 編カードを描画
+     */
+    renderChapterCards(subjectKey) {
+        const container = document.getElementById('chapterCards');
+        if (!container) return;
+
+        const chapters = this.subjects[subjectKey].chapters || {};
+        this.selectedSubject = subjectKey;
+        
+        let html = '';
+        Object.keys(chapters).forEach(chapterName => {
+            html += `
+                <div class="selection-card" onclick="KeyPointsModule.selectChapterCard('${chapterName}')">
+                    <div class="card-title">${chapterName}</div>
+                    <div class="card-meta">${Object.keys(chapters[chapterName].sections || {}).length} 節</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        this.updatePathDisplay();
+    }
+
+    /**
+     * 編を選択
+     */
+    selectChapterCard(chapterName) {
+        this.selectedChapter = chapterName;
+        
+        // 選択状態を更新
+        document.querySelectorAll('#chapterCards .selection-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        event.target.closest('.selection-card').classList.add('selected');
+        
+        // 節カードを表示
+        const sectionCardsArea = document.getElementById('sectionCardsArea');
+        const topicCardsArea = document.getElementById('topicCardsArea');
+        
+        if (sectionCardsArea) sectionCardsArea.style.display = 'block';
+        if (topicCardsArea) topicCardsArea.style.display = 'none';
+        
+        this.renderSectionCards();
+        this.updatePathDisplay();
+    }
+
+    /**
+     * 節カードを描画
+     */
+    renderSectionCards() {
+        const container = document.getElementById('sectionCards');
+        if (!container || !this.selectedSubject || !this.selectedChapter) return;
+
+        const sections = this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections || {};
+        
+        let html = '';
+        Object.entries(sections).forEach(([sectionName, topics]) => {
+            html += `
+                <div class="selection-card" onclick="KeyPointsModule.selectSectionCard('${sectionName}')">
+                    <div class="card-title">${sectionName}</div>
+                    <div class="card-meta">${topics.length} 項目</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    /**
+     * 節を選択
+     */
+    selectSectionCard(sectionName) {
+        this.selectedSection = sectionName;
+        
+        // 選択状態を更新
+        document.querySelectorAll('#sectionCards .selection-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        event.target.closest('.selection-card').classList.add('selected');
+        
+        // 項目カードを表示
+        const topicCardsArea = document.getElementById('topicCardsArea');
+        if (topicCardsArea) topicCardsArea.style.display = 'block';
+        
+        this.renderTopicCards();
+        this.updatePathDisplay();
+    }
+
+    /**
+     * 項目カードを描画
+     */
+    renderTopicCards() {
+        const container = document.getElementById('topicCards');
+        if (!container || !this.selectedSubject || !this.selectedChapter || !this.selectedSection) return;
+
+        const topics = this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] || [];
+        
+        let html = '';
+        topics.forEach((topic, index) => {
+            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
+            html += `
+                <div class="selection-card topic-card" onclick="KeyPointsModule.selectTopicCard('${topic.title}', ${index})">
+                    <div class="card-title">${topic.title}</div>
+                    <div class="card-meta">
+                        <span class="difficulty-badge ${difficultyClass}">${topic.difficulty}</span>
+                        ${topic.type === 'html' ? '<span class="custom-badge">カスタム</span>' : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    /**
+     * 項目を選択
+     */
+    selectTopicCard(topicTitle, topicIndex) {
+        this.selectedTopic = topicTitle;
+        this.selectedTopicIndex = topicIndex;
+        
+        // 選択状態を更新
+        document.querySelectorAll('#topicCards .selection-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        event.target.closest('.selection-card').classList.add('selected');
+        
+        // 登録ボタンを有効化
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+        }
+        
+        this.updatePathDisplay();
+    }
+
+    /**
+     * 選択パス表示を更新
+     */
+    updatePathDisplay() {
+        const pathDisplay = document.getElementById('pathDisplay');
+        const selectedPath = document.getElementById('selectedPath');
+        
+        if (!pathDisplay || !selectedPath) return;
+
+        let path = '';
+        if (this.selectedSubject) {
+            path += this.subjects[this.selectedSubject].name;
+        }
+        if (this.selectedChapter) {
+            path += ` > ${this.selectedChapter}`;
+        }
+        if (this.selectedSection) {
+            path += ` > ${this.selectedSection}`;
+        }
+        if (this.selectedTopic) {
+            path += ` > ${this.selectedTopic}`;
+        }
+        
+        if (path) {
+            pathDisplay.textContent = path;
+            selectedPath.style.display = 'block';
+        } else {
+            selectedPath.style.display = 'none';
+        }
+    }
+
+    /**
+     * カード選択式の項目追加
+     */
+    handleAddHierarchyItemCard() {
+        const titleInput = document.getElementById('keyPointTitle');
+        const htmlInput = document.getElementById('keyPointHtml');
+
+        if (!titleInput || !htmlInput) {
+            alert('必要な項目を入力してください');
+            return;
+        }
+
+        const title = titleInput.value.trim();
+        const htmlContent = htmlInput.value.trim();
+
+        if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
+            alert('すべての階層を選択してください');
+            return;
+        }
+
+        if (!title || !htmlContent) {
+            alert('タイトルとHTML内容を入力してください');
+            return;
+        }
+
+        // 該当する項目を取得して更新
+        if (this.subjects[this.selectedSubject] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
+            
+            // 項目をHTMLコンテンツ付きで更新
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
+                ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
+                title: title,
+                htmlContent: htmlContent,
+                type: 'html'
+            };
+
+            this.saveKeyPointsData();
+
+            // フォームをクリア
+            titleInput.value = '';
+            htmlInput.value = '';
+            
+            // 選択をリセット
+            const subjectSelect = document.getElementById('keyPointSubjectSelect');
+            if (subjectSelect) {
+                subjectSelect.value = '';
+                this.onSubjectChangeCard();
+            }
+
+            // 登録済みリストを更新
+            const listContainer = document.getElementById('keyPointsList');
+            if (listContainer) {
+                listContainer.innerHTML = this.renderKeyPointsList();
+            }
+
+            alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
+        } else {
+            alert('選択した項目が見つかりません');
+        }
+    }
         const subjectSelect = document.getElementById('keyPointSubjectSelect');
         const chapterGroup = document.getElementById('chapterSelectGroup');
         const sectionGroup = document.getElementById('sectionSelectGroup');
@@ -1035,9 +1305,75 @@ class KeyPointsModuleClass {
                 gap: 12px !important;
             }
 
+            /* カード選択式スタイル */
+            .card-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 12px;
+                margin: 15px 0;
+            }
+
+            .selection-card {
+                background: white;
+                border: 2px solid var(--light);
+                border-radius: 8px;
+                padding: 15px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-height: 80px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .selection-card:hover {
+                border-color: var(--secondary);
+                box-shadow: var(--shadow-lg);
+                transform: translateY(-2px);
+            }
+
+            .selection-card.selected {
+                border-color: var(--primary);
+                background: linear-gradient(135deg, rgba(44, 62, 80, 0.05), rgba(52, 152, 219, 0.05));
+                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            }
+
+            .selection-card .card-title {
+                font-weight: 600;
+                font-size: 14px;
+                margin-bottom: 8px;
+                line-height: 1.3;
+                color: var(--dark);
+            }
+
+            .selection-card .card-meta {
+                font-size: 12px;
+                color: var(--gray);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .topic-card .card-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .custom-badge {
+                background: var(--success);
+                color: white;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+
             @media (max-width: 768px) {
-                .table-of-contents {
-                    grid-template-columns: 1fr !important;
+                .card-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 10px;
                 }
                 
                 .subject-grid-fixed {
@@ -1058,9 +1394,23 @@ class KeyPointsModuleClass {
                 .subject-card-mobile div:not(:first-child) {
                     font-size: 10px !important;
                 }
+
+                .selection-card {
+                    padding: 12px;
+                    min-height: 70px;
+                }
+
+                .selection-card .card-title {
+                    font-size: 13px;
+                }
             }
 
             @media (max-width: 480px) {
+                .card-grid {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                }
+                
                 .subject-grid-fixed {
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 8px !important;
@@ -1078,6 +1428,15 @@ class KeyPointsModuleClass {
 
                 .subject-card-mobile div:not(:first-child) {
                     font-size: 9px !important;
+                }
+
+                .selection-card {
+                    padding: 10px;
+                    min-height: 60px;
+                }
+
+                .selection-card .card-title {
+                    font-size: 12px;
                 }
             }
         `;
