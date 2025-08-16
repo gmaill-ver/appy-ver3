@@ -129,7 +129,7 @@ class Application {
     }
 
     /**
- * フッタータブ切り替え（KeyPointsModule読み込み確認強化版）
+ * フッタータブ切り替え（重要語句ボタン重複修正版）
  */
 switchFooterTab(tabName, event) {
     const modal = document.getElementById('footerModal');
@@ -196,53 +196,11 @@ switchFooterTab(tabName, event) {
             }
             break;
         case 'keypoints':
-            // KeyPointsModuleの存在と初期化を確認
-            if (window.KeyPointsModule) {
-                if (typeof KeyPointsModule.renderKeyPointsContent === 'function') {
-                    try {
-                        modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
-                        console.log('KeyPointsModule loaded successfully');
-                    } catch (error) {
-                        console.error('Error rendering KeyPointsModule content:', error);
-                        modalBody.innerHTML = `
-                            <div style="text-align: center; padding: 20px; color: var(--danger);">
-                                <h4>⚠️ 要点確認モジュールエラー</h4>
-                                <p>モジュールの読み込みでエラーが発生しました。</p>
-                                <p style="font-size: 12px; color: var(--gray);">${error.message}</p>
-                                <button class="save-button" onclick="location.reload()" style="margin-top: 15px; background: var(--danger);">
-                                    ページを再読み込み
-                                </button>
-                            </div>
-                        `;
-                    }
-                } else {
-                    modalBody.innerHTML = `
-                        <div style="text-align: center; padding: 20px; color: var(--warning);">
-                            <h4>⚠️ 要点確認モジュール未完了</h4>
-                            <p>モジュールが完全に初期化されていません。</p>
-                            <button class="save-button" onclick="KeyPointsModule.initialize(); App.switchFooterTab('keypoints')" style="margin-top: 15px;">
-                                再初期化を試行
-                            </button>
-                        </div>
-                    `;
-                }
+            if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
+                modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
+                // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
             } else {
-                modalBody.innerHTML = `
-                    <div style="text-align: center; padding: 20px; color: var(--danger);">
-                        <h4>❌ 要点確認モジュール未読み込み</h4>
-                        <p>keypoints-module.js が読み込まれていません。</p>
-                        <div style="background: var(--light); padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left;">
-                            <strong>解決方法:</strong><br>
-                            1. index.html に以下の行があるか確認<br>
-                            <code>&lt;script src="keypoints-module.js"&gt;&lt;/script&gt;</code><br><br>
-                            2. ファイルが正しい場所にあるか確認<br>
-                            3. ブラウザの開発者ツールでエラーを確認
-                        </div>
-                        <button class="save-button" onclick="location.reload()" style="margin-top: 15px; background: var(--danger);">
-                            ページを再読み込み
-                        </button>
-                    </div>
-                `;
+                modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
             }
             break;
         case 'results':
