@@ -1,5 +1,6 @@
 /**
- * UIComponents - UIコンポーネント管理モジュール
+ * UIComponents - UIコンポーネント管理モジュール（修正版）
+ * カレンダー予定表示問題を解決
  */
 class UIComponentsClass {
     constructor() {
@@ -7,6 +8,7 @@ class UIComponentsClass {
         this.selectedDate = null;
         this.selectedPlanColor = '#3498db';
         this.colorPickerInitialized = false;
+        this.calendarUpdateTimeout = null; // 🆕 更新タイマー管理
     }
 
     /**
@@ -22,16 +24,61 @@ class UIComponentsClass {
         this.renderCalendar();
         this.initializeColorPicker();
         this.updateExamCountdown();
+        
+        // 🆕 定期的なカレンダー更新（データ変更検知）
+        this.startCalendarAutoUpdate();
     }
 
     /**
-     * カレンダー描画
+     * 🆕 修正1: カレンダー自動更新システム
+     */
+    startCalendarAutoUpdate() {
+        // 既存のタイマーをクリア
+        if (this.calendarUpdateTimeout) {
+            clearInterval(this.calendarUpdateTimeout);
+        }
+        
+        // 5秒ごとにデータ変更をチェックして更新
+        this.calendarUpdateTimeout = setInterval(() => {
+            this.checkAndUpdateCalendar();
+        }, 5000);
+        
+        console.log('🔄 カレンダー自動更新開始');
+    }
+
+    /**
+     * 🆕 修正2: データ変更チェック＆カレンダー更新
+     */
+    checkAndUpdateCalendar() {
+        try {
+            if (!DataManager || !DataManager.studyPlans) return;
+            
+            // 現在の予定数をチェック
+            const currentPlanCount = DataManager.studyPlans.length;
+            const lastPlanCount = this.lastPlanCount || 0;
+            
+            // 予定数が変わった場合は再描画
+            if (currentPlanCount !== lastPlanCount) {
+                console.log(`🔄 予定数変更検知: ${lastPlanCount} → ${currentPlanCount}`);
+                this.renderCalendar();
+                this.lastPlanCount = currentPlanCount;
+            }
+        } catch (error) {
+            console.warn('カレンダー自動更新エラー:', error);
+        }
+    }
+
+    /**
+     * 🔧 修正3: カレンダー描画の改善（予定表示を確実に）
      */
     renderCalendar() {
         const grid = document.getElementById('calendarGrid');
         const monthDisplay = document.getElementById('calendarMonth');
         
-        if (!grid || !monthDisplay) return;
+        if (!grid || !monthDisplay) {
+            console.warn('⚠️ カレンダー要素が見つかりません');
+            return;
+        }
 
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
@@ -70,7 +117,9 @@ class UIComponentsClass {
             const dayOfWeek = currentDay.getDay();
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             const isToday = currentDay.toDateString() === today.toDateString();
-            const plans = this.getPlansForDate(currentDay);
+            
+            // 🔧 予定取得を改善
+            const plans = this.getPlansForDateImproved(currentDay);
             
             let classes = 'calendar-day';
             if (isWeekend) classes += ' weekend';
@@ -80,10 +129,14 @@ class UIComponentsClass {
             if (plans.length > 0) {
                 planTexts = '<div class="calendar-day-plans">';
                 plans.forEach(plan => {
-                    const displayText = plan.displayType === 'bullet' ? '・' : plan.title.substring(0, 8);
-                    planTexts += `<div class="calendar-plan-text" style="color: ${plan.color};">${displayText}</div>`;
+                    const displayText = plan.displayType === 'bullet' ? 
+                        '・' : plan.title.substring(0, 8);
+                    planTexts += `<div class="calendar-plan-text" style="color: ${plan.color};" title="${plan.title}">${displayText}</div>`;
                 });
                 planTexts += '</div>';
+                
+                // デバッグ用ログ
+                console.log(`📅 ${year}/${month+1}/${date}: ${plans.length}件の予定`);
             }
             
             html += `<div class="${classes}" onclick="UIComponents.selectDate(${year}, ${month}, ${date})">
@@ -99,41 +152,37 @@ class UIComponentsClass {
         }
         
         grid.innerHTML = html;
+        
+        // 🆕 描画完了をログ出力
+        const totalPlans = DataManager.studyPlans ? DataManager.studyPlans.length : 0;
+        console.log(`✅ カレンダー描画完了: ${year}年${month+1}月 (総予定数: ${totalPlans})`);
     }
 
     /**
-     * 月を変更
+     * 🆕 修正4: 予定取得の改善版（削除済み除外＆デバッグ強化）
      */
-    changeMonth(direction) {
-        this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-        this.renderCalendar();
-    }
-
-    /**
-     * 今日に移動
-     */
-    goToToday() {
-        this.currentDate = new Date();
-        this.renderCalendar();
-    }
-
-    /**
-     * 日付選択
-     */
-    selectDate(year, month, date) {
-        this.selectedDate = new Date(year, month, date);
-        this.openPlanModalForDate(this.selectedDate);
-    }
-
-    /**
-     * 日付の計画を取得
-     */
-    getPlansForDate(date) {
-        if (!DataManager.studyPlans) {
+    getPlansForDateImproved(date) {
+        if (!DataManager || !DataManager.studyPlans) {
+            console.warn('⚠️ DataManager.studyPlansが見つかりません');
             return [];
         }
 
-        return DataManager.studyPlans.filter(plan => {
+        // 削除済みでないプランのみを取得
+        const validPlans = DataManager.studyPlans.filter(plan => {
+            // 削除チェック
+            if (DataManager.isDeleted && DataManager.isDeleted('studyPlans', plan.id)) {
+                console.log(`🗑️ 削除済み予定をスキップ: ${plan.title}`);
+                return false;
+            }
+            return true;
+        });
+
+        const matchingPlans = validPlans.filter(plan => {
+            if (!plan.startDate || !plan.endDate) {
+                console.warn('⚠️ 予定に日付が設定されていません:', plan);
+                return false;
+            }
+
             const start = new Date(plan.startDate);
             const end = new Date(plan.endDate);
             const checkDate = new Date(date);
@@ -143,8 +192,146 @@ class UIComponentsClass {
             end.setHours(0, 0, 0, 0);
             checkDate.setHours(0, 0, 0, 0);
             
-            return checkDate >= start && checkDate <= end;
+            const isInRange = checkDate >= start && checkDate <= end;
+            
+            if (isInRange) {
+                console.log(`📅 予定マッチ: ${plan.title} (${plan.startDate}〜${plan.endDate})`);
+            }
+            
+            return isInRange;
         });
+
+        return matchingPlans;
+    }
+
+    /**
+     * 🔧 修正5: 計画保存の改善（即座にカレンダー更新）
+     */
+    savePlan() {
+        const title = document.getElementById('planTitle')?.value;
+        const content = document.getElementById('planContent')?.value;
+        const startDate = document.getElementById('planStartDate')?.value;
+        const endDate = document.getElementById('planEndDate')?.value;
+        const displayType = document.querySelector('input[name="displayType"]:checked')?.value;
+        const editId = document.getElementById('editPlanId')?.value;
+        
+        if (!title || !startDate || !endDate) {
+            alert('必須項目を入力してください');
+            return;
+        }
+        
+        if (editId) {
+            // 編集モード
+            const index = DataManager.studyPlans.findIndex(p => p.id === parseInt(editId));
+            if (index !== -1) {
+                DataManager.studyPlans[index] = {
+                    ...DataManager.studyPlans[index],
+                    title,
+                    content,
+                    startDate,
+                    endDate,
+                    color: this.selectedPlanColor,
+                    displayType: displayType || 'text'
+                };
+                console.log(`✏️ 予定編集: ${title}`);
+            }
+        } else {
+            // 新規追加
+            const plan = {
+                id: Date.now(),
+                title,
+                content,
+                startDate,
+                endDate,
+                color: this.selectedPlanColor,
+                displayType: displayType || 'text'
+            };
+            DataManager.studyPlans.push(plan);
+            console.log(`➕ 予定追加: ${title}`);
+        }
+        
+        // データ保存
+        DataManager.saveStudyPlans();
+        
+        // 🆕 即座にカレンダー更新（複数回実行で確実に）
+        this.forceCalendarUpdate();
+        
+        // フォームクリア
+        document.getElementById('planTitle').value = '';
+        document.getElementById('planContent').value = '';
+        document.getElementById('editPlanId').value = '';
+        
+        alert('学習計画を保存しました');
+        this.closePlanModal();
+    }
+
+    /**
+     * 🆕 修正6: 強制カレンダー更新（確実に更新）
+     */
+    forceCalendarUpdate() {
+        // 即座に更新
+        this.renderCalendar();
+        
+        // 少し遅延させてもう一度更新（確実に）
+        setTimeout(() => {
+            this.renderCalendar();
+            console.log('🔄 カレンダー強制更新完了');
+        }, 100);
+        
+        // さらに遅延させてもう一度（念のため）
+        setTimeout(() => {
+            this.renderCalendar();
+        }, 500);
+    }
+
+    /**
+     * 🔧 修正7: 計画削除の改善（即座にカレンダー更新）
+     */
+    deletePlan(planId) {
+        if (confirm('この計画を削除しますか？')) {
+            // 削除前の予定名を取得
+            const planToDelete = DataManager.studyPlans.find(p => p.id === planId);
+            const planName = planToDelete ? planToDelete.title : 'Unknown';
+            
+            // 🆕 削除マーク方式に変更
+            if (DataManager.markAsDeleted) {
+                DataManager.markAsDeleted('studyPlans', planId, { title: planName });
+            } else {
+                // フォールバック：直接削除
+                DataManager.studyPlans = DataManager.studyPlans.filter(p => p.id !== planId);
+                DataManager.saveStudyPlans();
+            }
+            
+            // 🆕 即座にカレンダー更新
+            this.forceCalendarUpdate();
+            this.renderPlanList();
+            
+            console.log(`🗑️ 予定削除: ${planName}`);
+        }
+    }
+
+    /**
+     * 月を変更
+     */
+    changeMonth(direction) {
+        this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+        this.forceCalendarUpdate(); // 🔧 強制更新に変更
+    }
+
+    /**
+     * 今日に移動
+     */
+    goToToday() {
+        this.currentDate = new Date();
+        this.forceCalendarUpdate(); // 🔧 強制更新に変更
+    }
+
+    /**
+     * 日付選択
+     */
+    selectDate(year, month, date) {
+        this.selectedDate = new Date(year, month, date);
+        this.openPlanModalForDate(this.selectedDate);
     }
 
     /**
@@ -228,19 +415,24 @@ class UIComponentsClass {
     }
 
     /**
-     * 計画リストを描画
+     * 🔧 修正8: 計画リスト描画の改善（削除済み除外）
      */
     renderPlanList() {
         const container = document.getElementById('planListContent');
         if (!container) return;
 
-        if (!DataManager.studyPlans || DataManager.studyPlans.length === 0) {
+        // 削除済みでない予定のみを表示
+        const validPlans = DataManager.studyPlans ? DataManager.studyPlans.filter(plan => {
+            return !DataManager.isDeleted || !DataManager.isDeleted('studyPlans', plan.id);
+        }) : [];
+
+        if (validPlans.length === 0) {
             container.innerHTML = '<p style="color: var(--gray); text-align: center;">計画がありません</p>';
             return;
         }
         
         let html = '';
-        DataManager.studyPlans.forEach(plan => {
+        validPlans.forEach(plan => {
             html += `
                 <div class="plan-item">
                     <div style="display: flex; align-items: center;">
@@ -259,62 +451,7 @@ class UIComponentsClass {
         });
         
         container.innerHTML = html;
-    }
-
-    /**
-     * 計画を保存
-     */
-    savePlan() {
-        const title = document.getElementById('planTitle')?.value;
-        const content = document.getElementById('planContent')?.value;
-        const startDate = document.getElementById('planStartDate')?.value;
-        const endDate = document.getElementById('planEndDate')?.value;
-        const displayType = document.querySelector('input[name="displayType"]:checked')?.value;
-        const editId = document.getElementById('editPlanId')?.value;
-        
-        if (!title || !startDate || !endDate) {
-            alert('必須項目を入力してください');
-            return;
-        }
-        
-        if (editId) {
-            // 編集モード
-            const index = DataManager.studyPlans.findIndex(p => p.id === parseInt(editId));
-            if (index !== -1) {
-                DataManager.studyPlans[index] = {
-                    ...DataManager.studyPlans[index],
-                    title,
-                    content,
-                    startDate,
-                    endDate,
-                    color: this.selectedPlanColor,
-                    displayType: displayType || 'text'
-                };
-            }
-        } else {
-            // 新規追加
-            const plan = {
-                id: Date.now(),
-                title,
-                content,
-                startDate,
-                endDate,
-                color: this.selectedPlanColor,
-                displayType: displayType || 'text'
-            };
-            DataManager.studyPlans.push(plan);
-        }
-        
-        DataManager.saveStudyPlans();
-        this.renderCalendar();
-        
-        // フォームクリア
-        document.getElementById('planTitle').value = '';
-        document.getElementById('planContent').value = '';
-        document.getElementById('editPlanId').value = '';
-        
-        alert('学習計画を保存しました');
-        this.closePlanModal();
+        console.log(`✅ 計画リスト描画完了: ${validPlans.length}件`);
     }
 
     /**
@@ -345,18 +482,6 @@ class UIComponentsClass {
         
         // 色を設定
         this.setSelectedColor(plan.color);
-    }
-
-    /**
-     * 計画を削除
-     */
-    deletePlan(planId) {
-        if (confirm('この計画を削除しますか？')) {
-            DataManager.studyPlans = DataManager.studyPlans.filter(p => p.id !== planId);
-            DataManager.saveStudyPlans();
-            this.renderCalendar();
-            this.renderPlanList();
-        }
     }
 
     /**
@@ -417,6 +542,16 @@ class UIComponentsClass {
             }
         } else {
             countdown.innerHTML = `試験日を設定してください`;
+        }
+    }
+
+    /**
+     * 🆕 破棄処理
+     */
+    destroy() {
+        if (this.calendarUpdateTimeout) {
+            clearInterval(this.calendarUpdateTimeout);
+            this.calendarUpdateTimeout = null;
         }
     }
 }
