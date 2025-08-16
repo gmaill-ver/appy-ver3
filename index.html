@@ -595,36 +595,74 @@
         return null;
     }
 
-    // 💿 IndexedDB操作（Promise版）
+    // 💿 IndexedDB操作（Promise版・エラー修正）
     function saveToIndexedDB(key, value) {
         return new Promise((resolve) => {
             try {
                 const request = indexedDB.open('StudyTrackerPermanentDB', 1);
+                
                 request.onupgradeneeded = function(e) {
                     const db = e.target.result;
+                    console.log("🔧 IndexedDB初期化中...");
                     if (!db.objectStoreNames.contains('permanentData')) {
-                        db.createObjectStore('permanentData', { keyPath: 'key' });
+                        const store = db.createObjectStore('permanentData', { keyPath: 'key' });
+                        console.log("✅ IndexedDBオブジェクトストア作成");
                     }
                 };
+                
                 request.onsuccess = function(e) {
                     const db = e.target.result;
-                    const transaction = db.transaction(['permanentData'], 'readwrite');
-                    const store = transaction.objectStore('permanentData');
-                    store.put({ 
-                        key: key, 
-                        value: value, 
-                        timestamp: Date.now(),
-                        version: '2.0'
-                    });
-                    transaction.oncomplete = () => {
-                        console.log("✅ IndexedDB保存成功");
-                        resolve(true);
-                    };
-                    transaction.onerror = () => resolve(false);
+                    try {
+                        // オブジェクトストアの存在確認
+                        if (!db.objectStoreNames.contains('permanentData')) {
+                            console.warn("⚠️ オブジェクトストアが存在しません");
+                            resolve(false);
+                            return;
+                        }
+                        
+                        const transaction = db.transaction(['permanentData'], 'readwrite');
+                        const store = transaction.objectStore('permanentData');
+                        
+                        const putRequest = store.put({ 
+                            key: key, 
+                            value: value, 
+                            timestamp: Date.now(),
+                            version: '2.1'
+                        });
+                        
+                        putRequest.onsuccess = () => {
+                            console.log("✅ IndexedDB保存成功:", key);
+                            resolve(true);
+                        };
+                        
+                        putRequest.onerror = (error) => {
+                            console.error("❌ IndexedDB保存エラー:", error);
+                            resolve(false);
+                        };
+                        
+                        transaction.onerror = (error) => {
+                            console.error("❌ IndexedDBトランザクションエラー:", error);
+                            resolve(false);
+                        };
+                        
+                    } catch (error) {
+                        console.error("❌ IndexedDB操作エラー:", error);
+                        resolve(false);
+                    }
                 };
-                request.onerror = () => resolve(false);
+                
+                request.onerror = (error) => {
+                    console.error("❌ IndexedDBオープンエラー:", error);
+                    resolve(false);
+                };
+                
+                request.onblocked = () => {
+                    console.warn("⚠️ IndexedDBがブロックされています");
+                    resolve(false);
+                };
+                
             } catch (error) {
-                console.error("IndexedDB保存エラー:", error);
+                console.error("❌ IndexedDB初期化エラー:", error);
                 resolve(false);
             }
         });
@@ -634,28 +672,68 @@
         return new Promise((resolve) => {
             try {
                 const request = indexedDB.open('StudyTrackerPermanentDB', 1);
+                
+                request.onupgradeneeded = function(e) {
+                    const db = e.target.result;
+                    console.log("🔧 IndexedDB初期化中（読み込み）...");
+                    if (!db.objectStoreNames.contains('permanentData')) {
+                        const store = db.createObjectStore('permanentData', { keyPath: 'key' });
+                        console.log("✅ IndexedDBオブジェクトストア作成（読み込み時）");
+                    }
+                };
+                
                 request.onsuccess = function(e) {
                     const db = e.target.result;
-                    if (db.objectStoreNames.contains('permanentData')) {
+                    try {
+                        // オブジェクトストアの存在確認
+                        if (!db.objectStoreNames.contains('permanentData')) {
+                            console.log("📭 IndexedDBオブジェクトストアなし");
+                            resolve(null);
+                            return;
+                        }
+                        
                         const transaction = db.transaction(['permanentData'], 'readonly');
                         const store = transaction.objectStore('permanentData');
                         const getRequest = store.get(key);
+                        
                         getRequest.onsuccess = function() {
                             if (getRequest.result && getRequest.result.value) {
-                                console.log("✅ IndexedDB読み込み成功");
+                                console.log("✅ IndexedDB読み込み成功:", key);
                                 resolve(getRequest.result.value);
                             } else {
+                                console.log("📭 IndexedDBにデータなし:", key);
                                 resolve(null);
                             }
                         };
-                        getRequest.onerror = () => resolve(null);
-                    } else {
+                        
+                        getRequest.onerror = (error) => {
+                            console.error("❌ IndexedDB取得エラー:", error);
+                            resolve(null);
+                        };
+                        
+                        transaction.onerror = (error) => {
+                            console.error("❌ IndexedDBトランザクションエラー:", error);
+                            resolve(null);
+                        };
+                        
+                    } catch (error) {
+                        console.error("❌ IndexedDB操作エラー:", error);
                         resolve(null);
                     }
                 };
-                request.onerror = () => resolve(null);
+                
+                request.onerror = (error) => {
+                    console.error("❌ IndexedDBオープンエラー:", error);
+                    resolve(null);
+                };
+                
+                request.onblocked = () => {
+                    console.warn("⚠️ IndexedDBがブロックされています");
+                    resolve(null);
+                };
+                
             } catch (error) {
-                console.error("IndexedDB読み込みエラー:", error);
+                console.error("❌ IndexedDB読み込みエラー:", error);
                 resolve(null);
             }
         });
