@@ -515,9 +515,9 @@ function manualSaveData() {
 <script src="keypoints-module.js"></script>
 <script src="app.js"></script>
 
-<!-- 🔥 統合データ保存・復元版 -->
+<!-- 🔥 匿名認証付き統合データ版 -->
 <script>
-console.log("🚀 統合データ版開始");
+console.log("🚀 匿名認証付き統合データ版開始");
 
 // Firebaseオフライン永続化を有効にする
 try {
@@ -532,14 +532,30 @@ try {
     console.log("⚠️ 永続化設定エラー:", error);
 }
 
-// 統合データ保存処理
-DataManager.saveToFirestore = async function(data) {
+// 🔑 匿名認証を実行
+async function ensureAuthentication() {
     try {
         const user = firebase.auth().currentUser;
-        if (!user) {
-            console.log("❌ ユーザー未認証");
-            return false;
+        if (user) {
+            console.log("✅ 既にログイン済み:", user.uid);
+            return user;
         }
+        
+        console.log("🔑 匿名認証を開始...");
+        const userCredential = await firebase.auth().signInAnonymously();
+        console.log("✅ 匿名認証成功:", userCredential.user.uid);
+        return userCredential.user;
+    } catch (error) {
+        console.error("❌ 匿名認証失敗:", error);
+        throw error;
+    }
+}
+
+// 統合データ保存処理（認証確認付き）
+DataManager.saveToFirestore = async function(data) {
+    try {
+        // 認証を確認・実行
+        const user = await ensureAuthentication();
         
         console.log("📤 統合保存開始 - ユーザー:", user.uid);
         console.log("📤 保存データ:", data);
@@ -597,83 +613,84 @@ DataManager.saveToFirestore = async function(data) {
 };
 
 // 統合データ読み込み・復元処理
-DataManager.loadFromFirestore = function() {
-    console.log("📥 統合データ読み込み開始");
-    
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        console.log("❌ ユーザー未認証のため読み込みスキップ");
-        return;
-    }
-    
-    const userRef = db.collection('users').doc(user.uid);
-    
-    // リアルタイムでユーザーデータを監視
-    userRef.onSnapshot((doc) => {
-        if (doc.exists) {
-            const userData = doc.data();
-            console.log("📥 統合データ取得:", userData);
-            
-            // LocalStorageに復元
-            if (userData.allRecords) {
-                DataManager.allRecords = userData.allRecords;
-                localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
-                console.log("✅ 学習履歴復元:", userData.allRecords.length + "件");
-            }
-            
-            if (userData.books) {
-                DataManager.books = userData.books;
-                localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
-                console.log("✅ 問題集データ復元:", Object.keys(userData.books).length + "冊");
-            }
-            
-            if (userData.studyPlans) {
-                DataManager.studyPlans = userData.studyPlans;
-                localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
-                console.log("✅ 学習計画復元:", userData.studyPlans.length + "件");
-            }
-            
-            if (userData.qaQuestions) {
-                DataManager.qaQuestions = userData.qaQuestions;
-                localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
-                console.log("✅ 一問一答復元:", Object.keys(userData.qaQuestions).length + "セット");
-            }
-            
-            if (userData.examDate) {
-                try {
-                    DataManager.examDate = new Date(userData.examDate);
-                    localStorage.setItem('examDate', userData.examDate);
-                    console.log("✅ 試験日復元:", DataManager.examDate);
-                } catch (e) {
-                    console.log("⚠️ 試験日復元エラー");
+DataManager.loadFromFirestore = async function() {
+    try {
+        console.log("📥 統合データ読み込み開始");
+        
+        // 認証を確認・実行
+        const user = await ensureAuthentication();
+        const userRef = db.collection('users').doc(user.uid);
+        
+        // リアルタイムでユーザーデータを監視
+        userRef.onSnapshot((doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                console.log("📥 統合データ取得:", userData);
+                
+                // LocalStorageに復元
+                if (userData.allRecords) {
+                    DataManager.allRecords = userData.allRecords;
+                    localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
+                    console.log("✅ 学習履歴復元:", userData.allRecords.length + "件");
                 }
+                
+                if (userData.books) {
+                    DataManager.books = userData.books;
+                    localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
+                    console.log("✅ 問題集データ復元:", Object.keys(userData.books).length + "冊");
+                }
+                
+                if (userData.studyPlans) {
+                    DataManager.studyPlans = userData.studyPlans;
+                    localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
+                    console.log("✅ 学習計画復元:", userData.studyPlans.length + "件");
+                }
+                
+                if (userData.qaQuestions) {
+                    DataManager.qaQuestions = userData.qaQuestions;
+                    localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
+                    console.log("✅ 一問一答復元:", Object.keys(userData.qaQuestions).length + "セット");
+                }
+                
+                if (userData.examDate) {
+                    try {
+                        DataManager.examDate = new Date(userData.examDate);
+                        localStorage.setItem('examDate', userData.examDate);
+                        console.log("✅ 試験日復元:", DataManager.examDate);
+                    } catch (e) {
+                        console.log("⚠️ 試験日復元エラー");
+                    }
+                }
+                
+                // 学習記録履歴を表示
+                if (userData.studyRecords && userData.studyRecords.length > 0) {
+                    updateUnifiedHistoryDisplay(userData.studyRecords);
+                    console.log("✅ 学習記録履歴表示:", userData.studyRecords.length + "件");
+                }
+                
+                // 画面を更新
+                if (window.App && App.renderBookCards) {
+                    App.renderBookCards();
+                }
+                if (window.Analytics && Analytics.updateHistoryContent) {
+                    Analytics.updateHistoryContent();
+                }
+                if (window.UIComponents && UIComponents.updateExamCountdown) {
+                    UIComponents.updateExamCountdown();
+                }
+                
+                console.log("✅ 全データ復元完了");
+                
+            } else {
+                console.log("📭 ユーザーデータなし（初回利用）");
             }
-            
-            // 学習記録履歴を表示
-            if (userData.studyRecords && userData.studyRecords.length > 0) {
-                updateUnifiedHistoryDisplay(userData.studyRecords);
-                console.log("✅ 学習記録履歴表示:", userData.studyRecords.length + "件");
-            }
-            
-            // 画面を更新
-            if (window.App && App.renderBookCards) {
-                App.renderBookCards();
-            }
-            if (window.Analytics && Analytics.updateHistoryContent) {
-                Analytics.updateHistoryContent();
-            }
-            if (window.UIComponents && UIComponents.updateExamCountdown) {
-                UIComponents.updateExamCountdown();
-            }
-            
-            console.log("✅ 全データ復元完了");
-            
-        } else {
-            console.log("📭 ユーザーデータなし（初回利用）");
-        }
-    }, (error) => {
-        console.error("❌ 統合データ読み込みエラー:", error);
-    });
+        }, (error) => {
+            console.error("❌ 統合データ読み込みエラー:", error);
+        });
+        
+    } catch (error) {
+        console.error("❌ データ読み込み認証エラー:", error);
+    }
 };
 
 // 統合履歴表示
@@ -694,7 +711,7 @@ function updateUnifiedHistoryDisplay(studyRecords) {
             🔄 統合データ同期完了
         </div>
         <div style="font-size: 13px; opacity: 0.9;">
-            保存記録: ${studyRecords.length}件 | リアルタイム同期中
+            保存記録: ${studyRecords.length}件 | 認証済み・リアルタイム同期中
         </div>
     `;
     container.insertBefore(headerItem, container.firstChild);
@@ -724,10 +741,10 @@ function updateUnifiedHistoryDisplay(studyRecords) {
     });
 }
 
-// 保存ボタンの動作を拡張（統合版）
+// 保存ボタンの動作を拡張（認証付き統合版）
 const originalSaveRecord = App.saveRecord;
 App.saveRecord = function() {
-    console.log("💾 App.saveRecord 実行（統合版）");
+    console.log("💾 App.saveRecord 実行（認証付き統合版）");
     originalSaveRecord.call(this);
     
     const record = {
@@ -744,13 +761,13 @@ App.saveRecord = function() {
         }
     };
     
-    console.log("💾 学習記録を統合保存:", record);
+    console.log("💾 学習記録を認証付き統合保存:", record);
     DataManager.saveToFirestore(record);
 };
 
-// 統合テストボタン
+// 認証付き統合テストボタン
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🎯 統合テストボタン追加");
+    console.log("🎯 認証付き統合テストボタン追加");
     
     const header = document.querySelector('.app-header');
     if (header) {
@@ -760,12 +777,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const testBtn = document.createElement('button');
         testBtn.setAttribute('data-test-firebase', 'true');
-        testBtn.textContent = '🔄統合';
+        testBtn.textContent = '🔑統合';
         testBtn.style.cssText = `
             position: absolute;
             top: 20px;
             left: 20px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #4caf50, #81c784);
             border: none;
             border-radius: 8px;
             color: white;
@@ -773,38 +790,49 @@ document.addEventListener('DOMContentLoaded', function() {
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
-            box-shadow: 0 3px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 3px 15px rgba(76, 175, 80, 0.4);
             z-index: 1000;
         `;
-        testBtn.onclick = function() {
-            console.log("🔄 統合テストボタンクリック");
+        testBtn.onclick = async function() {
+            console.log("🔑 認証付き統合テストボタンクリック");
             
-            const testData = {
-                test: "統合テスト_" + Date.now(),
-                message: "データ統合テスト",
-                userAgent: navigator.userAgent,
-                randomValue: Math.random()
-            };
-            
-            console.log("🧪 統合テストデータ:", testData);
-            DataManager.saveToFirestore(testData);
+            try {
+                // 認証状態を確認
+                const user = await ensureAuthentication();
+                
+                const testData = {
+                    test: "認証付き統合テスト_" + Date.now(),
+                    message: "匿名認証 + データ統合テスト",
+                    userAgent: navigator.userAgent,
+                    userId: user.uid,
+                    randomValue: Math.random()
+                };
+                
+                console.log("🧪 認証付き統合テストデータ:", testData);
+                await DataManager.saveToFirestore(testData);
+            } catch (error) {
+                console.error("❌ テスト失敗:", error);
+                alert("❌ テスト失敗: " + error.message);
+            }
         };
         header.appendChild(testBtn);
-        console.log("✅ 🔄統合ボタン追加完了");
+        console.log("✅ 🔑統合ボタン追加完了");
     }
     
-    // 起動時データ読み込み（認証完了を待つ）
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            setTimeout(() => {
-                console.log("📥 統合データ読み込み開始（認証後）");
-                DataManager.loadFromFirestore();
-            }, 1000);
+    // 起動時に匿名認証 + データ読み込み
+    setTimeout(async () => {
+        try {
+            console.log("🔑 起動時匿名認証開始");
+            await ensureAuthentication();
+            console.log("📥 認証後データ読み込み開始");
+            await DataManager.loadFromFirestore();
+        } catch (error) {
+            console.error("❌ 起動時認証・読み込みエラー:", error);
         }
-    });
+    }, 1000);
 });
 
-console.log("🔄 統合データ版が追加されました");
+console.log("🔑 匿名認証付き統合データ版が追加されました");
 </script>
 </body>
 </html>
