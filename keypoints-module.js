@@ -1,5 +1,5 @@
 /**
- * KeyPointsModule - 要点確認専用モジュール（カード式展開対応版）
+ * KeyPointsModule - 要点確認専用モジュール（Firebase統合完全版）
  */
 class KeyPointsModuleClass {
     constructor() {
@@ -365,7 +365,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 要点データの読み込み
+     * 要点データの読み込み（Firebase統合）
      */
     loadKeyPointsData() {
         try {
@@ -405,14 +405,61 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 要点データの保存
+     * 要点データの保存（Firebase統合強化版）
      */
     saveKeyPointsData() {
         try {
+            console.log('💾 KeyPoints保存開始（Firebase統合版）');
+            
+            // LocalStorageに保存
             localStorage.setItem('keyPointsData', JSON.stringify(this.subjects));
+            
+            // Firebaseにも保存（ULTRA_STABLE_USER_IDが利用可能な場合）
+            if (window.ULTRA_STABLE_USER_ID && window.DataManager && typeof DataManager.saveToFirestore === 'function') {
+                const keyPointsCount = this.countTotalKeyPoints();
+                
+                DataManager.saveToFirestore({
+                    type: 'keyPoints',
+                    action: 'save',
+                    keyPointsCount: keyPointsCount,
+                    subjectsCount: Object.keys(this.subjects).length,
+                    timestamp: new Date().toISOString(),
+                    message: '要点確認データを保存しました'
+                });
+                
+                console.log('✅ KeyPoints Firebase保存完了');
+            } else {
+                console.log('📝 KeyPoints LocalStorage保存のみ');
+            }
+            
         } catch (error) {
-            console.error('Error saving key points data:', error);
+            console.error('❌ KeyPoints保存エラー:', error);
         }
+    }
+
+    /**
+     * 総要点数カウント
+     */
+    countTotalKeyPoints() {
+        let count = 0;
+        Object.values(this.subjects).forEach(subject => {
+            if (subject.chapters) {
+                Object.values(subject.chapters).forEach(chapter => {
+                    if (chapter.sections) {
+                        Object.values(chapter.sections).forEach(topics => {
+                            if (Array.isArray(topics)) {
+                                topics.forEach(topic => {
+                                    if (topic.type === 'html' && topic.htmlContent) {
+                                        count++;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        return count;
     }
 
     /**
@@ -644,22 +691,29 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 編の折りたたみ切り替え
+     * 編の折りたたみ切り替え（修正版）
      */
     toggleChapter(chapterId) {
         const content = document.getElementById(chapterId);
         const arrow = document.getElementById(`arrow-${chapterId}`);
         
-        if (!content || !arrow) return;
+        if (!content || !arrow) {
+            console.warn(`Chapter elements not found: ${chapterId}`);
+            return;
+        }
 
-        if (content.style.display === 'none') {
-            content.style.display = 'block';
-            arrow.style.transform = 'rotate(0deg)';
-            arrow.textContent = '▼';
-        } else {
-            content.style.display = 'none';
-            arrow.style.transform = 'rotate(-90deg)';
-            arrow.textContent = '▶';
+        try {
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(0deg)';
+                arrow.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(-90deg)';
+                arrow.textContent = '▶';
+            }
+        } catch (error) {
+            console.error('Error toggling chapter:', error);
         }
     }
 
@@ -830,7 +884,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * カード式科目選択時のイベント
+     * カード式科目選択時のイベント（修正版）
      */
     onSubjectChangeCard() {
         const subjectSelect = document.getElementById('keyPointSubjectSelect');
@@ -839,7 +893,10 @@ class KeyPointsModuleClass {
         const topicCardsArea = document.getElementById('topicCardsArea');
         const breadcrumb = document.getElementById('selectionBreadcrumb');
 
-        if (!subjectSelect || !chapterCardsArea) return;
+        if (!subjectSelect || !chapterCardsArea) {
+            console.warn('Required elements not found for card selection');
+            return;
+        }
 
         const subjectKey = subjectSelect.value;
         
@@ -1092,15 +1149,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 選択パス表示を更新（レガシー関数 - 互換性のため残す）
-     */
-    updatePathDisplay() {
-        // 新しいupdateBreadcrumb()を呼び出す
-        this.updateBreadcrumb();
-    }
-
-    /**
-     * カード選択式の項目追加
+     * カード選択式の項目追加（Firebase統合版）
      */
     handleAddHierarchyItemCard() {
         const titleInput = document.getElementById('keyPointTitle');
@@ -1138,6 +1187,7 @@ class KeyPointsModuleClass {
                 type: 'html'
             };
 
+            // Firebase統合保存
             this.saveKeyPointsData();
 
             // フォームをクリア
@@ -1229,7 +1279,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 階層項目削除
+     * 階層項目削除（Firebase統合版）
      */
     deleteHierarchyItem(subjectKey, chapterName, sectionName, topicIndex) {
         if (confirm('この要点まとめを削除しますか？')) {
@@ -1243,6 +1293,7 @@ class KeyPointsModuleClass {
                 delete topic.htmlContent;
                 topic.type = 'link';
 
+                // Firebase統合保存
                 this.saveKeyPointsData();
                 
                 const listContainer = document.getElementById('keyPointsList');
@@ -1451,98 +1502,7 @@ class KeyPointsModuleClass {
                 border-radius: 3px;
             }
 
-            /* 大きなカード選択式スタイル（科目一覧表示用） */
-            .card-selection-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 12px;
-                margin: 15px 0;
-            }
-
-            .selection-card {
-                background: white;
-                border: 2px solid var(--light);
-                border-radius: 10px;
-                padding: 15px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                min-height: 80px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                text-align: center;
-                position: relative;
-            }
-
-            .selection-card:hover {
-                border-color: var(--secondary);
-                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.15);
-                transform: translateY(-3px);
-            }
-
-            .selection-card.selected {
-                border-color: var(--primary);
-                background: linear-gradient(135deg, rgba(44, 62, 80, 0.08), rgba(52, 152, 219, 0.08));
-                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
-                transform: translateY(-2px);
-            }
-
-            .selection-card .card-title {
-                font-weight: 600;
-                font-size: 14px;
-                margin-bottom: 8px;
-                line-height: 1.3;
-                color: var(--dark);
-            }
-
-            .selection-card .card-meta {
-                font-size: 12px;
-                color: var(--gray);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                flex-wrap: wrap;
-            }
-
-            .chapter-card {
-                background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            }
-
-            .section-card {
-                background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
-            }
-
-            .topic-card .card-meta {
-                flex-direction: column;
-                gap: 5px;
-            }
-
-            .custom-badge {
-                background: linear-gradient(135deg, #4caf50, #66bb6a);
-                color: white;
-                padding: 3px 8px;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-                box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
-            }
-
-            .link-badge {
-                background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
-                color: white;
-                padding: 3px 8px;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-            }
-
             @media (max-width: 768px) {
-                .card-selection-grid {
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 10px;
-                }
-                
                 .small-card-grid {
                     grid-template-columns: repeat(4, 1fr);
                     gap: 6px;
@@ -1551,15 +1511,6 @@ class KeyPointsModuleClass {
                 .subject-grid-fixed {
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 10px !important;
-                }
-
-                .selection-card {
-                    padding: 12px;
-                    min-height: 70px;
-                }
-
-                .selection-card .card-title {
-                    font-size: 13px;
                 }
 
                 .small-selection-card {
@@ -1582,11 +1533,6 @@ class KeyPointsModuleClass {
             }
 
             @media (max-width: 480px) {
-                .card-selection-grid {
-                    grid-template-columns: 1fr;
-                    gap: 8px;
-                }
-                
                 .small-card-grid {
                     grid-template-columns: repeat(3, 1fr);
                     gap: 5px;
@@ -1595,15 +1541,6 @@ class KeyPointsModuleClass {
                 .subject-grid-fixed {
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 8px !important;
-                }
-
-                .selection-card {
-                    padding: 10px;
-                    min-height: 60px;
-                }
-
-                .selection-card .card-title {
-                    font-size: 12px;
                 }
 
                 .small-selection-card {
