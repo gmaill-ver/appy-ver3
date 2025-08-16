@@ -5,13 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>学習トラッカー - 行政書士試験対策</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Firebase SDK (オプション) -->
-    <!-- Firebaseを使用する場合はコメントを外してください
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    -->
 </head>
 <body>
     <!-- ヘッダー -->
@@ -397,806 +390,732 @@
             <button class="dialog-btn primary" id="dialogConfirmBtn">確定</button>
         </div>
     </div>
-    
-    <!-- Firebase SDK v9 (Compat版) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<script>
-// Firebase設定
-const firebaseConfig = {
-    apiKey: "AIzaSyCa3-o7VIbxDzZDy7_SPHTk1kqpq23I79s",
-    authDomain: "gakushusintyoku.firebaseapp.com",
-    projectId: "gakushusintyoku",
-    storageBucket: "gakushusintyoku.firebasestorage.app",
-    messagingSenderId: "386582438890",
-    appId: "1:386582438890:web:78cd619f0d7ad3ae5a0893"
-};
+    <!-- 🔥 Firebase SDK v9 (Compat版) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-// Firebase初期化
-firebase.initializeApp(firebaseConfig);
+    <!-- 🔧 Firebase設定＆初期化 -->
+    <script>
+    // Firebase設定
+    const firebaseConfig = {
+        apiKey: "AIzaSyCa3-o7VIbxDzZDy7_SPHTk1kqpq23I79s",
+        authDomain: "gakushusintyoku.firebaseapp.com",
+        projectId: "gakushusintyoku",
+        storageBucket: "gakushusintyoku.firebasestorage.app",
+        messagingSenderId: "386582438890",
+        appId: "1:386582438890:web:78cd619f0d7ad3ae5a0893"
+    };
 
-// Firestoreの初期化と同期処理（1回だけ！）
-const db = firebase.firestore();
+    // Firebase初期化
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    </script>
 
-// ユーザー認証状態の監視
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        console.log('ユーザーがログインしました:', user.uid);
-        
-        // ユーザー固有のコレクションを監視
-        const userRef = db.collection('users').doc(user.uid);
-        
-        // データ保存関数
-        window.saveUserData = function(data) {
-            userRef.set(data, { merge: true })
-                .then(() => {
-                    console.log('データ保存成功');
-                    alert('データを保存しました');
-                })
-                .catch((error) => {
-                    console.error('データ保存エラー:', error);
-                    alert('データ保存に失敗しました');
-                });
-        };
-        
-        // データ読み込み関数（リアルタイム）
-        userRef.onSnapshot((doc) => {
-            if (doc.exists) {
-                const userData = doc.data();
-                console.log('ユーザーデータ:', userData);
-                
-                // データを画面に反映する処理
-                if (userData.allRecords) {
-                    DataManager.allRecords = userData.allRecords;
-                    if (window.Analytics) {
-                        Analytics.updateHistoryContent();
-                    }
-                }
-                
-                if (userData.books) {
-                    DataManager.books = userData.books;
-                }
-            } else {
-                console.log('ユーザーデータが見つかりません');
-            }
-        }, (error) => {
-            console.error('データ読み込みエラー:', error);
-        });
-        
-        // 定期的な自動保存
-        setInterval(() => {
-            const dataToSave = {
-                allRecords: DataManager.allRecords,
-                books: DataManager.books,
-                studyPlans: DataManager.studyPlans,
-            };
-            
-            saveUserData(dataToSave);
-        }, 5 * 60 * 1000); // 5分ごとに自動保存
-    } else {
-        console.log('ユーザーがログアウトしています');
-    }
-});
+    <!-- 📱 JavaScript モジュール読み込み（順序重要） -->
+    <script src="data-manager.js"></script>
+    <script src="ui-components.js"></script>
+    <script src="analytics.js"></script>
+    <script src="qa-module.js"></script>
+    <script src="timer-module.js"></script>
+    <script src="keypoints-module.js"></script>
+    <script src="app.js"></script>
 
-// デバッグ用の手動保存ボタン（必要に応じて追加）
-function manualSaveData() {
-    const user = firebase.auth().currentUser;
-    if (user) {
-        const dataToSave = {
-            allRecords: DataManager.allRecords,
-            books: DataManager.books,
-            studyPlans: DataManager.studyPlans,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        
-        db.collection('users').doc(user.uid).set(dataToSave, { merge: true })
-            .then(() => {
-                console.log('手動でデータを保存しました');
-                alert('データを保存しました');
-            })
-            .catch((error) => {
-                console.error('手動保存エラー:', error);
-                alert('データ保存に失敗しました');
-            });
-    } else {
-        alert('ログインしてください');
-    }
-}
-</script>
+    <!-- 🔥 完全固定ユーザーID版Firebase統合コード（キャッシュクリア完全対応） -->
+    <script>
+    console.log("🚀 完全固定Firebase統合開始（キャッシュクリア対応版）");
 
-<!-- JavaScript モジュール読み込み（順序重要） -->
-<script src="data-manager.js"></script>
-<script src="ui-components.js"></script>
-<script src="analytics.js"></script>
-<script src="qa-module.js"></script>
-<script src="timer-module.js"></script>
-<script src="keypoints-module.js"></script>
-<script src="app.js"></script>
-
-<!-- 🔥 固定ユーザーID版Firebase統合コード -->
-<script>
-console.log("🚀 固定ユーザーID版Firebase統合開始");
-
-// Firebaseオフライン永続化を有効にする
-try {
-    firebase.firestore().enablePersistence({ synchronizeTabs: true })
-        .then(() => {
-            console.log("✅ オフライン永続化有効（タブ同期あり）");
-        })
-        .catch((err) => {
-            console.log("⚠️ 永続化エラー:", err.code);
-        });
-} catch (error) {
-    console.log("⚠️ 永続化設定エラー:", error);
-}
-
-// 🔑 固定ユーザーIDを取得・生成（複数ストレージ対応）
-function getFixedUserId() {
-    // 複数の場所からIDを取得試行
-    let userId = localStorage.getItem('fixedUserId') || 
-                 sessionStorage.getItem('fixedUserId') ||
-                 getCookieValue('fixedUserId');
-    
-    if (!userId) {
-        // 固定IDを生成（デバイス固有＋ブラウザフィンガープリント）
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substr(2, 9);
-        const device = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-        const fingerprint = btoa(navigator.userAgent + navigator.language + screen.width + screen.height).substr(0, 8);
-        userId = `${device}_${timestamp}_${random}_${fingerprint}`;
-        
-        // 複数の場所に保存
-        localStorage.setItem('fixedUserId', userId);
-        sessionStorage.setItem('fixedUserId', userId);
-        setCookie('fixedUserId', userId, 365); // 1年間有効
-        
-        console.log("🆕 新しい固定ユーザーID生成:", userId);
-    } else {
-        // 見つかったIDを全ての場所に保存（バックアップ）
-        localStorage.setItem('fixedUserId', userId);
-        sessionStorage.setItem('fixedUserId', userId);
-        setCookie('fixedUserId', userId, 365);
-        console.log("✅ 既存の固定ユーザーID使用:", userId);
-    }
-    return userId;
-}
-
-// Cookie操作ヘルパー関数
-function setCookie(name, value, days) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-}
-
-function getCookieValue(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-// 固定ユーザーIDを取得
-const FIXED_USER_ID = getFixedUserId();
-
-// 統合データ保存処理（固定ID版）
-DataManager.saveToFirestore = async function(data) {
+    // 🔧 Firebase設定とオフライン永続化
     try {
-        console.log("📤 固定ID統合保存開始 - ユーザー:", FIXED_USER_ID);
-        console.log("📤 保存データ:", data);
+        // Firestoreのオフライン永続化（重要：他の処理より先に実行）
+        firebase.firestore().enablePersistence({ 
+            synchronizeTabs: true,
+            experimentalForceOwningTab: true 
+        }).then(() => {
+            console.log("✅ Firebase オフライン永続化有効");
+        }).catch((err) => {
+            if (err.code === 'failed-precondition') {
+                console.log("⚠️ 複数タブ開いているため永続化無効");
+            } else if (err.code === 'unimplemented') {
+                console.log("⚠️ ブラウザが永続化非対応");
+            }
+        });
+    } catch (error) {
+        console.error("Firebase設定エラー:", error);
+    }
+
+    // 🔑 超安定固定ユーザーID生成（完全固定版）
+    function generateUltraStableUserId() {
+        // より安定した要素のみ使用
+        const stableElements = [
+            navigator.userAgent.split(' ')[0], // ブラウザ名のみ
+            navigator.platform,
+            screen.width,
+            screen.height,
+            navigator.language,
+            navigator.hardwareConcurrency || '4',
+            new Date().getTimezoneOffset().toString()
+        ];
         
-        // 固定ユーザーIDのドキュメントに統合保存
-        const userRef = db.collection('fixedUsers').doc(FIXED_USER_ID);
+        // 最も安定したハッシュ生成
+        let hash = 'stable';
+        const combined = stableElements.join('|');
         
-        // 現在のデータを取得
-        const userDoc = await userRef.get();
-        let existingData = userDoc.exists ? userDoc.data() : {
-            userId: FIXED_USER_ID,
-            createdAt: new Date().toISOString(),
-            deviceInfo: {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        for (let i = 0; i < combined.length; i++) {
+            const char = combined.charCodeAt(i);
+            hash = ((hash << 5) - hash + char) & 0xffffffff;
+        }
+        
+        // デバイスタイプ判定（簡素化）
+        const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+        const deviceType = isMobile ? 'mobile' : 'desktop';
+        
+        // 完全固定ID（時間要素一切なし）
+        const baseId = Math.abs(hash).toString(36).padStart(8, '0');
+        return `${deviceType}_${baseId}_permanent`;
+    }
+
+    // 🏪 複数ストレージからの確実なID取得
+    async function getOrCreateFixedUserId() {
+        console.log("🔍 固定ID取得・生成開始");
+        
+        // 1. 既存IDを複数の場所から検索
+        let existingId = null;
+        
+        // LocalStorage
+        existingId = localStorage.getItem('ultraStableUserId');
+        if (existingId) {
+            console.log("✅ LocalStorageから固定ID取得");
+            await backupIdToAllStorages(existingId);
+            return existingId;
+        }
+        
+        // SessionStorage
+        existingId = sessionStorage.getItem('ultraStableUserId');
+        if (existingId) {
+            console.log("✅ SessionStorageから固定ID復元");
+            await backupIdToAllStorages(existingId);
+            return existingId;
+        }
+        
+        // Cookie
+        existingId = getCookieValue('ultraStableUserId');
+        if (existingId) {
+            console.log("✅ Cookieから固定ID復元");
+            await backupIdToAllStorages(existingId);
+            return existingId;
+        }
+        
+        // IndexedDB
+        existingId = await loadFromIndexedDB('ultraStableUserId');
+        if (existingId) {
+            console.log("✅ IndexedDBから固定ID復元");
+            await backupIdToAllStorages(existingId);
+            return existingId;
+        }
+        
+        // 2. Firebase検索（既存データがあるかもしれない）
+        const calculatedId = generateUltraStableUserId();
+        const firebaseId = await searchExistingDataInFirebase(calculatedId);
+        if (firebaseId) {
+            console.log("✅ Firebaseから既存データ発見");
+            await backupIdToAllStorages(firebaseId);
+            return firebaseId;
+        }
+        
+        // 3. 新規ID生成
+        console.log("🆕 新しい超安定固定ID生成");
+        const newId = calculatedId;
+        await backupIdToAllStorages(newId);
+        return newId;
+    }
+
+    // 🔍 Firebaseで既存データ検索
+    async function searchExistingDataInFirebase(calculatedId) {
+        try {
+            console.log("🔍 Firebase既存データ検索中...");
+            
+            // 1. 直接IDで検索
+            const directDoc = await db.collection('permanentUsers').doc(calculatedId).get();
+            if (directDoc.exists) {
+                console.log("✅ Firebase直接検索ヒット");
+                return calculatedId;
+            }
+            
+            // 2. デバイス指紋でクエリ検索
+            const fingerprint = generateUltraStableUserId().split('_')[1]; // ハッシュ部分
+            const querySnapshot = await db.collection('permanentUsers')
+                .where('deviceFingerprint', '==', fingerprint)
+                .limit(1)
+                .get();
+            
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                console.log("✅ Firebase指紋検索ヒット");
+                return doc.id;
+            }
+            
+            console.log("📭 Firebase既存データなし");
+            return null;
+        } catch (error) {
+            console.error("Firebase検索エラー:", error);
+            return null;
+        }
+    }
+
+    // 💾 全ストレージにバックアップ
+    async function backupIdToAllStorages(userId) {
+        // LocalStorage
+        localStorage.setItem('ultraStableUserId', userId);
+        
+        // SessionStorage  
+        sessionStorage.setItem('ultraStableUserId', userId);
+        
+        // Cookie（1年間有効）
+        setCookie('ultraStableUserId', userId, 365);
+        
+        // IndexedDB
+        await saveToIndexedDB('ultraStableUserId', userId);
+        
+        console.log("💾 全ストレージにID保存完了:", userId);
+    }
+
+    // 🍪 Cookie操作
+    function setCookie(name, value, days) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax;Secure`;
+    }
+
+    function getCookieValue(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // 💿 IndexedDB操作（Promise版）
+    function saveToIndexedDB(key, value) {
+        return new Promise((resolve) => {
+            try {
+                const request = indexedDB.open('StudyTrackerPermanentDB', 1);
+                request.onupgradeneeded = function(e) {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('permanentData')) {
+                        db.createObjectStore('permanentData', { keyPath: 'key' });
+                    }
+                };
+                request.onsuccess = function(e) {
+                    const db = e.target.result;
+                    const transaction = db.transaction(['permanentData'], 'readwrite');
+                    const store = transaction.objectStore('permanentData');
+                    store.put({ 
+                        key: key, 
+                        value: value, 
+                        timestamp: Date.now(),
+                        version: '2.0'
+                    });
+                    transaction.oncomplete = () => {
+                        console.log("✅ IndexedDB保存成功");
+                        resolve(true);
+                    };
+                    transaction.onerror = () => resolve(false);
+                };
+                request.onerror = () => resolve(false);
+            } catch (error) {
+                console.error("IndexedDB保存エラー:", error);
+                resolve(false);
+            }
+        });
+    }
+
+    function loadFromIndexedDB(key) {
+        return new Promise((resolve) => {
+            try {
+                const request = indexedDB.open('StudyTrackerPermanentDB', 1);
+                request.onsuccess = function(e) {
+                    const db = e.target.result;
+                    if (db.objectStoreNames.contains('permanentData')) {
+                        const transaction = db.transaction(['permanentData'], 'readonly');
+                        const store = transaction.objectStore('permanentData');
+                        const getRequest = store.get(key);
+                        getRequest.onsuccess = function() {
+                            if (getRequest.result && getRequest.result.value) {
+                                console.log("✅ IndexedDB読み込み成功");
+                                resolve(getRequest.result.value);
+                            } else {
+                                resolve(null);
+                            }
+                        };
+                        getRequest.onerror = () => resolve(null);
+                    } else {
+                        resolve(null);
+                    }
+                };
+                request.onerror = () => resolve(null);
+            } catch (error) {
+                console.error("IndexedDB読み込みエラー:", error);
+                resolve(null);
+            }
+        });
+    }
+
+    // 🆔 グローバル固定ID（初期化後設定）
+    let ULTRA_STABLE_USER_ID = null;
+
+    // ⚡ 初期化メイン処理
+    (async function initializeFirebaseIntegration() {
+        try {
+            console.log("🔄 Firebase統合初期化開始");
+            
+            // 固定ID取得・生成
+            ULTRA_STABLE_USER_ID = await getOrCreateFixedUserId();
+            console.log("🔒 確定した超安定固定ID:", ULTRA_STABLE_USER_ID);
+            
+            // グローバルからアクセス可能に
+            window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
+            
+            // Firebase操作を設定
+            setupFirebaseOperations();
+            
+            // 初期データ読み込み
+            await loadFromFirebaseInstantly();
+            
+            console.log("✅ Firebase統合初期化完了");
+            
+        } catch (error) {
+            console.error("❌ Firebase統合初期化エラー:", error);
+        }
+    })();
+
+    // 🔥 Firebase操作設定
+    function setupFirebaseOperations() {
+        // 保存処理
+        DataManager.saveToFirestore = async function(data) {
+            try {
+                if (!ULTRA_STABLE_USER_ID) {
+                    console.error("❌ 固定IDが未設定");
+                    return false;
+                }
+                
+                console.log("📤 超安定ID保存開始:", ULTRA_STABLE_USER_ID);
+                
+                const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+                
+                // 現在のデータを取得
+                const userDoc = await userRef.get();
+                let existingData = userDoc.exists ? userDoc.data() : {
+                    userId: ULTRA_STABLE_USER_ID,
+                    deviceFingerprint: ULTRA_STABLE_USER_ID.split('_')[1],
+                    createdAt: new Date().toISOString(),
+                    deviceInfo: {
+                        userAgent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language
+                    }
+                };
+                
+                // 学習記録追加
+                if (!existingData.studyRecords) {
+                    existingData.studyRecords = [];
+                }
+                
+                const newRecord = {
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+                    recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+                };
+                
+                existingData.studyRecords.unshift(newRecord);
+                
+                // 最新100件まで保持
+                if (existingData.studyRecords.length > 100) {
+                    existingData.studyRecords = existingData.studyRecords.slice(0, 100);
+                }
+                
+                // 全データ統合保存
+                existingData.allRecords = DataManager.allRecords || [];
+                existingData.books = DataManager.books || {};
+                existingData.studyPlans = DataManager.studyPlans || [];
+                existingData.qaQuestions = DataManager.qaQuestions || {};
+                existingData.csvTemplates = DataManager.csvTemplates || {};
+                existingData.examDate = DataManager.examDate ? DataManager.examDate.toISOString() : null;
+                existingData.heatmapPinnedBook = DataManager.heatmapPinnedBook || null;
+                existingData.radarPinnedBook = DataManager.radarPinnedBook || null;
+                existingData.bookOrder = DataManager.bookOrder || [];
+                existingData.analysisCardOrder = DataManager.analysisCardOrder || [];
+                
+                // メタデータ更新
+                existingData.lastUpdated = new Date().toISOString();
+                existingData.lastDevice = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
+                existingData.syncCount = (existingData.syncCount || 0) + 1;
+                
+                // Firestore保存
+                await userRef.set(existingData, { merge: true });
+                
+                console.log("✅ 超安定ID保存成功");
+                showSuccessNotification(existingData.studyRecords.length, existingData.syncCount);
+                
+                return true;
+            } catch (error) {
+                console.error("❌ Firebase保存エラー:", error);
+                showErrorNotification(error.message);
+                return false;
             }
         };
         
-        // 学習記録を配列に追加（最新100件まで保持）
-        if (!existingData.studyRecords) {
-            existingData.studyRecords = [];
-        }
-        
-        // 新しい記録を追加
-        const newRecord = {
-            ...data,
-            timestamp: new Date().toISOString(),
-            deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-            id: Date.now().toString(),
-            recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+        // 読み込み処理
+        DataManager.loadFromFirestore = async function() {
+            if (!ULTRA_STABLE_USER_ID) return;
+            
+            console.log("📥 超安定ID読み込み開始:", ULTRA_STABLE_USER_ID);
+            
+            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+            
+            // リアルタイム監視
+            userRef.onSnapshot((doc) => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    console.log("📥 リアルタイム更新検知");
+                    restoreAllDataFromFirebase(userData);
+                } else {
+                    console.log("📭 Firebaseデータなし");
+                }
+            }, (error) => {
+                console.error("❌ リアルタイム監視エラー:", error);
+            });
         };
+    }
+
+    // 📥 即座にデータ読み込み
+    async function loadFromFirebaseInstantly() {
+        if (!ULTRA_STABLE_USER_ID) return;
         
-        existingData.studyRecords.unshift(newRecord); // 先頭に追加
-        
-        // 最新100件まで保持
-        if (existingData.studyRecords.length > 100) {
-            existingData.studyRecords = existingData.studyRecords.slice(0, 100);
+        try {
+            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+            const doc = await userRef.get();
+            
+            if (doc.exists) {
+                console.log("📥 即座にFirebaseデータ復元");
+                restoreAllDataFromFirebase(doc.data());
+            } else {
+                console.log("📭 Firebaseに初回データなし");
+                // 初回データ移行スケジュール
+                setTimeout(() => {
+                    if (DataManager.books && Object.keys(DataManager.books).length > 0) {
+                        DataManager.saveToFirestore({
+                            type: "initialMigration",
+                            message: "初回データ移行"
+                        });
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error("❌ 即座読み込みエラー:", error);
         }
+    }
+
+    // 🔄 全データ復元処理
+    function restoreAllDataFromFirebase(userData) {
+        let restoredCount = 0;
         
-        // LocalStorageデータも統合保存
-        existingData.allRecords = DataManager.allRecords || [];
-        existingData.books = DataManager.books || {};
-        existingData.studyPlans = DataManager.studyPlans || [];
-        existingData.qaQuestions = DataManager.qaQuestions || {};
-        existingData.csvTemplates = DataManager.csvTemplates || {};
-        existingData.examDate = DataManager.examDate ? DataManager.examDate.toISOString() : null;
-        existingData.heatmapPinnedBook = DataManager.heatmapPinnedBook || null;
-        existingData.radarPinnedBook = DataManager.radarPinnedBook || null;
-        existingData.bookOrder = DataManager.bookOrder || [];
-        existingData.analysisCardOrder = DataManager.analysisCardOrder || [];
-        
-        // メタデータ更新
-        existingData.lastUpdated = new Date().toISOString();
-        existingData.lastDevice = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-        existingData.lastUserAgent = navigator.userAgent;
-        existingData.syncCount = (existingData.syncCount || 0) + 1;
-        
-        // Firestoreに保存
-        await userRef.set(existingData, { merge: true });
-        
-        console.log("✅ 固定ID統合保存成功 - 記録数:", existingData.studyRecords.length);
-        
-        // 成功通知
+        try {
+            // 学習履歴
+            if (userData.allRecords && Array.isArray(userData.allRecords)) {
+                DataManager.allRecords = userData.allRecords;
+                localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
+                restoredCount++;
+            }
+            
+            // 問題集
+            if (userData.books && typeof userData.books === 'object') {
+                DataManager.books = userData.books;
+                localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
+                restoredCount++;
+            }
+            
+            // 学習計画
+            if (userData.studyPlans && Array.isArray(userData.studyPlans)) {
+                DataManager.studyPlans = userData.studyPlans;
+                localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
+                restoredCount++;
+            }
+            
+            // 一問一答
+            if (userData.qaQuestions && typeof userData.qaQuestions === 'object') {
+                DataManager.qaQuestions = userData.qaQuestions;
+                localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
+                restoredCount++;
+            }
+            
+            // その他設定
+            if (userData.examDate) {
+                DataManager.examDate = new Date(userData.examDate);
+                localStorage.setItem('examDate', userData.examDate);
+                restoredCount++;
+            }
+            
+            if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
+                DataManager.bookOrder = userData.bookOrder;
+                localStorage.setItem('bookOrder', JSON.stringify(userData.bookOrder));
+                restoredCount++;
+            }
+            
+            console.log(`✅ 全データ復元完了 - ${restoredCount}項目`);
+            
+            if (restoredCount > 0) {
+                showRestoreNotification(restoredCount, userData.syncCount || 0);
+                updateAllUI();
+            }
+            
+        } catch (error) {
+            console.error("❌ データ復元エラー:", error);
+        }
+    }
+
+    // 🖥️ UI更新
+    function updateAllUI() {
+        setTimeout(() => {
+            try {
+                if (window.App && typeof App.renderBookCards === 'function') {
+                    App.renderBookCards();
+                }
+                if (window.Analytics && typeof Analytics.updateHistoryContent === 'function') {
+                    Analytics.updateHistoryContent();
+                    Analytics.updateHeatmapBookSelect();
+                    Analytics.updateRadarBookSelect();
+                }
+                if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
+                    UIComponents.updateExamCountdown();
+                }
+                console.log("✅ UI更新完了");
+            } catch (error) {
+                console.error("⚠️ UI更新エラー:", error);
+            }
+        }, 200);
+    }
+
+    // 🔔 通知機能
+    function showSuccessNotification(recordCount, syncCount) {
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #4caf50, #81c784);
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
             color: white;
             padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
             z-index: 9999;
             font-weight: 600;
-            animation: slideIn 0.3s ease;
+            animation: slideInRight 0.3s ease;
         `;
         notification.innerHTML = `
             ✅ 保存完了！<br>
-            記録数: ${existingData.studyRecords.length}<br>
-            ID: ${FIXED_USER_ID.substr(0, 12)}...
+            記録: ${recordCount}件<br>
+            同期: ${syncCount}回<br>
+            ID: ${ULTRA_STABLE_USER_ID?.substr(0, 12)}...
         `;
         document.body.appendChild(notification);
         
-        // 3秒後に自動削除
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 3000);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    function showRestoreNotification(restoredCount, syncCount) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #2196f3, #42a5f5);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+            z-index: 9999;
+            font-weight: 600;
+            animation: slideInRight 0.3s ease;
+        `;
+        notification.innerHTML = `
+            🔄 データ復元完了！<br>
+            復元: ${restoredCount}項目<br>
+            同期: ${syncCount}回<br>
+            固定ID使用中
+        `;
+        document.body.appendChild(notification);
         
-        // 履歴を即座に更新
-        updateFixedHistoryDisplay(existingData);
-        
-        return true;
-    } catch (error) {
-        console.error("❌ 固定ID統合保存失敗:", error);
-        
-        // エラー通知
-        const errorNotification = document.createElement('div');
-        errorNotification.style.cssText = `
+        setTimeout(() => notification.remove(), 4000);
+    }
+
+    function showErrorNotification(message) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             background: linear-gradient(135deg, #f44336, #ef5350);
             color: white;
             padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.3);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4);
             z-index: 9999;
             font-weight: 600;
+            animation: slideInRight 0.3s ease;
         `;
-        errorNotification.innerHTML = `❌ 保存失敗<br>${error.message}`;
-        document.body.appendChild(errorNotification);
+        notification.innerHTML = `❌ エラー<br>${message}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => notification.remove(), 5000);
+    }
+
+    // 🎯 学習記録保存の拡張
+    const originalSaveRecord = App.saveRecord;
+    App.saveRecord = function() {
+        console.log("💾 学習記録保存（超安定ID版）");
+        originalSaveRecord.call(this);
+        
+        if (!ULTRA_STABLE_USER_ID) {
+            console.error("❌ 固定IDが未設定のため保存スキップ");
+            return;
+        }
+        
+        const record = {
+            type: "studyRecord",
+            bookId: this.currentBook?.id,
+            bookName: this.currentBook?.name,
+            path: this.currentPath ? [...this.currentPath] : [],
+            questionsCount: this.questionStates ? Object.keys(this.questionStates).length : 0,
+            stats: {
+                total: parseInt(document.getElementById('totalCount')?.textContent || '0'),
+                correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
+                wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
+                rate: document.getElementById('correctRate')?.textContent || '0%'
+            }
+        };
+        
+        DataManager.saveToFirestore(record);
+    };
+
+    // 🎛️ 管理ボタン追加
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("🎛️ 管理ボタン追加");
         
         setTimeout(() => {
-            if (errorNotification.parentNode) {
-                errorNotification.remove();
-            }
-        }, 5000);
-        
-        return false;
-    }
-};
-
-// 統合データ読み込み・復元処理（強化版）
-DataManager.loadFromFirestore = function() {
-    console.log("📥 固定ID統合データ読み込み開始 - ID:", FIXED_USER_ID);
-    
-    const userRef = db.collection('fixedUsers').doc(FIXED_USER_ID);
-    
-    // 初回即座にデータを取得（リアルタイム監視の前に）
-    userRef.get().then((doc) => {
-        if (doc.exists) {
-            console.log("📥 初回データ取得成功");
-            restoreDataFromFirebase(doc.data());
-        } else {
-            console.log("📭 初回データ取得：データなし");
-        }
-    }).catch((error) => {
-        console.error("❌ 初回データ取得エラー:", error);
-    });
-    
-    // リアルタイムでユーザーデータを監視
-    userRef.onSnapshot((doc) => {
-        if (doc.exists) {
-            const userData = doc.data();
-            console.log("📥 リアルタイム更新検知 - 同期回数:", userData.syncCount || 0);
-            restoreDataFromFirebase(userData);
-        } else {
-            console.log("📭 リアルタイム更新：データなし（初回利用）");
-            scheduleInitialDataSave();
-        }
-    }, (error) => {
-        console.error("❌ リアルタイム監視エラー:", error);
-    });
-};
-
-// データ復元処理を関数化
-function restoreDataFromFirebase(userData) {
-    let restoredCount = 0;
-    
-    // 学習履歴復元
-    if (userData.allRecords && Array.isArray(userData.allRecords)) {
-        DataManager.allRecords = userData.allRecords;
-        localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
-        console.log("✅ 学習履歴復元:", userData.allRecords.length + "件");
-        restoredCount++;
-    }
-    
-    // 問題集データ復元
-    if (userData.books && typeof userData.books === 'object') {
-        DataManager.books = userData.books;
-        localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
-        console.log("✅ 問題集データ復元:", Object.keys(userData.books).length + "冊");
-        restoredCount++;
-    }
-    
-    // 学習計画復元
-    if (userData.studyPlans && Array.isArray(userData.studyPlans)) {
-        DataManager.studyPlans = userData.studyPlans;
-        localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
-        console.log("✅ 学習計画復元:", userData.studyPlans.length + "件");
-        restoredCount++;
-    }
-    
-    // 一問一答復元
-    if (userData.qaQuestions && typeof userData.qaQuestions === 'object') {
-        DataManager.qaQuestions = userData.qaQuestions;
-        localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
-        console.log("✅ 一問一答復元:", Object.keys(userData.qaQuestions).length + "セット");
-        restoredCount++;
-    }
-    
-    // CSVテンプレート復元
-    if (userData.csvTemplates && typeof userData.csvTemplates === 'object') {
-        DataManager.csvTemplates = userData.csvTemplates;
-        localStorage.setItem('csvTemplates', JSON.stringify(userData.csvTemplates));
-        console.log("✅ CSVテンプレート復元:", Object.keys(userData.csvTemplates).length + "件");
-        restoredCount++;
-    }
-    
-    // 試験日復元
-    if (userData.examDate) {
-        try {
-            DataManager.examDate = new Date(userData.examDate);
-            localStorage.setItem('examDate', userData.examDate);
-            console.log("✅ 試験日復元:", DataManager.examDate);
-            restoredCount++;
-        } catch (e) {
-            console.log("⚠️ 試験日復元エラー");
-        }
-    }
-    
-    // その他設定復元
-    if (userData.heatmapPinnedBook) {
-        DataManager.heatmapPinnedBook = userData.heatmapPinnedBook;
-        localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
-        restoredCount++;
-    }
-    
-    if (userData.radarPinnedBook) {
-        DataManager.radarPinnedBook = userData.radarPinnedBook;
-        localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
-        restoredCount++;
-    }
-    
-    if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
-        DataManager.bookOrder = userData.bookOrder;
-        localStorage.setItem('bookOrder', JSON.stringify(userData.bookOrder));
-        restoredCount++;
-    }
-    
-    if (userData.analysisCardOrder && Array.isArray(userData.analysisCardOrder)) {
-        DataManager.analysisCardOrder = userData.analysisCardOrder;
-        localStorage.setItem('analysisCardOrder', JSON.stringify(userData.analysisCardOrder));
-        restoredCount++;
-    }
-    
-    // 復元完了通知
-    if (restoredCount > 0) {
-        showRestoreNotification(restoredCount, userData.syncCount || 0);
-    }
-    
-    // 学習記録履歴を表示
-    updateFixedHistoryDisplay(userData);
-    
-    // 画面を更新（少し遅延させて確実に実行）
-    setTimeout(() => {
-        updateAllUI();
-    }, 300);
-    
-    console.log(`✅ 固定ID全データ復元完了 - 復元項目数: ${restoredCount}, 同期回数: ${userData.syncCount || 0}`);
-}
-
-// UI更新処理
-function updateAllUI() {
-    try {
-        if (window.App && typeof App.renderBookCards === 'function') {
-            App.renderBookCards();
-        }
-        if (window.Analytics && typeof Analytics.updateHistoryContent === 'function') {
-            Analytics.updateHistoryContent();
-        }
-        if (window.Analytics && typeof Analytics.updateHeatmapBookSelect === 'function') {
-            Analytics.updateHeatmapBookSelect();
-            Analytics.updateRadarBookSelect();
-        }
-        if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
-            UIComponents.updateExamCountdown();
-        }
-        console.log("✅ UI更新完了");
-    } catch (error) {
-        console.error("⚠️ UI更新エラー:", error);
-    }
-}
-
-// 初回データ保存スケジュール
-function scheduleInitialDataSave() {
-    setTimeout(() => {
-        if (DataManager.books && Object.keys(DataManager.books).length > 0) {
-            console.log("💾 初回データをFirestoreに保存");
-            DataManager.saveToFirestore({
-                type: "initialDataMigration",
-                message: "初回LocalStorageデータをFirestoreに移行",
-                dataInfo: {
-                    books: Object.keys(DataManager.books).length,
-                    records: DataManager.allRecords ? DataManager.allRecords.length : 0,
-                    plans: DataManager.studyPlans ? DataManager.studyPlans.length : 0
-                },
-                migrationTime: new Date().toISOString()
-            });
-        }
-    }, 3000);
-}
-
-// 復元完了通知
-function showRestoreNotification(restoredCount, syncCount) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
-        z-index: 9999;
-        font-weight: 600;
-        animation: slideIn 0.3s ease;
-        max-width: 300px;
-    `;
-    notification.innerHTML = `
-        🔄 データ復元完了！<br>
-        復元項目: ${restoredCount}個<br>
-        同期回数: ${syncCount}回<br>
-        ID: ${FIXED_USER_ID.substr(0, 15)}...
-    `;
-    document.body.appendChild(notification);
-    
-    // 5秒後に自動削除
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 5000);
-}
-
-// 固定ID履歴表示
-function updateFixedHistoryDisplay(userData) {
-    const container = document.getElementById('historyContent');
-    if (!container) return;
-    
-    // 既存の統合履歴をクリア
-    const existingItems = container.querySelectorAll('[data-fixed-history]');
-    existingItems.forEach(item => item.remove());
-    
-    // 固定IDヘッダーを追加
-    const headerItem = document.createElement('div');
-    headerItem.setAttribute('data-fixed-history', 'header');
-    headerItem.style.cssText = 'padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 10px; margin-bottom: 10px; text-align: center; position: relative;';
-    headerItem.innerHTML = `
-        <div style="font-weight: 700; font-size: 16px; margin-bottom: 5px;">
-            🔒 固定ID同期完了
-        </div>
-        <div style="font-size: 13px; opacity: 0.9;">
-            固定ID: ${FIXED_USER_ID.substr(0, 20)}...
-        </div>
-        <div style="font-size: 12px; opacity: 0.8; margin-top: 5px;">
-            記録: ${userData.studyRecords ? userData.studyRecords.length : 0}件 | 同期: ${userData.syncCount || 0}回
-        </div>
-        <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">
-            最終更新: ${userData.lastDevice || 'unknown'} - ${userData.lastUpdated ? new Date(userData.lastUpdated).toLocaleString('ja-JP') : '不明'}
-        </div>
-    `;
-    container.insertBefore(headerItem, container.firstChild);
-    
-    // 最新10件の記録を表示
-    if (userData.studyRecords && userData.studyRecords.length > 0) {
-        const recentRecords = userData.studyRecords.slice(0, 10);
-        recentRecords.forEach((record, index) => {
-            const item = document.createElement('div');
-            item.setAttribute('data-fixed-history', 'record');
-            item.style.cssText = 'padding: 12px; background: linear-gradient(135deg, #f8f9fa, #e9ecef); border-left: 4px solid #667eea; border-radius: 8px; margin-bottom: 8px;';
-            
-            const timeStr = new Date(record.timestamp).toLocaleString('ja-JP');
-            
-            item.innerHTML = `
-                <div style="font-weight: 600; color: #495057; margin-bottom: 5px;">
-                    📱 ${record.deviceType} - ${record.type || 'データ'}
-                </div>
-                <div style="font-size: 12px; color: #6c757d; margin-bottom: 8px;">
-                    📅 ${timeStr} | ID: ${record.recordId || 'N/A'}
-                </div>
-                <div style="font-size: 11px; background: white; padding: 8px; border-radius: 4px; font-family: monospace; max-height: 60px; overflow: hidden;">
-                    ${JSON.stringify(record, null, 1).substring(0, 200)}...
-                </div>
-            `;
-            
-            container.insertBefore(item, container.children[1]); // ヘッダーの次に挿入
-        });
-    }
-}
-
-// 保存ボタンの動作を拡張（固定ID版）
-const originalSaveRecord = App.saveRecord;
-App.saveRecord = function() {
-    console.log("💾 App.saveRecord 実行（固定ID版）");
-    originalSaveRecord.call(this);
-    
-    const record = {
-        type: "studyRecord",
-        bookId: this.currentBook?.id,
-        bookName: this.currentBook?.name,
-        path: this.currentPath ? [...this.currentPath] : [],
-        questionsCount: this.questionStates ? Object.keys(this.questionStates).length : 0,
-        stats: {
-            total: parseInt(document.getElementById('totalCount')?.textContent || '0'),
-            correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
-            wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
-            rate: document.getElementById('correctRate')?.textContent || '0%'
-        }
-    };
-    
-    console.log("💾 学習記録を固定ID統合保存:", record);
-    DataManager.saveToFirestore(record);
-};
-
-// 固定IDテストボタンと管理機能
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🎯 固定ID管理機能追加");
-    
-    const header = document.querySelector('.app-header');
-    if (header) {
-        // 既存ボタンを削除
-        const existingBtn = header.querySelector('[data-test-firebase]');
-        if (existingBtn) existingBtn.remove();
-        
-        // メインテストボタン
-        const testBtn = document.createElement('button');
-        testBtn.setAttribute('data-test-firebase', 'true');
-        testBtn.textContent = '🔒固定';
-        testBtn.style.cssText = `
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 3px 15px rgba(102, 126, 234, 0.4);
-            z-index: 1000;
-        `;
-        testBtn.onclick = function() {
-            console.log("🔒 固定IDテストボタンクリック");
-            
-            const testData = {
-                test: "固定IDテスト_" + Date.now(),
-                message: "固定ユーザーID + データ永続化テスト",
-                userAgent: navigator.userAgent,
-                fixedUserId: FIXED_USER_ID,
-                randomValue: Math.random(),
-                testTime: new Date().toISOString()
-            };
-            
-            console.log("🧪 固定IDテストデータ:", testData);
-            DataManager.saveToFirestore(testData);
-        };
-        header.appendChild(testBtn);
-        
-        // ID情報ボタン
-        const infoBtn = document.createElement('button');
-        infoBtn.textContent = 'ℹ️';
-        infoBtn.style.cssText = `
-            position: absolute;
-            top: 20px;
-            left: 90px;
-            background: rgba(102, 126, 234, 0.8);
-            border: none;
-            border-radius: 50%;
-            color: white;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            z-index: 1000;
-        `;
-        infoBtn.onclick = function() {
-            alert(`🔒 固定ユーザーID情報\n\nID: ${FIXED_USER_ID}\n作成日: ${localStorage.getItem('fixedUserId') ? '既存' : '新規'}\n\nこのIDでデータが永続化されます。\nキャッシュクリア後も同じIDで復元されます。`);
-        };
-        header.appendChild(infoBtn);
-        
-        console.log("✅ 🔒固定管理ボタン追加完了");
-    }
-    
-    // 起動時データ読み込み（早期実行）
-    setTimeout(() => {
-        console.log("📥 固定ID起動時データ読み込み開始");
-        DataManager.loadFromFirestore();
-    }, 500); // 500msに短縮
-    
-    // データ存在確認＋強制復元（キャッシュクリア対策）
-    setTimeout(() => {
-        console.log("🔍 データ存在確認＋強制復元実行");
-        forceDataCheck();
-    }, 2000);
-});
-
-// データ存在確認＋強制復元
-async function forceDataCheck() {
-    try {
-        // LocalStorageが空の場合、強制的にFirebaseから復元
-        const hasLocalBooks = DataManager.books && Object.keys(DataManager.books).length > 0;
-        const hasLocalRecords = DataManager.allRecords && DataManager.allRecords.length > 0;
-        
-        if (!hasLocalBooks || !hasLocalRecords) {
-            console.log("⚠️ LocalStorageにデータなし - 強制Firebase復元実行");
-            
-            const userRef = db.collection('fixedUsers').doc(FIXED_USER_ID);
-            const doc = await userRef.get();
-            
-            if (doc.exists) {
-                const userData = doc.data();
-                console.log("🔄 強制復元実行 - Firebaseデータあり");
-                restoreDataFromFirebase(userData);
+            const header = document.querySelector('.app-header');
+            if (header && ULTRA_STABLE_USER_ID) {
+                // 既存ボタン削除
+                const existing = header.querySelector('[data-firebase-btn]');
+                if (existing) existing.remove();
                 
-                // 強制復元完了通知
-                const notification = document.createElement('div');
-                notification.style.cssText = `
-                    position: fixed;
-                    top: 140px;
-                    right: 20px;
-                    background: linear-gradient(135deg, #ff9800, #f57c00);
-                    color: white;
-                    padding: 15px 20px;
+                // 保存テストボタン
+                const testBtn = document.createElement('button');
+                testBtn.setAttribute('data-firebase-btn', 'true');
+                testBtn.textContent = '🔒超安定';
+                testBtn.style.cssText = `
+                    position: absolute;
+                    top: 20px;
+                    left: 20px;
+                    background: linear-gradient(135deg, #9c27b0, #673ab7);
+                    border: none;
                     border-radius: 8px;
-                    box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3);
-                    z-index: 9999;
-                    font-weight: 600;
-                    animation: slideIn 0.3s ease;
+                    color: white;
+                    padding: 8px 12px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    font-weight: bold;
+                    box-shadow: 0 3px 15px rgba(156, 39, 176, 0.4);
+                    z-index: 1000;
                 `;
-                notification.innerHTML = `
-                    🔄 強制復元完了！<br>
-                    キャッシュクリア後のデータ復元<br>
-                    ID: ${FIXED_USER_ID.substr(0, 15)}...
+                testBtn.onclick = function() {
+                    const testData = {
+                        test: "超安定IDテスト_" + Date.now(),
+                        message: "キャッシュクリア対応テスト",
+                        stableId: ULTRA_STABLE_USER_ID,
+                        randomValue: Math.random(),
+                        testTime: new Date().toISOString()
+                    };
+                    DataManager.saveToFirestore(testData);
+                };
+                header.appendChild(testBtn);
+                
+                // ID情報ボタン
+                const infoBtn = document.createElement('button');
+                infoBtn.textContent = 'ℹ️';
+                infoBtn.style.cssText = `
+                    position: absolute;
+                    top: 20px;
+                    left: 85px;
+                    background: rgba(156, 39, 176, 0.8);
+                    border: none;
+                    border-radius: 50%;
+                    color: white;
+                    width: 28px;
+                    height: 28px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    z-index: 1000;
                 `;
-                document.body.appendChild(notification);
-                
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 4000);
-                
-            } else {
-                console.log("📭 Firebaseにもデータなし");
+                infoBtn.onclick = function() {
+                    showIdInfo();
+                };
+                header.appendChild(infoBtn);
             }
-        } else {
-            console.log("✅ LocalStorageにデータあり - 強制復元スキップ");
-        }
-    } catch (error) {
-        console.error("❌ 強制復元エラー:", error);
+        }, 1000);
+    });
+
+    // 📋 ID情報表示
+    function showIdInfo() {
+        const info = `🔒 超安定固定ユーザーID
+
+    現在のID: ${ULTRA_STABLE_USER_ID}
+
+    保存状況:
+    ├ LocalStorage: ${localStorage.getItem('ultraStableUserId') ? '✅' : '❌'}
+    ├ SessionStorage: ${sessionStorage.getItem('ultraStableUserId') ? '✅' : '❌'}
+    ├ Cookie: ${getCookieValue('ultraStableUserId') ? '✅' : '❌'}
+    └ IndexedDB: 保存済み
+
+    このIDの特徴:
+    • 完全固定（時間要素なし）
+    • キャッシュクリア対応
+    • 複数ストレージ自動復元
+    • Firebase既存データ検索
+
+    キャッシュクリア後も安全に復元されます！`;
+
+        alert(info);
     }
-}
 
-// 固定IDリセット機能（デバッグ用）
-window.resetFixedUserId = function() {
-    if (confirm('固定ユーザーIDをリセットしますか？\n\n⚠️ 警告: 新しいIDが生成され、以前のクラウドデータにアクセスできなくなります。\n\n現在のID: ' + FIXED_USER_ID.substr(0, 20) + '...')) {
-        // 全ての保存場所からIDを削除
-        localStorage.removeItem('fixedUserId');
-        sessionStorage.removeItem('fixedUserId');
-        setCookie('fixedUserId', '', -1); // Cookie削除
-        
-        alert('固定IDをリセットしました。ページを再読み込みします。');
-        location.reload();
+    // 🎨 アニメーション追加
+    const style = document.createElement('style');
+    style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-};
-
-// ID確認機能（強化版）
-window.showFixedUserId = function() {
-    const storageInfo = {
-        localStorage: localStorage.getItem('fixedUserId') ? '✅' : '❌',
-        sessionStorage: sessionStorage.getItem('fixedUserId') ? '✅' : '❌',
-        cookie: getCookieValue('fixedUserId') ? '✅' : '❌'
-    };
-    
-    const info = `
-🔒 固定ユーザーID詳細情報
-
-現在のID: ${FIXED_USER_ID}
-短縮表示: ${FIXED_USER_ID.substr(0, 25)}...
-
-保存状況:
-├ LocalStorage: ${storageInfo.localStorage}
-├ SessionStorage: ${storageInfo.sessionStorage}
-└ Cookie: ${storageInfo.cookie}
-
-デバイス: ${/Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'モバイル' : 'デスクトップ'}
-作成日時: ${localStorage.getItem('fixedUserId') ? '既存ID使用中' : '新規作成'}
-
-このIDでクラウドデータが管理されています。
-複数の場所に保存しているため、キャッシュクリア後も復元されます。
-
-デバッグコマンド:
-- resetFixedUserId() : IDリセット
-- showFixedUserId() : この情報表示
-- forceDataCheck() : 強制データ確認・復元
     `;
-    console.log(info);
-    alert(info);
-};
+    document.head.appendChild(style);
 
-// 強制データ確認も外部から実行可能に
-window.forceDataCheck = forceDataCheck;
+    // 🧹 リセット機能（デバッグ用）
+    window.resetUltraStableId = function() {
+        if (confirm('超安定IDをリセットしますか？\n\n⚠️新しいIDが生成されます')) {
+            localStorage.removeItem('ultraStableUserId');
+            sessionStorage.removeItem('ultraStableUserId');
+            setCookie('ultraStableUserId', '', -1);
+            location.reload();
+        }
+    };
 
-// スタイル追加
-const style = document.createElement('style');
-style.textContent = `
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-`;
-document.head.appendChild(style);
+    // デバッグ用関数をグローバルに
+    window.showIdInfo = showIdInfo;
+    window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
 
-console.log("🔒 固定ユーザーID版Firebase統合が追加されました");
-console.log("🆔 現在の固定ID:", FIXED_USER_ID);
-console.log("🛠️ デバッグコマンド: resetFixedUserId(), showFixedUserId()");
-</script>
+    console.log("🔒 超安定Firebase統合完了");
+    console.log("🆔 現在のID:", ULTRA_STABLE_USER_ID);
+    console.log("🛠️ デバッグ: showIdInfo(), resetUltraStableId()");
+    </script>
 </body>
 </html>
