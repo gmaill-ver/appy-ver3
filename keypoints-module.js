@@ -1014,26 +1014,81 @@ class KeyPointsModuleClass {
         
         if (!breadcrumbPath || !breadcrumb) return;
 
-        let path = '';
+        let html = '';
+        
         if (this.selectedSubject) {
-            path += this.subjects[this.selectedSubject].name;
+            const subjectName = this.subjects[this.selectedSubject].name;
+            html += `<span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('subject')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${subjectName}</span>`;
             breadcrumb.style.display = 'block';
-        }
-        if (this.selectedChapter) {
-            path += ` → ${this.selectedChapter}`;
-        }
-        if (this.selectedSection) {
-            path += ` → ${this.selectedSection}`;
-        }
-        if (this.selectedTopic) {
-            path += ` → ${this.selectedTopic}`;
+            
+            if (this.selectedChapter) {
+                html += ` → <span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('chapter')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${this.selectedChapter}</span>`;
+                
+                if (this.selectedSection) {
+                    html += ` → <span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('section')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${this.selectedSection}</span>`;
+                    
+                    if (this.selectedTopic) {
+                        html += ` → <span class="breadcrumb-item current" style="color: #495057; font-weight: 600;">${this.selectedTopic}</span>`;
+                    }
+                }
+            }
         }
         
-        if (path) {
-            breadcrumbPath.textContent = path;
+        if (html) {
+            breadcrumbPath.innerHTML = html;
         } else {
             breadcrumb.style.display = 'none';
         }
+    }
+
+    /**
+     * パンくずリストから指定の段階に戻る
+     */
+    goToStep(step) {
+        const chapterCardsArea = document.getElementById('chapterCardsArea');
+        const sectionCardsArea = document.getElementById('sectionCardsArea');
+        const topicCardsArea = document.getElementById('topicCardsArea');
+        
+        // すべて非表示にする
+        if (chapterCardsArea) chapterCardsArea.style.display = 'none';
+        if (sectionCardsArea) sectionCardsArea.style.display = 'none';
+        if (topicCardsArea) topicCardsArea.style.display = 'none';
+        
+        // 登録ボタンを無効化
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+        
+        if (step === 'subject') {
+            // 科目選択段階に戻る（編選択を表示）
+            this.selectedChapter = null;
+            this.selectedSection = null;
+            this.selectedTopic = null;
+            this.selectedTopicIndex = null;
+            
+            if (chapterCardsArea) chapterCardsArea.style.display = 'block';
+            this.renderChapterCards(this.selectedSubject);
+            
+        } else if (step === 'chapter') {
+            // 編選択段階に戻る（節選択を表示）
+            this.selectedSection = null;
+            this.selectedTopic = null;
+            this.selectedTopicIndex = null;
+            
+            if (sectionCardsArea) sectionCardsArea.style.display = 'block';
+            this.renderSectionCards();
+            
+        } else if (step === 'section') {
+            // 節選択段階に戻る（項目選択を表示）
+            this.selectedTopic = null;
+            this.selectedTopicIndex = null;
+            
+            if (topicCardsArea) topicCardsArea.style.display = 'block';
+            this.renderTopicCards();
+        }
+        
+        this.updateBreadcrumb();
     }
 
     /**
@@ -1376,6 +1431,24 @@ class KeyPointsModuleClass {
                 border-radius: 3px;
                 font-size: 8px;
                 font-weight: bold;
+            }
+
+            /* パンくずリストのスタイル */
+            .breadcrumb-item {
+                transition: all 0.2s ease;
+            }
+
+            .breadcrumb-item:hover {
+                color: #0056b3 !important;
+                background: rgba(0, 123, 255, 0.1);
+                padding: 2px 4px;
+                border-radius: 3px;
+            }
+
+            .breadcrumb-item.current {
+                background: rgba(73, 80, 87, 0.1);
+                padding: 2px 4px;
+                border-radius: 3px;
             }
 
             /* 大きなカード選択式スタイル（科目一覧表示用） */
