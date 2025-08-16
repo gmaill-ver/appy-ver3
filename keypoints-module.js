@@ -488,23 +488,25 @@ class KeyPointsModuleClass {
                         </select>
                     </div>
                     
+                    <!-- パンくずリスト -->
+                    <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
+                        <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
+                    </div>
+                    
                     <div id="chapterCardsArea" style="display: none;">
                         <label class="form-label">編を選択</label>
-                        <div id="chapterCards" class="card-selection-grid"></div>
+                        <div id="chapterCards" class="small-card-grid"></div>
                     </div>
                     
                     <div id="sectionCardsArea" style="display: none;">
                         <label class="form-label">節を選択</label>
-                        <div id="sectionCards" class="card-selection-grid"></div>
+                        <div id="sectionCards" class="small-card-grid"></div>
                     </div>
                     
                     <div id="topicCardsArea" style="display: none;">
                         <label class="form-label">項目を選択</label>
-                        <div id="topicCards" class="card-selection-grid"></div>
-                    </div>
-                    
-                    <div id="selectedPath" style="display: none; margin: 15px 0; padding: 12px; background: linear-gradient(135deg, #e3f2fd, #f3e5f5); border-radius: 8px; border-left: 4px solid #2196f3;">
-                        <strong style="color: #1976d2;">📍 選択パス:</strong> <span id="pathDisplay" style="color: #424242; margin-left: 8px;"></span>
+                        <div id="topicCards" class="small-card-grid"></div>
                     </div>
                 </div>
                 
@@ -835,23 +837,23 @@ class KeyPointsModuleClass {
         const chapterCardsArea = document.getElementById('chapterCardsArea');
         const sectionCardsArea = document.getElementById('sectionCardsArea');
         const topicCardsArea = document.getElementById('topicCardsArea');
-        const selectedPath = document.getElementById('selectedPath');
+        const breadcrumb = document.getElementById('selectionBreadcrumb');
 
         if (!subjectSelect || !chapterCardsArea) return;
 
         const subjectKey = subjectSelect.value;
         
-        // 下位の選択をリセット
+        // すべての下位選択をリセット
+        chapterCardsArea.style.display = 'none';
         sectionCardsArea.style.display = 'none';
         topicCardsArea.style.display = 'none';
-        selectedPath.style.display = 'none';
+        breadcrumb.style.display = 'none';
         this.resetSelectionState();
 
         if (subjectKey && this.subjects[subjectKey]) {
             chapterCardsArea.style.display = 'block';
             this.renderChapterCards(subjectKey);
-        } else {
-            chapterCardsArea.style.display = 'none';
+            this.updateBreadcrumb();
         }
     }
 
@@ -885,15 +887,14 @@ class KeyPointsModuleClass {
         Object.entries(chapters).forEach(([chapterName, chapterData]) => {
             const sectionCount = Object.keys(chapterData.sections || {}).length;
             html += `
-                <div class="selection-card chapter-card" onclick="KeyPointsModule.selectChapterCard('${chapterName}')">
-                    <div class="card-title">${chapterName}</div>
-                    <div class="card-meta">${sectionCount} 節</div>
+                <div class="small-selection-card" onclick="KeyPointsModule.selectChapterCard('${chapterName}')">
+                    <div class="small-card-title">${chapterName}</div>
+                    <div class="small-card-meta">${sectionCount} 節</div>
                 </div>
             `;
         });
         
         container.innerHTML = html;
-        this.updatePathDisplay();
     }
 
     /**
@@ -902,21 +903,17 @@ class KeyPointsModuleClass {
     selectChapterCard(chapterName) {
         this.selectedChapter = chapterName;
         
-        // 選択状態を更新
-        document.querySelectorAll('#chapterCards .selection-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        event.target.closest('.selection-card').classList.add('selected');
-        
-        // 節カードを表示
+        // 編カードエリアを非表示にして節カードエリアを表示
+        const chapterCardsArea = document.getElementById('chapterCardsArea');
         const sectionCardsArea = document.getElementById('sectionCardsArea');
         const topicCardsArea = document.getElementById('topicCardsArea');
         
+        if (chapterCardsArea) chapterCardsArea.style.display = 'none';
         if (sectionCardsArea) sectionCardsArea.style.display = 'block';
         if (topicCardsArea) topicCardsArea.style.display = 'none';
         
         this.renderSectionCards();
-        this.updatePathDisplay();
+        this.updateBreadcrumb();
     }
 
     /**
@@ -931,9 +928,9 @@ class KeyPointsModuleClass {
         let html = '';
         Object.entries(sections).forEach(([sectionName, topics]) => {
             html += `
-                <div class="selection-card section-card" onclick="KeyPointsModule.selectSectionCard('${sectionName}')">
-                    <div class="card-title">${sectionName}</div>
-                    <div class="card-meta">${topics.length} 項目</div>
+                <div class="small-selection-card" onclick="KeyPointsModule.selectSectionCard('${sectionName}')">
+                    <div class="small-card-title">${sectionName}</div>
+                    <div class="small-card-meta">${topics.length} 項目</div>
                 </div>
             `;
         });
@@ -947,18 +944,15 @@ class KeyPointsModuleClass {
     selectSectionCard(sectionName) {
         this.selectedSection = sectionName;
         
-        // 選択状態を更新
-        document.querySelectorAll('#sectionCards .selection-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        event.target.closest('.selection-card').classList.add('selected');
-        
-        // 項目カードを表示
+        // 節カードエリアを非表示にして項目カードエリアを表示
+        const sectionCardsArea = document.getElementById('sectionCardsArea');
         const topicCardsArea = document.getElementById('topicCardsArea');
+        
+        if (sectionCardsArea) sectionCardsArea.style.display = 'none';
         if (topicCardsArea) topicCardsArea.style.display = 'block';
         
         this.renderTopicCards();
-        this.updatePathDisplay();
+        this.updateBreadcrumb();
     }
 
     /**
@@ -976,11 +970,11 @@ class KeyPointsModuleClass {
             const hasCustomContent = topic.type === 'html' && topic.htmlContent;
             
             html += `
-                <div class="selection-card topic-card" onclick="KeyPointsModule.selectTopicCard('${topic.title}', ${index})">
-                    <div class="card-title">${topic.title}</div>
-                    <div class="card-meta">
+                <div class="small-selection-card topic-card-small" onclick="KeyPointsModule.selectTopicCard('${topic.title}', ${index})">
+                    <div class="small-card-title">${topic.title}</div>
+                    <div class="small-card-meta">
                         <span class="difficulty-badge ${difficultyClass}">${topic.difficulty}</span>
-                        ${hasCustomContent ? '<span class="custom-badge">HTML登録済</span>' : '<span class="link-badge">リンクのみ</span>'}
+                        ${hasCustomContent ? '<span class="custom-badge-small">HTML</span>' : '<span class="link-badge-small">Link</span>'}
                     </div>
                 </div>
             `;
@@ -996,11 +990,11 @@ class KeyPointsModuleClass {
         this.selectedTopic = topicTitle;
         this.selectedTopicIndex = topicIndex;
         
-        // 選択状態を更新
-        document.querySelectorAll('#topicCards .selection-card').forEach(card => {
+        // 選択した項目カードを強調表示
+        document.querySelectorAll('#topicCards .small-selection-card').forEach(card => {
             card.classList.remove('selected');
         });
-        event.target.closest('.selection-card').classList.add('selected');
+        event.target.closest('.small-selection-card').classList.add('selected');
         
         // 登録ボタンを有効化
         const submitBtn = document.getElementById('submitBtn');
@@ -1008,21 +1002,22 @@ class KeyPointsModuleClass {
             submitBtn.disabled = false;
         }
         
-        this.updatePathDisplay();
+        this.updateBreadcrumb();
     }
 
     /**
-     * 選択パス表示を更新
+     * パンくずリスト表示を更新
      */
-    updatePathDisplay() {
-        const pathDisplay = document.getElementById('pathDisplay');
-        const selectedPath = document.getElementById('selectedPath');
+    updateBreadcrumb() {
+        const breadcrumbPath = document.getElementById('breadcrumbPath');
+        const breadcrumb = document.getElementById('selectionBreadcrumb');
         
-        if (!pathDisplay || !selectedPath) return;
+        if (!breadcrumbPath || !breadcrumb) return;
 
         let path = '';
         if (this.selectedSubject) {
             path += this.subjects[this.selectedSubject].name;
+            breadcrumb.style.display = 'block';
         }
         if (this.selectedChapter) {
             path += ` → ${this.selectedChapter}`;
@@ -1035,11 +1030,18 @@ class KeyPointsModuleClass {
         }
         
         if (path) {
-            pathDisplay.textContent = path;
-            selectedPath.style.display = 'block';
+            breadcrumbPath.textContent = path;
         } else {
-            selectedPath.style.display = 'none';
+            breadcrumb.style.display = 'none';
         }
+    }
+
+    /**
+     * 選択パス表示を更新（レガシー関数 - 互換性のため残す）
+     */
+    updatePathDisplay() {
+        // 新しいupdateBreadcrumb()を呼び出す
+        this.updateBreadcrumb();
     }
 
     /**
@@ -1100,7 +1102,7 @@ class KeyPointsModuleClass {
                 listContainer.innerHTML = this.renderKeyPointsList();
             }
 
-            alert('📚 要点まとめを登録しました！該当項目をクリックすると表示されます。');
+            alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
         } else {
             alert('選択した項目が見つかりません');
         }
@@ -1156,7 +1158,7 @@ class KeyPointsModuleClass {
                             <button class="delete-btn" 
                                     onclick="KeyPointsModule.deleteHierarchyItem('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
                                     style="background: #ef4444; font-size: 12px;">
-                                🗑️ 削除
+                                削除
                             </button>
                         </div>
                     `;
@@ -1192,7 +1194,7 @@ class KeyPointsModuleClass {
                 if (listContainer) {
                     listContainer.innerHTML = this.renderKeyPointsList();
                 }
-                alert('🗑️ 要点まとめを削除しました');
+                alert('要点まとめを削除しました');
             }
         }
     }
@@ -1299,7 +1301,84 @@ class KeyPointsModuleClass {
                 gap: 12px !important;
             }
 
-            /* カード選択式スタイル */
+            /* カード選択式スタイル（小さなカード版） */
+            .small-card-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
+                margin: 15px 0;
+            }
+
+            .small-selection-card {
+                background: white;
+                border: 2px solid var(--light);
+                border-radius: 8px;
+                padding: 6px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-height: 45px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                text-align: center;
+                position: relative;
+            }
+
+            .small-selection-card:hover {
+                border-color: var(--secondary);
+                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+                transform: translateY(-2px);
+            }
+
+            .small-selection-card.selected {
+                border-color: var(--primary);
+                background: linear-gradient(135deg, rgba(44, 62, 80, 0.08), rgba(52, 152, 219, 0.08));
+                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+                transform: translateY(-1px);
+            }
+
+            .small-card-title {
+                font-weight: 600;
+                font-size: 10px;
+                margin-bottom: 3px;
+                line-height: 1.1;
+                color: var(--dark);
+            }
+
+            .small-card-meta {
+                font-size: 8px;
+                color: var(--gray);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 3px;
+                flex-wrap: wrap;
+            }
+
+            .topic-card-small .small-card-meta {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .custom-badge-small {
+                background: linear-gradient(135deg, #4caf50, #66bb6a);
+                color: white;
+                padding: 1px 3px;
+                border-radius: 2px;
+                font-size: 7px;
+                font-weight: bold;
+            }
+
+            .link-badge-small {
+                background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
+                color: white;
+                padding: 1px 3px;
+                border-radius: 2px;
+                font-size: 7px;
+                font-weight: bold;
+            }
+
+            /* 大きなカード選択式スタイル（科目一覧表示用） */
             .card-selection-grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -1391,6 +1470,11 @@ class KeyPointsModuleClass {
                     gap: 10px;
                 }
                 
+                .small-card-grid {
+                    grid-template-columns: repeat(4, 1fr);
+                    gap: 5px;
+                }
+                
                 .subject-grid-fixed {
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 10px !important;
@@ -1405,6 +1489,19 @@ class KeyPointsModuleClass {
                     font-size: 13px;
                 }
 
+                .small-selection-card {
+                    padding: 5px;
+                    min-height: 40px;
+                }
+
+                .small-card-title {
+                    font-size: 9px;
+                }
+
+                .small-card-meta {
+                    font-size: 7px;
+                }
+
                 .topic-grid {
                     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
                     gap: 8px !important;
@@ -1415,6 +1512,11 @@ class KeyPointsModuleClass {
                 .card-selection-grid {
                     grid-template-columns: 1fr;
                     gap: 8px;
+                }
+                
+                .small-card-grid {
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 4px;
                 }
                 
                 .subject-grid-fixed {
@@ -1429,6 +1531,19 @@ class KeyPointsModuleClass {
 
                 .selection-card .card-title {
                     font-size: 12px;
+                }
+
+                .small-selection-card {
+                    padding: 4px;
+                    min-height: 35px;
+                }
+
+                .small-card-title {
+                    font-size: 8px;
+                }
+
+                .small-card-meta {
+                    font-size: 6px;
                 }
 
                 .topic-grid {
