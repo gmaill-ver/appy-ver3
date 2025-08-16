@@ -417,7 +417,7 @@ const firebaseConfig = {
 // Firebase初期化
 firebase.initializeApp(firebaseConfig);
 
-// Firestoreの初期化と同期処理
+// Firestoreの初期化と同期処理（1回だけ！）
 const db = firebase.firestore();
 
 // ユーザー認証状態の監視
@@ -448,19 +448,15 @@ firebase.auth().onAuthStateChanged((user) => {
                 console.log('ユーザーデータ:', userData);
                 
                 // データを画面に反映する処理
-                // 例: 学習記録の更新
                 if (userData.allRecords) {
                     DataManager.allRecords = userData.allRecords;
-                    // 必要に応じて画面を更新
                     if (window.Analytics) {
                         Analytics.updateHistoryContent();
                     }
                 }
                 
-                // 他のデータも同様に更新
                 if (userData.books) {
                     DataManager.books = userData.books;
-                    // 問題集リストの更新など
                 }
             } else {
                 console.log('ユーザーデータが見つかりません');
@@ -475,7 +471,6 @@ firebase.auth().onAuthStateChanged((user) => {
                 allRecords: DataManager.allRecords,
                 books: DataManager.books,
                 studyPlans: DataManager.studyPlans,
-                // 他に保存したいデータ
             };
             
             saveUserData(dataToSave);
@@ -520,12 +515,9 @@ function manualSaveData() {
 <script src="keypoints-module.js"></script>
 <script src="app.js"></script>
 
-<!-- Firebase保存・読み込み処理を追加 -->
+<!-- ⭐ 統合されたFirebase追加機能（重複なし） -->
 <script>
-// Firestore データベース取得
-const db = firebase.firestore();
-
-// データ保存処理をDataManagerに追加
+// データ保存処理をDataManagerに追加（dbは既に定義済み）
 DataManager.saveToFirestore = async function(data) {
     try {
         const docRef = await db.collection("studyData").add({
@@ -534,19 +526,20 @@ DataManager.saveToFirestore = async function(data) {
             deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop'
         });
         console.log("Firestore保存成功:", docRef.id);
+        alert("✅ Firestore保存成功: " + docRef.id);
         return true;
     } catch (error) {
         console.error("Firestore保存失敗:", error);
+        alert("❌ 保存失敗: " + error.message);
         return false;
     }
 };
 
 // データ読み込み処理をDataManagerに追加
 DataManager.loadFromFirestore = function() {
-    // リアルタイムでデータを監視・読み込み
     db.collection("studyData")
       .orderBy("timestamp", "desc")
-      .limit(50) // 最新50件
+      .limit(50)
       .onSnapshot((snapshot) => {
           console.log("Firestore変更検知:", snapshot.docs.length + "件");
           
@@ -554,10 +547,8 @@ DataManager.loadFromFirestore = function() {
               const data = doc.data();
               console.log("取得データ:", data);
               
-              // 画面に反映（例：記録リストに追加）
               const container = document.getElementById('historyContent');
               if (container && data) {
-                  // 既存の履歴表示を更新
                   updateHistoryDisplay(data);
               }
           });
@@ -572,27 +563,28 @@ function updateHistoryDisplay(data) {
     if (!container) return;
     
     const item = document.createElement('div');
-    item.style.cssText = 'padding: 10px; border-bottom: 1px solid var(--light); background: #f0f8ff;';
+    item.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--light); background: linear-gradient(135deg, #e3f2fd, #f0f8ff); margin-bottom: 5px; border-radius: 8px; border-left: 4px solid #2196f3;';
     item.innerHTML = `
-        <div style="font-weight: 600;">📱 ${data.deviceType} から保存</div>
-        <div style="font-size: 12px; color: var(--gray);">
+        <div style="font-weight: 700; color: #1976d2;">📱 ${data.deviceType} から保存</div>
+        <div style="font-size: 12px; color: var(--gray); margin: 5px 0;">
             ${data.timestamp ? data.timestamp.toDate().toLocaleString('ja-JP') : '時刻不明'}
         </div>
-        <div style="font-size: 12px;">データ: ${JSON.stringify(data).substring(0, 100)}...</div>
+        <div style="font-size: 12px; background: white; padding: 8px; border-radius: 4px;">
+            ${JSON.stringify(data).substring(0, 100)}...
+        </div>
     `;
     
-    // 先頭に挿入
     container.insertBefore(item, container.firstChild);
 }
 
 // 保存ボタンの動作を拡張
 const originalSaveRecord = App.saveRecord;
 App.saveRecord = function() {
-    // 元の保存処理を実行
+    console.log("💾 App.saveRecord 実行");
     originalSaveRecord.call(this);
     
-    // Firestoreにも保存
     const record = {
+        type: "studyRecord",
         bookId: this.currentBook?.id,
         bookName: this.currentBook?.name,
         path: this.currentPath,
@@ -605,47 +597,64 @@ App.saveRecord = function() {
         }
     };
     
+    console.log("💾 Firestoreに学習記録保存:", record);
     DataManager.saveToFirestore(record);
 };
 
-// テスト保存ボタンを追加（デバッグ用）
+// テスト保存ボタンを追加（強化版）
 document.addEventListener('DOMContentLoaded', function() {
-    // アプリヘッダーにテストボタンを追加
+    console.log("🎯 テストボタン追加処理開始");
+    
     const header = document.querySelector('.app-header');
     if (header) {
+        // 既存のテストボタンを削除
+        const existingBtn = header.querySelector('[data-test-firebase]');
+        if (existingBtn) {
+            existingBtn.remove();
+        }
+        
         const testBtn = document.createElement('button');
+        testBtn.setAttribute('data-test-firebase', 'true');
         testBtn.textContent = '🔥TEST';
         testBtn.style.cssText = `
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, #ff5722, #ff7043);
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             color: white;
-            padding: 5px 10px;
+            padding: 10px 15px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(255, 87, 34, 0.4);
+            z-index: 1000;
         `;
         testBtn.onclick = function() {
-            // テストデータ保存
+            console.log("🔥 TESTボタンクリック");
+            
             DataManager.saveToFirestore({
                 test: "手動テスト_" + Date.now(),
-                message: "スマホからの保存テスト",
-                userAgent: navigator.userAgent
+                message: "🔥TESTボタンからの保存",
+                userAgent: navigator.userAgent,
+                location: window.location.href
             });
-            alert('テストデータを保存しました！');
         };
         header.appendChild(testBtn);
+        console.log("✅ 🔥TESTボタン追加完了");
+    } else {
+        console.error("❌ ヘッダーが見つかりません");
     }
     
     // Firebase読み込みを開始
     setTimeout(() => {
+        console.log("📥 Firebase読み込み開始");
         DataManager.loadFromFirestore();
-    }, 1000);
+    }, 2000);
 });
 
-console.log("🔥 Firebase保存・読み込み処理が追加されました");
+console.log("🔥 統合Firebase処理が追加されました");
 </script>
 </body>
 </html>
