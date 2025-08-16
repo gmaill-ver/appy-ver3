@@ -398,23 +398,25 @@
         </div>
     </div>
     
-    <!-- Firebase Configuration (オプション) -->
-    <script>
-        // Firebase設定（使用する場合は適切な値に変更してください）
-        // const firebaseConfig = {
-        //     apiKey: "YOUR_API_KEY",
-        //     authDomain: "YOUR_AUTH_DOMAIN",
-        //     projectId: "YOUR_PROJECT_ID",
-        //     storageBucket: "YOUR_STORAGE_BUCKET",
-        //     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        //     appId: "YOUR_APP_ID"
-        // };
-        
-        // Firebaseを初期化（設定が完全な場合のみ）
-        // if (typeof firebase !== 'undefined' && firebaseConfig && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-        //     firebase.initializeApp(firebaseConfig);
-        // }
-    </script>
+    <!-- Firebase SDK v8 (Compat版) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script>
+// Firebase設定
+const firebaseConfig = {
+    apiKey: "AIzaSyCa3-o7VIbxDzZDy7_SPHTk1kqpq23I79s",
+    authDomain: "gakushusintyoku.firebaseapp.com",
+    projectId: "gakushusintyoku",
+    storageBucket: "gakushusintyoku.firebasestorage.app",
+    messagingSenderId: "386582438890",
+    appId: "1:386582438890:web:78cd619f0d7ad3ae5a0893"
+};
+
+// Firebase初期化
+firebase.initializeApp(firebaseConfig);
+</script>
     
     <!-- JavaScript モジュール読み込み（順序重要） -->
     <script src="data-manager.js"></script>
