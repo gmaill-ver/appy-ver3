@@ -1,5 +1,5 @@
 /**
- * KeyPointsModule - 要点確認専用モジュール（階層選択・3列配置対応版）
+ * KeyPointsModule - 要点確認専用モジュール（重要語句ボタン重複修正版）
  */
 class KeyPointsModuleClass {
     constructor() {
@@ -157,6 +157,7 @@ class KeyPointsModuleClass {
         this.currentView = 'welcome'; // 'welcome', 'subjects', 'chapters', 'content'
         this.keyTermsHidden = false; // 重要語句の表示状態
         this.initialized = false;
+        this.isContentView = false; // HTMLコンテンツ表示中かどうかのフラグ
     }
 
     /**
@@ -236,6 +237,9 @@ class KeyPointsModuleClass {
      * 要点確認のメインコンテンツを描画
      */
     renderKeyPointsContent() {
+        // コンテンツ表示モードをリセット
+        this.isContentView = false;
+        
         return `
             <div id="keyPointsMainContent">
                 ${this.renderSubjectListDirect()}
@@ -304,6 +308,7 @@ class KeyPointsModuleClass {
      */
     renderSubjectListDirect() {
         this.currentView = 'subjects';
+        this.isContentView = false;
         const subjects = this.getSubjectList();
         
         let html = `
@@ -407,6 +412,7 @@ class KeyPointsModuleClass {
     selectSubject(subjectKey) {
         this.currentSubject = subjectKey;
         this.currentView = 'chapters';
+        this.isContentView = false;
         const subject = this.subjects[subjectKey];
         if (!subject) return;
 
@@ -525,16 +531,33 @@ class KeyPointsModuleClass {
      * 科目一覧に戻る
      */
     backToSubjectList() {
+        this.isContentView = false;
         const content = document.getElementById('keyPointsMainContent');
         if (content) {
             content.innerHTML = this.renderSubjectListDirect();
             this.addKeyPointStyles();
         }
         
+        // モーダルヘッダーを通常の状態に戻す
+        this.resetModalHeader();
+        
         // ページトップにスクロール
         const modalContent = document.querySelector('.modal-content');
         if (modalContent) {
             modalContent.scrollTop = 0;
+        }
+    }
+
+    /**
+     * モーダルヘッダーを通常状態にリセット
+     */
+    resetModalHeader() {
+        const modalHeader = document.querySelector('.modal-header');
+        if (modalHeader) {
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">📚 要点確認</h3>
+                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
+            `;
         }
     }
 
@@ -559,9 +582,10 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * HTMLコンテンツ表示
+     * HTMLコンテンツ表示（重要語句ボタン重複修正版）
      */
     showHTMLContent(title, htmlContent) {
+        this.isContentView = true;
         const content = document.getElementById('keyPointsMainContent');
         if (!content) return;
 
@@ -576,9 +600,9 @@ class KeyPointsModuleClass {
 
         content.innerHTML = html;
         
-        // モーダルヘッダーに重要語句ボタンを追加
+        // モーダルヘッダーに重要語句ボタンを追加（既存のボタンがない場合のみ）
         const modalHeader = document.querySelector('.modal-header');
-        if (modalHeader) {
+        if (modalHeader && !modalHeader.querySelector('#keyPointToggleBtn')) {
             modalHeader.innerHTML = `
                 <h3 style="margin: 0; flex-grow: 1; text-align: center;">📄 ${title}</h3>
                 <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">重要語句を隠す</button>
@@ -586,7 +610,7 @@ class KeyPointsModuleClass {
             `;
         }
         
-        // モーダルフッターに戻るボタンを追加
+        // モーダルフッターを戻るボタン付きに変更
         const modalFooter = document.querySelector('.modal-footer');
         if (modalFooter) {
             modalFooter.innerHTML = `
@@ -641,9 +665,15 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 重要語句の表示切り替え
+     * 重要語句の表示切り替え（コンテンツ表示中のみ有効）
      */
     toggleKeyTerms() {
+        // コンテンツ表示中でない場合は何もしない
+        if (!this.isContentView) {
+            console.log('Not in content view, toggle ignored');
+            return;
+        }
+
         const keyTerms = document.querySelectorAll('.wp-key-term');
         const btn = document.getElementById('keyPointToggleBtn');
         
@@ -848,6 +878,7 @@ class KeyPointsModuleClass {
      */
     showWelcome() {
         this.currentView = 'welcome';
+        this.isContentView = false;
         const content = document.getElementById('keyPointsMainContent');
         if (content) {
             content.innerHTML = this.renderWelcomeContent();
