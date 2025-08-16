@@ -927,6 +927,47 @@
                 localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
                 restoredCount++;
             }
+
+            // CSVテンプレート
+            if (userData.csvTemplates && typeof userData.csvTemplates === 'object') {
+                DataManager.csvTemplates = userData.csvTemplates;
+                localStorage.setItem('csvTemplates', JSON.stringify(userData.csvTemplates));
+                restoredCount++;
+            }
+
+            // 要点確認データ（新規追加）
+            if (userData.keyPointsData && typeof userData.keyPointsData === 'object') {
+                localStorage.setItem('keyPointsData', JSON.stringify(userData.keyPointsData));
+                // KeyPointsModuleが読み込まれている場合は直接更新
+                if (window.KeyPointsModule && KeyPointsModule.subjects) {
+                    Object.keys(userData.keyPointsData).forEach(key => {
+                        if (KeyPointsModule.subjects[key] && userData.keyPointsData[key]) {
+                            // 既存データとマージ
+                            if (userData.keyPointsData[key].items) {
+                                KeyPointsModule.subjects[key].items = userData.keyPointsData[key].items;
+                            }
+                            if (userData.keyPointsData[key].chapters) {
+                                Object.keys(userData.keyPointsData[key].chapters).forEach(chapterKey => {
+                                    if (KeyPointsModule.subjects[key].chapters[chapterKey] && userData.keyPointsData[key].chapters[chapterKey].sections) {
+                                        Object.keys(userData.keyPointsData[key].chapters[chapterKey].sections).forEach(sectionKey => {
+                                            if (KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey]) {
+                                                userData.keyPointsData[key].chapters[chapterKey].sections[sectionKey].forEach((savedTopic, index) => {
+                                                    if (KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index] && 
+                                                        savedTopic.htmlContent) {
+                                                        KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index].htmlContent = savedTopic.htmlContent;
+                                                        KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index].type = 'html';
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+                restoredCount++;
+            }
             
             // その他設定
             if (userData.examDate) {
@@ -938,6 +979,24 @@
             if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
                 DataManager.bookOrder = userData.bookOrder;
                 localStorage.setItem('bookOrder', JSON.stringify(userData.bookOrder));
+                restoredCount++;
+            }
+
+            if (userData.heatmapPinnedBook) {
+                DataManager.heatmapPinnedBook = userData.heatmapPinnedBook;
+                localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
+                restoredCount++;
+            }
+
+            if (userData.radarPinnedBook) {
+                DataManager.radarPinnedBook = userData.radarPinnedBook;
+                localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
+                restoredCount++;
+            }
+
+            if (userData.analysisCardOrder && Array.isArray(userData.analysisCardOrder)) {
+                DataManager.analysisCardOrder = userData.analysisCardOrder;
+                localStorage.setItem('analysisCardOrder', JSON.stringify(userData.analysisCardOrder));
                 restoredCount++;
             }
             
