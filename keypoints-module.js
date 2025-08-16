@@ -244,62 +244,6 @@ class KeyPointsModuleClass {
             <div id="keyPointsMainContent">
                 ${this.renderSubjectListDirect()}
             </div>
-            
-            <div class="card" style="margin-top: 20px;">
-                <h4>要点管理（階層選択式）</h4>
-                
-                <div class="form-group">
-                    <label class="form-label">科目</label>
-                    <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChange()">
-                        <option value="">科目を選択</option>
-                        ${this.getSubjectList().map(subject => 
-                            `<option value="${subject.key}">${subject.name}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                
-                <div class="form-group" id="chapterSelectGroup" style="display: none;">
-                    <label class="form-label">編</label>
-                    <select class="form-control" id="keyPointChapterSelect" onchange="KeyPointsModule.onChapterChange()">
-                        <option value="">編を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="sectionSelectGroup" style="display: none;">
-                    <label class="form-label">節</label>
-                    <select class="form-control" id="keyPointSectionSelect" onchange="KeyPointsModule.onSectionChange()">
-                        <option value="">節を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" id="topicSelectGroup" style="display: none;">
-                    <label class="form-label">項目</label>
-                    <select class="form-control" id="keyPointTopicSelect">
-                        <option value="">項目を選択</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">要点まとめタイトル</label>
-                    <input type="text" class="form-control" id="keyPointTitle" 
-                           placeholder="例：権利能力の要点まとめ">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">HTML内容</label>
-                    <textarea class="form-control" id="keyPointHtml" rows="10" 
-                              placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
-                </div>
-                
-                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItem()">
-                    階層に要点を登録
-                </button>
-            </div>
-            
-            <div class="card" style="margin-top: 20px;">
-                <h4>登録済み要点</h4>
-                <div id="keyPointsList">${this.renderKeyPointsList()}</div>
-            </div>
         `;
     }
 
