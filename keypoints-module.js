@@ -1305,7 +1305,7 @@ class KeyPointsModuleClass {
             .small-card-grid {
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
-                gap: 6px;
+                gap: 8px;
                 margin: 15px 0;
             }
 
@@ -1313,10 +1313,10 @@ class KeyPointsModuleClass {
                 background: white;
                 border: 2px solid var(--light);
                 border-radius: 8px;
-                padding: 6px;
+                padding: 8px;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                min-height: 45px;
+                min-height: 55px;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
@@ -1339,19 +1339,19 @@ class KeyPointsModuleClass {
 
             .small-card-title {
                 font-weight: 600;
-                font-size: 10px;
-                margin-bottom: 3px;
-                line-height: 1.1;
+                font-size: 12px;
+                margin-bottom: 4px;
+                line-height: 1.2;
                 color: var(--dark);
             }
 
             .small-card-meta {
-                font-size: 8px;
+                font-size: 10px;
                 color: var(--gray);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 3px;
+                gap: 4px;
                 flex-wrap: wrap;
             }
 
@@ -1363,18 +1363,18 @@ class KeyPointsModuleClass {
             .custom-badge-small {
                 background: linear-gradient(135deg, #4caf50, #66bb6a);
                 color: white;
-                padding: 1px 3px;
-                border-radius: 2px;
-                font-size: 7px;
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-size: 8px;
                 font-weight: bold;
             }
 
             .link-badge-small {
                 background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
                 color: white;
-                padding: 1px 3px;
-                border-radius: 2px;
-                font-size: 7px;
+                padding: 2px 4px;
+                border-radius: 3px;
+                font-size: 8px;
                 font-weight: bold;
             }
 
@@ -1472,7 +1472,7 @@ class KeyPointsModuleClass {
                 
                 .small-card-grid {
                     grid-template-columns: repeat(4, 1fr);
-                    gap: 5px;
+                    gap: 6px;
                 }
                 
                 .subject-grid-fixed {
@@ -1490,16 +1490,16 @@ class KeyPointsModuleClass {
                 }
 
                 .small-selection-card {
-                    padding: 5px;
-                    min-height: 40px;
+                    padding: 7px;
+                    min-height: 50px;
                 }
 
                 .small-card-title {
-                    font-size: 9px;
+                    font-size: 11px;
                 }
 
                 .small-card-meta {
-                    font-size: 7px;
+                    font-size: 9px;
                 }
 
                 .topic-grid {
@@ -1516,7 +1516,7 @@ class KeyPointsModuleClass {
                 
                 .small-card-grid {
                     grid-template-columns: repeat(3, 1fr);
-                    gap: 4px;
+                    gap: 5px;
                 }
                 
                 .subject-grid-fixed {
@@ -1534,16 +1534,16 @@ class KeyPointsModuleClass {
                 }
 
                 .small-selection-card {
-                    padding: 4px;
-                    min-height: 35px;
+                    padding: 6px;
+                    min-height: 45px;
                 }
 
                 .small-card-title {
-                    font-size: 8px;
+                    font-size: 10px;
                 }
 
                 .small-card-meta {
-                    font-size: 6px;
+                    font-size: 8px;
                 }
 
                 .topic-grid {
