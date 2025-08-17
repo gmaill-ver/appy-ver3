@@ -1081,13 +1081,13 @@ class Application {
             const isExpanded = this.expandedNodes.has(nodeId);
             
             html += `
-                <div class="hierarchy-item">
+                <div class="hierarchy-item" id="${nodeId}">
                     <div class="hierarchy-row" onclick="App.toggleRegisterNode('${nodeId}', event)">
                         <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
                         <span class="hierarchy-icon">📚</span>
                         <span class="hierarchy-label">${book.name}</span>
                         <div class="hierarchy-actions">
-                        　　 <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}')" title="並び替え">並替え</button>
+                        　　 <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}', event)" title="並び替え">並替え</button>
                             <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
                             <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
                         </div>
@@ -1553,7 +1553,8 @@ class Application {
     /**
      * 階層並び替えモードの切り替え（新規追加）
      */
-    toggleHierarchySort(bookId) {
+    toggleHierarchySort(bookId, event) {  // event引数を追加
+    event.stopPropagation();  // 親要素のクリックを防ぐ
         const book = DataManager.books[bookId];
         if (!book) return;
         
