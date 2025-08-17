@@ -1549,6 +1549,20 @@ class Application {
         alert('問題集を削除しました');
     }
 
+    /**
+     * 階層並び替えモードの切り替え
+     */
+    toggleHierarchySort(bookId) {
+        // 新規メソッドのコード
+    }
+
+    /**
+     * 階層ドラッグ&ドロップ有効化
+     */
+    enableHierarchyDragAndDrop(bookId) {
+        // 新規メソッドのコード
+    }
+
     getTypeLabel(type) {
         const labels = {
             'subject': '科目',
