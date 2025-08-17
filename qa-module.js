@@ -348,44 +348,50 @@ class QAModuleClass {
      * UIコンテンツを生成
      */
     renderQAContent() {
-        const sets = this.getSetList();
-        
-        let html = `
-            <div class="qa-card">
-                <div class="qa-selector">
-                    <select id="qaSetSelect">
-                        <option value="">問題集を選択</option>
-        `;
-        
-        sets.forEach(setName => {
-            const count = this.getQuestions(setName).length;
-            html += `<option value="${setName}">${setName} (${count}問)</option>`;
-        });
-        
-        html += `
-                    </select>
-                    <button onclick="QAModule.handleStart()">開始</button>
-                </div>
-                
-                <div class="qa-progress" id="qaProgress" style="display: none;">
-                    <span class="qa-progress-text">
-                        問題 <span id="qaCurrentNum">0</span> / <span id="qaTotalNum">0</span>
-                    </span>
-                    <div class="qa-stats">
-                        <span class="qa-stat">
-                            正解: <span class="qa-stat-value" id="qaCorrectCount">0</span>
-                        </span>
-                        <span class="qa-stat">
-                            不正解: <span class="qa-stat-value" id="qaWrongCount">0</span>
-                        </span>
-                    </div>
-                </div>
-                
-                <div id="qaContent"></div>
+    const sets = this.getSetList();
+    
+    let html = `
+        <!-- ⭐ 問題開始エリアを先に配置 -->
+        <div class="qa-card">
+            <div class="qa-selector">
+                <select id="qaSetSelect">
+                    <option value="">問題集を選択</option>
+    `;
+    
+    sets.forEach(setName => {
+        const count = this.getQuestions(setName).length;
+        html += `<option value="${setName}">${setName} (${count}問)</option>`;
+    });
+    
+    html += `
+                </select>
+                <button onclick="QAModule.handleStart()">開始</button>
             </div>
             
-            <div class="card" style="margin-top: 20px;">
-                <h4>問題を手動追加</h4>
+            <div class="qa-progress" id="qaProgress" style="display: none;">
+                <span class="qa-progress-text">
+                    問題 <span id="qaCurrentNum">0</span> / <span id="qaTotalNum">0</span>
+                </span>
+                <div class="qa-stats">
+                    <span class="qa-stat">
+                        正解: <span class="qa-stat-value" id="qaCorrectCount">0</span>
+                    </span>
+                    <span class="qa-stat">
+                        不正解: <span class="qa-stat-value" id="qaWrongCount">0</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div id="qaContent"></div>
+        </div>
+        
+        <!-- ⭐ 手動追加エリアをアコーディオンに変更 -->
+        <div class="qa-accordion" style="margin-top: 20px;">
+            <div class="qa-accordion-header" onclick="QAModule.toggleAddAccordion(this)">
+                <span>📝 問題を手動追加</span>
+                <span class="qa-accordion-arrow">▼</span>
+            </div>
+            <div class="qa-accordion-content" id="qaAddContent">
                 <div class="form-group">
                     <label class="form-label">問題集名</label>
                     <input type="text" class="form-control" id="qaNewSetName" 
@@ -401,19 +407,28 @@ class QAModuleClass {
                     <textarea class="form-control" id="qaNewAnswer" rows="3" 
                               placeholder="答えを入力"></textarea>
                 </div>
-                <button class="save-button" onclick="QAModule.handleAddQuestion()">
-                    問題を追加
-                </button>
+                <button class="save-button" onclick="QAModule.handleAddQuestion()">追加</button>
             </div>
-            
-            <div class="card" style="margin-top: 20px;">
-                <h4>登録済み問題</h4>
-                <div id="qaListContent">${this.renderQAList()}</div>
-            </div>
-        `;
-        
-        return html;
+        </div>
+    `;
+    
+    return html;
+}
+// ⭐ 新規追加：アコーディオンのトグル
+toggleAddAccordion(header) {
+    const content = header.nextElementSibling;
+    const arrow = header.querySelector('.qa-accordion-arrow');
+    
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        header.classList.remove('active');
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        content.classList.add('active');
+        header.classList.add('active');
+        arrow.style.transform = 'rotate(180deg)';
     }
+}
 
     /**
      * 問題リストを生成
@@ -455,25 +470,26 @@ class QAModuleClass {
      * 開始ボタンのハンドラ
      */
     handleStart() {
-        const select = document.getElementById('qaSetSelect');
-        if (!select || !select.value) {
-            alert('問題集を選択してください');
-            return;
-        }
-        
-        // DataManager.qaQuestionsが初期化されているか確認
-        if (!DataManager.qaQuestions || Object.keys(DataManager.qaQuestions).length === 0) {
-            alert('問題が登録されていません。先に問題を追加してください。');
-            return;
-        }
-        
-        if (!DataManager.qaQuestions[select.value]) {
-            alert('選択した問題集に問題がありません。');
-            return;
-        }
-        
-        this.startSession(select.value);
+    const select = document.getElementById('qaSetSelect');
+    if (!select || !select.value) {
+        alert('問題集を選択してください');
+        return;
     }
+    
+    // アコーディオンを閉じる
+    const accordion = document.querySelector('.qa-accordion-content.active');
+    const header = document.querySelector('.qa-accordion-header.active');
+    if (accordion) {
+        accordion.classList.remove('active');
+    }
+    if (header) {
+        header.classList.remove('active');
+        const arrow = header.querySelector('.qa-accordion-arrow');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+    
+    this.startSession(select.value);
+}
 
     /**
      * 問題追加のハンドラ
