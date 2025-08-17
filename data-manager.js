@@ -6,7 +6,6 @@ class DataManagerClass {
     constructor() {
         this.books = {};
         this.bookOrder = [];
-        this.bookStructureOrder = {}; 
         this.allRecords = [];
         this.savedQuestionStates = {};
         this.studyPlans = [];
@@ -101,10 +100,12 @@ class DataManagerClass {
         }
     }
 
-    // ⭐ 修正：Firebase復元時に階層順序も復元
-    restoreAllDataFromFirebase(userData) {
-        let restoredCount = 0;
-        
+    /**
+     * Firebaseとの同期（削除済みアイテム対応）
+     */
+    async syncWithFirebase() {
+        if (!this.firebaseEnabled || !this.currentUser) return;
+
         try {
             const db = firebase.firestore();
             const userId = this.currentUser.uid;
@@ -144,12 +145,6 @@ class DataManagerClass {
                 if (data.deletedItems && Array.isArray(data.deletedItems)) {
                     this.deletedItems = data.deletedItems;
                 }
-                if (userData.bookStructureOrder && typeof userData.bookStructureOrder === 'object') {
-                this.bookStructureOrder = userData.bookStructureOrder;
-                localStorage.setItem('bookStructureOrder', JSON.stringify(userData.bookStructureOrder));
-                restoredCount++;
-                console.log(`✅ 階層順序復元: ${Object.keys(userData.bookStructureOrder).length}件`);
-            }
                 
                 // ローカルにも保存
                 this.saveAllData();
@@ -158,7 +153,7 @@ class DataManagerClass {
                 await this.saveToFirebase();
             }
         } catch (error) {
-            console.error('Error restoring data:', error);
+            console.error('Firebase sync error:', error);
             // エラーが発生してもローカルデータは維持
         }
     }
@@ -247,15 +242,12 @@ class DataManagerClass {
     /**
      * Firebaseにデータを保存（削除済みアイテム含む）
      */
-    async saveToFirestore(syncData) {
+    async saveToFirebase() {
         if (!this.firebaseEnabled || !this.currentUser) return;
 
         try {
             const db = firebase.firestore();
             const userId = this.currentUser.uid;
-            const dataToSave = {
-            ...syncData,
-            bookStructureOrder: this.bookStructureOrder, 
 
             await db.collection('users').doc(userId).set({
                 books: this.books || {},
@@ -283,7 +275,6 @@ class DataManagerClass {
         try {
             this.loadBooksFromStorage();
             this.loadBookOrder();
-            this.loadBookStructureOrder(); 
             this.loadAllRecords();
             this.loadSavedQuestionStates();
             this.loadStudyPlans();
@@ -299,53 +290,6 @@ class DataManagerClass {
         }
     }
 
-    // ⭐ 新規追加：階層順序の読み込み
-    loadBookStructureOrder() {
-        try {
-            const saved = localStorage.getItem('bookStructureOrder');
-            if (saved) {
-                this.bookStructureOrder = JSON.parse(saved);
-            }
-        } catch (error) {
-            console.error('Error loading structure order:', error);
-            this.bookStructureOrder = {};
-        }
-    }
-
-    // ⭐ 新規追加：階層順序の保存
-    saveBookStructureOrder() {
-        try {
-            localStorage.setItem('bookStructureOrder', JSON.stringify(this.bookStructureOrder));
-        } catch (error) {
-            console.error('Error saving structure order:', error);
-        }
-    }
-
-    // ⭐ 新規追加：階層の順序を取得（なければ作成）
-    getStructureOrder(bookId, path) {
-        const key = `${bookId}/${path.join('/')}`;
-        if (!this.bookStructureOrder[key]) {
-            // 現在の構造から順序を生成
-            let structure = this.books[bookId]?.structure;
-            for (const p of path) {
-                if (structure && structure[p]) {
-                    structure = structure[p].children;
-                }
-            }
-            if (structure) {
-                this.bookStructureOrder[key] = Object.keys(structure);
-                this.saveBookStructureOrder();
-            }
-        }
-        return this.bookStructureOrder[key] || [];
-    }
-
-    // ⭐ 新規追加：階層の順序を更新
-    updateStructureOrder(bookId, path, newOrder) {
-        const key = `${bookId}/${path.join('/')}`;
-        this.bookStructureOrder[key] = newOrder;
-        this.saveBookStructureOrder();
-    }
     /**
      * 全データの保存（削除済みアイテム含む）
      */
