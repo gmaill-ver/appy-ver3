@@ -896,7 +896,7 @@
         }
     }
 
-    // 🔄 全データ復元処理
+    // 🔄 全データ復元処理（修正版）
     function restoreAllDataFromFirebase(userData) {
         let restoredCount = 0;
         
@@ -913,6 +913,14 @@
                 DataManager.books = userData.books;
                 localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
                 restoredCount++;
+            }
+            
+            // 【重要】削除済みアイテムリストの復元を追加
+            if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
+                DataManager.deletedItems = userData.deletedItems;
+                localStorage.setItem('deletedItems', JSON.stringify(userData.deletedItems));
+                restoredCount++;
+                console.log(`✅ 削除済みアイテム復元: ${userData.deletedItems.length}件`);
             }
             
             // 学習計画
@@ -935,37 +943,24 @@
                 localStorage.setItem('csvTemplates', JSON.stringify(userData.csvTemplates));
                 restoredCount++;
             }
+            
+            // 【重要】問題チェック状態の復元を追加
+            if (userData.savedQuestionStates && typeof userData.savedQuestionStates === 'object') {
+                DataManager.savedQuestionStates = userData.savedQuestionStates;
+                localStorage.setItem('savedQuestionStates', JSON.stringify(userData.savedQuestionStates));
+                restoredCount++;
+                console.log(`✅ 問題チェック状態復元: ${Object.keys(userData.savedQuestionStates).length}件`);
+            }
 
-            // 要点確認データ（新規追加）
+            // 要点確認データ（修正版）
             if (userData.keyPointsData && typeof userData.keyPointsData === 'object') {
                 localStorage.setItem('keyPointsData', JSON.stringify(userData.keyPointsData));
+                
                 // KeyPointsModuleが読み込まれている場合は直接更新
                 if (window.KeyPointsModule && KeyPointsModule.subjects) {
-                    Object.keys(userData.keyPointsData).forEach(key => {
-                        if (KeyPointsModule.subjects[key] && userData.keyPointsData[key]) {
-                            // 既存データとマージ
-                            if (userData.keyPointsData[key].items) {
-                                KeyPointsModule.subjects[key].items = userData.keyPointsData[key].items;
-                            }
-                            if (userData.keyPointsData[key].chapters) {
-                                Object.keys(userData.keyPointsData[key].chapters).forEach(chapterKey => {
-                                    if (KeyPointsModule.subjects[key].chapters[chapterKey] && userData.keyPointsData[key].chapters[chapterKey].sections) {
-                                        Object.keys(userData.keyPointsData[key].chapters[chapterKey].sections).forEach(sectionKey => {
-                                            if (KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey]) {
-                                                userData.keyPointsData[key].chapters[chapterKey].sections[sectionKey].forEach((savedTopic, index) => {
-                                                    if (KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index] && 
-                                                        savedTopic.htmlContent) {
-                                                        KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index].htmlContent = savedTopic.htmlContent;
-                                                        KeyPointsModule.subjects[key].chapters[chapterKey].sections[sectionKey][index].type = 'html';
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        }
-                    });
+                    // 完全にデータを置き換える
+                    KeyPointsModule.subjects = userData.keyPointsData;
+                    console.log(`✅ 要点確認データ復元: ${Object.keys(userData.keyPointsData).length}科目`);
                 }
                 restoredCount++;
             }
