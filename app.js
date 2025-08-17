@@ -1087,6 +1087,7 @@ class Application {
                         <span class="hierarchy-icon">📚</span>
                         <span class="hierarchy-label">${book.name}</span>
                         <div class="hierarchy-actions">
+                        　　 <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}')" title="並び替え">並替え</button>
                             <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
                             <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
                         </div>
@@ -1550,17 +1551,132 @@ class Application {
     }
 
     /**
-     * 階層並び替えモードの切り替え
+     * 階層並び替えモードの切り替え（新規追加）
      */
     toggleHierarchySort(bookId) {
-        // 新規メソッドのコード
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        // 並び替えモードフラグ
+        if (!this.hierarchySortMode) {
+            this.hierarchySortMode = {};
+        }
+        
+        this.hierarchySortMode[bookId] = !this.hierarchySortMode[bookId];
+        
+        if (this.hierarchySortMode[bookId]) {
+            this.enableHierarchyDragAndDrop(bookId);
+        } else {
+            this.disableHierarchyDragAndDrop(bookId);
+            DataManager.saveBooksToStorage();
+            alert('並び替えを保存しました');
+        }
+        
+        // ボタンのテキストを更新
+        const btn = event.target;
+        if (btn) {
+            btn.textContent = this.hierarchySortMode[bookId] ? '完了' : '並替え';
+            btn.style.background = this.hierarchySortMode[bookId] ? '#27ae60' : '';
+        }
     }
 
     /**
-     * 階層ドラッグ&ドロップ有効化
+     * 階層ドラッグ&ドロップ有効化（新規追加）
      */
     enableHierarchyDragAndDrop(bookId) {
-        // 新規メソッドのコード
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        // 科目レベルで並び替え
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const subjects = container.querySelectorAll('.hierarchy-children > .hierarchy-item');
+        
+        subjects.forEach(subject => {
+            subject.draggable = true;
+            subject.style.cursor = 'move';
+            
+            subject.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                this.draggedElement = subject;
+                subject.style.opacity = '0.5';
+            });
+            
+            subject.addEventListener('dragend', (e) => {
+                e.stopPropagation();
+                subject.style.opacity = '';
+            });
+            
+            subject.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            subject.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (this.draggedElement && this.draggedElement !== subject) {
+                    const parent = subject.parentNode;
+                    const draggedIndex = Array.from(parent.children).indexOf(this.draggedElement);
+                    const targetIndex = Array.from(parent.children).indexOf(subject);
+                    
+                    if (draggedIndex < targetIndex) {
+                        parent.insertBefore(this.draggedElement, subject.nextSibling);
+                    } else {
+                        parent.insertBefore(this.draggedElement, subject);
+                    }
+                    
+                    // データ構造を更新
+                    this.updateBookStructureOrder(bookId);
+                }
+            });
+        });
+    }
+
+    /**
+     * ドラッグ&ドロップ無効化（新規追加）
+     */
+    disableHierarchyDragAndDrop(bookId) {
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const subjects = container.querySelectorAll('.hierarchy-children > .hierarchy-item');
+        subjects.forEach(subject => {
+            subject.draggable = false;
+            subject.style.cursor = '';
+            // イベントリスナーは残しておく（再度有効化する場合のため）
+        });
+    }
+
+    /**
+     * DOM順序に基づいて構造を更新（新規追加）
+     */
+    updateBookStructureOrder(bookId) {
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const childrenContainer = container.querySelector('.hierarchy-children');
+        if (!childrenContainer) return;
+        
+        const newStructure = {};
+        const subjectElements = childrenContainer.querySelectorAll(':scope > .hierarchy-item');
+        
+        subjectElements.forEach(elem => {
+            const label = elem.querySelector('.hierarchy-label');
+            if (label) {
+                const subjectName = label.textContent.trim();
+                if (book.structure[subjectName]) {
+                    newStructure[subjectName] = book.structure[subjectName];
+                }
+            }
+        });
+        
+        book.structure = newStructure;
     }
 
     getTypeLabel(type) {
