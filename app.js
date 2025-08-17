@@ -1,5 +1,5 @@
 /**
- * Application - メインアプリケーションクラス（完全版）
+ * App - メインアプリケーションロジック（Firebase統合強化版）
  */
 class Application {
     constructor() {
@@ -8,72 +8,71 @@ class Application {
         this.questionStates = {};
         this.bookmarkMode = false;
         this.expandedNodes = new Set();
+        this.selectedBookCard = null;
         this.sortMode = false;
         this.analysisSortMode = false;
-        this.hierarchySortMode = {};
-        
-        // ページネーション用のプロパティを追加
-        this.currentQuestionIndex = 0;
-        this.currentQuestionRange = [];
+        this.initialized = false;
     }
 
     /**
      * アプリケーション初期化
      */
     async initialize() {
-        console.log('Initializing Application...');
-        
-        // DataManager初期化を待つ
-        await this.waitForDataManager();
-        
-        // 他のモジュールの初期化を待つ
-        await this.waitForModules();
-        
-        // UI初期化
-        this.renderBookCards();
-        this.initializeSampleDataIfNeeded();
-        
-        // UIComponents初期化
-        if (window.UIComponents) {
-            UIComponents.renderCalendar();
-            UIComponents.updateExamCountdown();
+        // 二重初期化を防ぐ
+        if (this.initialized) {
+            console.log('App already initialized');
+            return true;
         }
-        
-        // Analytics初期化
-        if (window.Analytics) {
-            Analytics.initialize();
-        }
-        
-        console.log('Application initialized');
-    }
 
-    /**
-     * DataManagerの初期化を待つ
-     */
-    async waitForDataManager() {
-        let attempts = 0;
-        while (attempts < 50) {
-            if (window.DataManager) {
-                console.log('DataManager loaded');
-                return true;
+        try {
+            console.log('Starting App initialization...');
+            
+            // DataManagerの初期化を待つ（最大5秒）
+            const maxWait = 50;
+            let attempts = 0;
+            while (!window.DataManager && attempts < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
             }
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
+            
+            if (!window.DataManager) {
+                console.error('DataManager not found after waiting');
+                return false;
+            }
+
+            // DataManagerの初期化
+            const dataInitialized = await DataManager.initialize();
+            if (!dataInitialized) {
+                console.error('DataManager initialization failed');
+                return false;
+            }
+            
+            // 他のモジュールの存在確認（初期化は各モジュール内で行う）
+            await this.waitForModules();
+            
+            // 初期描画
+            this.renderBookCards();
+            this.initializeSampleDataIfNeeded();
+            
+            this.initialized = true;
+            console.log('Application initialized successfully');
+            return true;
+        } catch (error) {
+            console.error('Application initialization error:', error);
+            return false;
         }
-        console.error('DataManager not loaded');
-        return false;
     }
 
     /**
-     * 他のモジュールの初期化を待つ
+     * モジュールの存在確認を待つ
      */
     async waitForModules() {
-        const modules = ['UIComponents', 'Analytics', 'QAModule', 'KeyPointsModule', 'TimerModule'];
+        const maxAttempts = 50;
         let attempts = 0;
         
-        while (attempts < 50) {
-            const allLoaded = modules.every(module => window[module]);
-            if (allLoaded) {
+        while (attempts < maxAttempts) {
+            // モジュールの存在のみ確認（初期化は各モジュール内で行う）
+            if (window.UIComponents && window.Analytics && window.QAModule && window.TimerModule) {
                 console.log('All modules loaded');
                 return true;
             }
@@ -96,7 +95,7 @@ class Application {
     }
 
     /**
-     * メインタブ切り替え
+     * メインタブ切り替え（進捗タブデータ更新強化）
      */
     switchMainTab(tabName, event) {
         // タブボタンの状態更新
@@ -117,8 +116,9 @@ class Application {
             tabContent.classList.add('active');
         }
         
-        // タブ別の初期化処理
+        // タブ別の初期化処理（Analyticsが初期化されているか確認）
         if (tabName === 'analysis' && window.Analytics) {
+            // 分析タブ：最新データで更新
             setTimeout(() => {
                 Analytics.updateChartBars();
                 Analytics.updateHeatmap();
@@ -128,6 +128,7 @@ class Application {
                 Analytics.updateRadarBookSelect();
             }, 100);
         } else if (tabName === 'progress' && window.Analytics) {
+            // 進捗タブ：最新データで強制更新
             setTimeout(() => {
                 Analytics.updateProgressContent();
                 Analytics.drawRadarChart();
@@ -138,7 +139,7 @@ class Application {
     }
 
     /**
-     * フッタータブ切り替え
+     * フッタータブ切り替え（カレンダー予定保存強化版）
      */
     switchFooterTab(tabName, event) {
         const modal = document.getElementById('footerModal');
@@ -158,14 +159,16 @@ class Application {
         
         modalTitle.textContent = titles[tabName] || 'タイトル';
         
-        // モーダルヘッダーを動的に再構築
+        // モーダルヘッダーを動的に再構築（要点確認以外の場合のみ）
         const modalHeader = modal.querySelector('.modal-header');
         if (modalHeader && tabName !== 'keypoints') {
+            // 要点確認以外の場合：通常ヘッダー
             modalHeader.innerHTML = `
                 <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
                 <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
             `;
         } else if (modalHeader && tabName === 'keypoints') {
+            // 要点確認の場合：初期状態は通常ヘッダー（重要語句ボタンはコンテンツ表示時のみ追加）
             modalHeader.innerHTML = `
                 <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
                 <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
@@ -175,6 +178,7 @@ class Application {
         // モーダルフッターを動的に再構築
         if (modalFooter) {
             if (tabName === 'keypoints') {
+                // 要点確認の場合：戻るボタン + 閉じるボタン
                 modalFooter.innerHTML = `
                     <div style="display: flex; gap: 10px;">
                         <button id="modalBackBtn" style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.backToSubjectList()">↩️ 戻る</button>
@@ -182,6 +186,7 @@ class Application {
                     </div>
                 `;
             } else {
+                // その他の場合：閉じるボタンのみ
                 modalFooter.innerHTML = `
                     <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
                 `;
@@ -203,6 +208,7 @@ class Application {
             case 'keypoints':
                 if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
                     modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
+                    // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
                 } else {
                     modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
                 }
@@ -220,357 +226,254 @@ class Application {
     }
 
     /**
-     * 問題集選択
+     * 試験日保存（修正版）
      */
-    selectBook(bookId) {
-        if (this.sortMode) return;
-        
-        const book = DataManager.books[bookId];
-        if (!book) return;
-        
-        this.currentBook = book;
-        this.currentPath = [];
-        
-        document.querySelectorAll('.book-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        const selectedCard = document.getElementById(`book-card-${bookId}`);
-        if (selectedCard) {
-            selectedCard.classList.add('selected');
+    saveExamDate() {
+        const input = document.getElementById('examDateInput');
+        if (!input || !input.value) {
+            alert('試験日を入力してください');
+            return;
         }
-        
-        document.getElementById('recordHierarchyContainer').style.display = 'block';
-        document.getElementById('questionSection').style.display = 'none';
-        document.getElementById('breadcrumb').style.display = 'block';
-        
-        this.renderRecordHierarchy();
-        this.updateBreadcrumb();
-    }
 
-    /**
-     * 問題表示（ページネーション機能付き）
-     */
-    showQuestions(path) {
-        if (!this.currentBook) return;
-        
-        const pathArray = path.split('/');
-        let target = this.currentBook.structure;
-        
-        for (let i = 0; i < pathArray.length; i++) {
-            if (target[pathArray[i]]) {
-                target = target[pathArray[i]];
-                if (target.children && i < pathArray.length - 1) {
-                    target = target.children;
+        try {
+            const examDate = new Date(input.value);
+            // DataManager.saveExamDateの戻り値をチェック
+            const success = DataManager.saveExamDate(examDate);
+            
+            if (success) {
+                // UIComponentsが存在する場合のみ更新
+                if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
+                    UIComponents.updateExamCountdown();
                 }
-            }
-        }
-        
-        if (!target || !target.questions) return;
-        
-        this.currentPath = pathArray;
-        this.currentQuestionRange = target.questions;
-        this.currentQuestionIndex = 0; // 最初の問題から開始
-        
-        // 問題番号チェック状態を読み込み
-        const savedStates = DataManager.getSavedQuestionStates(this.currentBook.id, path);
-        this.questionStates = {};
-        
-        target.questions.forEach(num => {
-            this.questionStates[num] = savedStates[num] || { state: null, bookmarked: false };
-        });
-        
-        document.getElementById('recordHierarchyContainer').style.display = 'none';
-        document.getElementById('questionSection').style.display = 'block';
-        
-        this.updateBreadcrumb();
-        this.renderQuestionGrid();
-        this.updateStats();
-        this.updateNavigationButtons();
-    }
-
-    /**
-     * ページネーションボタンの状態を更新
-     */
-    updateNavigationButtons() {
-        const prevBtn = document.getElementById('prevQuestionBtn');
-        const nextBtn = document.getElementById('nextQuestionBtn');
-        
-        if (prevBtn) {
-            prevBtn.disabled = this.currentQuestionIndex === 0;
-            prevBtn.style.opacity = prevBtn.disabled ? '0.5' : '1';
-        }
-        
-        if (nextBtn) {
-            nextBtn.disabled = this.currentQuestionIndex >= this.currentQuestionRange.length - 1;
-            nextBtn.style.opacity = nextBtn.disabled ? '0.5' : '1';
-        }
-    }
-
-    /**
-     * 前の問題へ
-     */
-    navigateToPrevQuestion() {
-        if (this.currentQuestionIndex > 0) {
-            this.currentQuestionIndex--;
-            this.renderQuestionGrid();
-            this.updateNavigationButtons();
-        }
-    }
-
-    /**
-     * 次の問題へ
-     */
-    navigateToNextQuestion() {
-        if (this.currentQuestionIndex < this.currentQuestionRange.length - 1) {
-            this.currentQuestionIndex++;
-            this.renderQuestionGrid();
-            this.updateNavigationButtons();
-        }
-    }
-
-    /**
-     * 問題グリッドの描画（ページネーション版）
-     */
-    renderQuestionGrid() {
-        const grid = document.getElementById('questionGrid');
-        if (!grid || !this.currentQuestionRange || this.currentQuestionRange.length === 0) return;
-        
-        // 現在の問題番号を取得
-        const currentQuestionNum = this.currentQuestionRange[this.currentQuestionIndex];
-        
-        // ページネーションコントロールを追加
-        let html = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px;">
-                <button id="prevQuestionBtn" class="nav-btn" onclick="App.navigateToPrevQuestion()" 
-                        style="font-size: 24px; padding: 10px 20px; border-radius: 10px;">
-                    ◀
-                </button>
-                <div style="text-align: center;">
-                    <div style="font-size: 32px; font-weight: bold; color: var(--primary);">問題 ${currentQuestionNum}</div>
-                    <div style="font-size: 16px; color: var(--gray); margin-top: 5px;">
-                        ${this.currentQuestionIndex + 1} / ${this.currentQuestionRange.length}
-                    </div>
-                </div>
-                <button id="nextQuestionBtn" class="nav-btn" onclick="App.navigateToNextQuestion()" 
-                        style="font-size: 24px; padding: 10px 20px; border-radius: 10px;">
-                    ▶
-                </button>
-            </div>
-        `;
-        
-        // 現在の問題の状態を表示
-        const state = this.questionStates[currentQuestionNum];
-        const cellClass = state.state === 'correct' ? 'correct' : 
-                         state.state === 'wrong' ? 'wrong' : '';
-        const bookmarkClass = state.bookmarked ? 'bookmarked' : '';
-        
-        html += `
-            <div class="question-display" style="text-align: center; padding: 30px;">
-                <div class="question-cell ${cellClass} ${bookmarkClass}" 
-                     data-number="${currentQuestionNum}"
-                     onclick="App.toggleQuestion(${currentQuestionNum})"
-                     style="display: inline-block; width: 120px; height: 120px; line-height: 120px; 
-                            font-size: 36px; cursor: pointer; position: relative;">
-                    ${currentQuestionNum}
-                    ${state.bookmarked ? '<span style="position: absolute; top: -10px; right: -10px; font-size: 24px;">⭐</span>' : ''}
-                </div>
-            </div>
-        `;
-        
-        grid.innerHTML = html;
-        this.updateNavigationButtons();
-    }
-
-    /**
-     * 問題の状態をトグル
-     */
-    toggleQuestion(number) {
-        if (!this.questionStates[number]) {
-            this.questionStates[number] = { state: null, bookmarked: false };
-        }
-        
-        if (this.bookmarkMode) {
-            this.questionStates[number].bookmarked = !this.questionStates[number].bookmarked;
-        } else {
-            // 状態を循環: null -> correct -> wrong -> null
-            if (this.questionStates[number].state === null) {
-                this.questionStates[number].state = 'correct';
-            } else if (this.questionStates[number].state === 'correct') {
-                this.questionStates[number].state = 'wrong';
+                
+                // Firebase保存強化
+                if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                    DataManager.saveToFirestore({
+                        type: 'examDate',
+                        action: 'save',
+                        examDate: examDate.toISOString(),
+                        message: '試験日を設定しました'
+                    });
+                }
+                
+                alert('試験日を設定しました');
+                // モーダルを閉じる
+                setTimeout(() => this.closeFooterModal(), 100);
             } else {
-                this.questionStates[number].state = null;
+                alert('試験日の設定に失敗しました。有効な日付を入力してください。');
             }
-        }
-        
-        this.renderQuestionGrid();
-        this.updateStats();
-        this.saveQuestionStatesForPath();
-    }
-
-    /**
-     * 現在のパスの問題状態を保存
-     */
-    saveQuestionStatesForPath() {
-        if (this.currentBook && this.currentPath.length > 0) {
-            const pathStr = this.currentPath.join('/');
-            DataManager.saveQuestionStates(this.currentBook.id, pathStr, this.questionStates);
+        } catch (error) {
+            console.error('Error saving exam date:', error);
+            alert('試験日の設定に失敗しました');
         }
     }
 
     /**
-     * 全問正解マーク
+     * 実績コンテンツ生成（Analytics依存を安全に）
      */
-    markCorrect() {
-        Object.keys(this.questionStates).forEach(num => {
-            if (this.questionStates[num].state === null) {
-                this.questionStates[num].state = 'correct';
-            }
-        });
-        this.saveQuestionStatesForPath();
-        this.renderQuestionGrid();
-        this.updateStats();
-    }
-
-    /**
-     * 全問不正解マーク
-     */
-    markWrong() {
-        Object.keys(this.questionStates).forEach(num => {
-            if (this.questionStates[num].state === null) {
-                this.questionStates[num].state = 'wrong';
-            }
-        });
-        this.saveQuestionStatesForPath();
-        this.renderQuestionGrid();
-        this.updateStats();
-    }
-
-    /**
-     * ブックマークモード切り替え
-     */
-    toggleBookmarkMode() {
-        this.bookmarkMode = !this.bookmarkMode;
-        const btn = document.getElementById('bookmarkBtn');
-        if (btn) {
-            btn.classList.toggle('active');
-        }
-    }
-
-    /**
-     * 統計情報更新
-     */
-    updateStats() {
-        let total = 0;
-        let correct = 0;
-        let wrong = 0;
-        
-        Object.values(this.questionStates).forEach(state => {
-            if (state.state !== null) {
-                total++;
-                if (state.state === 'correct') {
-                    correct++;
-                } else {
-                    wrong++;
-                }
-            }
-        });
-        
-        const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
-        
-        document.getElementById('totalCount').textContent = total;
-        document.getElementById('correctCount').textContent = correct;
-        document.getElementById('wrongCount').textContent = wrong;
-        document.getElementById('correctRate').textContent = rate + '%';
-    }
-
-    /**
-     * 学習記録を保存
-     */
-    saveRecord() {
-        if (!this.currentBook || this.currentPath.length === 0) {
-            alert('問題を選択してください');
-            return;
-        }
-        
-        let total = 0;
-        let correct = 0;
-        let wrong = 0;
-        
-        Object.values(this.questionStates).forEach(state => {
-            if (state.state !== null) {
-                total++;
-                if (state.state === 'correct') {
-                    correct++;
-                } else {
-                    wrong++;
-                }
-            }
-        });
-        
-        if (total === 0) {
-            alert('解答を入力してください');
-            return;
-        }
-        
-        const record = {
-            date: new Date().toISOString(),
-            bookId: this.currentBook.id,
-            bookName: this.currentBook.name,
-            path: this.currentPath.join(' > '),
-            total: total,
-            correct: correct,
-            wrong: wrong,
-            rate: Math.round((correct / total) * 100)
+    getResultsContent() {
+        // デフォルト値
+        let stats = {
+            totalAnswered: 0,
+            overallRate: 0,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            uniqueAnsweredCount: 0,
+            progressPercentage: 0
         };
         
-        DataManager.allRecords.push(record);
-        DataManager.saveAllRecords();
+        let subjectCount = 0;
         
-        alert('学習記録を保存しました');
-        
-        // UIをリセット
-        this.questionStates = {};
-        this.currentPath = [];
-        document.getElementById('questionSection').style.display = 'none';
-        document.getElementById('recordHierarchyContainer').style.display = 'block';
-        this.renderRecordHierarchy();
-        this.updateBreadcrumb();
-        
-        // カレンダーと分析を更新
-        if (window.UIComponents) {
-            UIComponents.renderCalendar();
+        try {
+            // Analyticsが利用可能な場合のみ統計を取得
+            if (window.Analytics && typeof Analytics.calculateOverallProgress === 'function') {
+                stats = Analytics.calculateOverallProgress();
+            }
+            if (window.Analytics && typeof Analytics.calculateSubjectStats === 'function') {
+                const subjectStats = Analytics.calculateSubjectStats();
+                subjectCount = Object.keys(subjectStats).length;
+            }
+        } catch (error) {
+            console.error('Error calculating stats:', error);
         }
-        if (window.Analytics) {
-            Analytics.updateChartBars();
-            Analytics.updateHistoryContent();
+        
+        const streakDays = localStorage.getItem('streakDays') || '0';
+        
+        const badges = [
+            { 
+                icon: '🎯', 
+                label: '初学習', 
+                unlocked: DataManager.allRecords.length > 0,
+                value: DataManager.allRecords.length > 0 ? '達成' : '未達成'
+            },
+            { 
+                icon: '📚', 
+                label: '100問', 
+                unlocked: stats.totalAnswered >= 100,
+                value: `${stats.totalAnswered}問`
+            },
+            { 
+                icon: '🔥', 
+                label: '7日連続', 
+                unlocked: parseInt(streakDays) >= 7,
+                value: `${streakDays}日`
+            },
+            { 
+                icon: '⭐', 
+                label: '正答90%', 
+                unlocked: stats.overallRate >= 90,
+                value: `${stats.overallRate}%`
+            },
+            { 
+                icon: '🏆', 
+                label: '1000問', 
+                unlocked: stats.totalAnswered >= 1000,
+                value: stats.totalAnswered >= 1000 ? '達成' : `${stats.totalAnswered}問`
+            },
+            { 
+                icon: '🚀', 
+                label: '全科目', 
+                unlocked: subjectCount >= 4,
+                value: `${subjectCount}科目`
+            },
+            { 
+                icon: '💎', 
+                label: '30日継続', 
+                unlocked: parseInt(streakDays) >= 30,
+                value: `${streakDays}日`
+            },
+            { 
+                icon: '👑', 
+                label: 'マスター', 
+                unlocked: stats.totalAnswered >= 5000 && stats.overallRate >= 85,
+                value: stats.totalAnswered >= 5000 ? '達成' : '未達成'
+            }
+        ];
+        
+        let html = `
+            <div class="card" style="margin: 10px;">
+                <h4 style="text-align: center; margin-bottom: 20px;">獲得バッジ</h4>
+                <div class="achievement-grid">
+        `;
+        
+        badges.forEach(badge => {
+            html += `
+                <div class="achievement-card">
+                    <div class="achievement-icon ${!badge.unlocked ? 'disabled' : ''}">${badge.icon}</div>
+                    <div class="achievement-label">${badge.label}</div>
+                    <div class="achievement-value">${badge.value}</div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+        
+        return html;
+    }
+
+    closeFooterModal() {
+        const modal = document.getElementById('footerModal');
+        if (modal) {
+            modal.classList.remove('active');
         }
     }
 
-    /**
-     * パンくずリスト更新
-     */
-    updateBreadcrumb() {
-        const breadcrumb = document.getElementById('breadcrumb');
-        if (!breadcrumb) return;
+    renderBookCards() {
+        const container = document.getElementById('bookCardsContainer');
+        if (!container) return;
+
+        let html = '';
         
-        if (this.currentBook) {
-            let html = `<span class="breadcrumb-item" onclick="App.navigateTo(-1)">📚 ${this.currentBook.name}</span>`;
+        const orderedBooks = DataManager.bookOrder
+            .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
+            .map(id => DataManager.books[id]);
+        
+        Object.values(DataManager.books).forEach(book => {
+            if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
+                orderedBooks.push(book);
+                DataManager.bookOrder.push(book.id);
+            }
+        });
+        
+        orderedBooks.forEach(book => {
+            const questionCount = DataManager.countQuestionsInBook(book);
+            const sortClass = this.sortMode ? 'sortable' : '';
+            html += `
+                <div class="book-card ${sortClass}" id="book-card-${book.id}" 
+                     onclick="${this.sortMode ? '' : `App.toggleBookCard('${book.id}')`}">
+                    <span class="book-card-drag-handle">☰</span>
+                    <div class="book-card-title">📚 ${book.name}</div>
+                    <div class="book-card-meta">
+                        ${Object.keys(book.structure).length}科目 | ${questionCount}問
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+
+    toggleBookCard(bookId) {
+        const card = document.getElementById(`book-card-${bookId}`);
+        if (!card) return;
+
+        if (this.selectedBookCard === bookId) {
+            card.classList.remove('selected');
+            this.selectedBookCard = null;
+            this.currentBook = null;
+            this.currentPath = [];
             
-            this.currentPath.forEach((item, index) => {
-                html += ` > <span class="breadcrumb-item ${index === this.currentPath.length - 1 ? 'active' : ''}" 
-                         onclick="App.navigateTo(${index})">${item}</span>`;
+            const breadcrumb = document.getElementById('breadcrumb');
+            const hierarchyContainer = document.getElementById('recordHierarchyContainer');
+            const questionSection = document.getElementById('questionSection');
+            
+            if (breadcrumb) breadcrumb.style.display = 'none';
+            if (hierarchyContainer) hierarchyContainer.style.display = 'none';
+            if (questionSection) questionSection.style.display = 'none';
+        } else {
+            document.querySelectorAll('.book-card').forEach(c => {
+                c.classList.remove('selected');
             });
             
-            breadcrumb.innerHTML = html;
-        } else {
-            breadcrumb.style.display = 'none';
+            card.classList.add('selected');
+            this.selectedBookCard = bookId;
+            this.selectBook(bookId);
         }
     }
 
-    /**
-     * パンくずリストから指定位置へ移動
-     */
+    selectBook(bookId) {
+        this.currentBook = DataManager.books[bookId];
+        this.currentPath = [];
+        
+        const breadcrumb = document.getElementById('breadcrumb');
+        const questionSection = document.getElementById('questionSection');
+        
+        if (breadcrumb) breadcrumb.style.display = 'flex';
+        if (questionSection) questionSection.style.display = 'none';
+        
+        this.updateBreadcrumb();
+        this.renderRecordHierarchy();
+    }
+
+    updateBreadcrumb() {
+        const breadcrumb = document.getElementById('breadcrumb');
+        if (!breadcrumb || !this.currentBook) return;
+
+        const items = [this.currentBook.name, ...this.currentPath];
+        
+        let html = '';
+        items.forEach((item, index) => {
+            if (index > 0) html += '<span class="breadcrumb-separator">›</span>';
+            html += `<span class="breadcrumb-item ${index === items.length - 1 ? 'active' : ''}" 
+                     onclick="App.navigateTo(${index - 1})">${item}</span>`;
+        });
+        
+        breadcrumb.innerHTML = html;
+    }
+
     navigateTo(index) {
         if (index === -1) {
             this.currentPath = [];
@@ -586,25 +489,6 @@ class Application {
         this.updateBreadcrumb();
     }
 
-    /**
-     * 階層の順序を保持する関数
-     */
-    getOrderedStructure(structure) {
-        if (!structure) return [];
-        
-        const items = Object.entries(structure);
-        
-        // orderプロパティでソート
-        return items.sort((a, b) => {
-            const orderA = a[1].order !== undefined ? a[1].order : 999;
-            const orderB = b[1].order !== undefined ? b[1].order : 999;
-            return orderA - orderB;
-        });
-    }
-
-    /**
-     * 記録入力階層を描画
-     */
     renderRecordHierarchy() {
         const container = document.getElementById('recordHierarchyContainer');
         if (!container || !this.currentBook) return;
@@ -627,16 +511,10 @@ class Application {
         container.innerHTML = html;
     }
 
-    /**
-     * 記録入力階層レベルを描画（順序保持）
-     */
     renderRecordLevel(structure, basePath) {
         let html = '';
         
-        // 順序を保持して取得
-        const orderedItems = this.getOrderedStructure(structure);
-        
-        orderedItems.forEach(([name, item]) => {
+        Object.entries(structure).forEach(([name, item]) => {
             const currentPath = [...basePath, name];
             const pathStr = currentPath.join('/');
             const hasChildren = item.children && Object.keys(item.children).length > 0;
@@ -656,105 +534,256 @@ class Application {
                 
                 if (hasChildren) {
                     html += `
-                        <div class="hierarchy-children ${isExpanded ? 'show' : ''}">
+                        <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
                             ${this.renderRecordLevel(item.children, currentPath)}
                         </div>
                     `;
                 }
-            } else {
+            } else if (hasChildren) {
                 html += `
-                    <div class="hierarchy-row" ${hasChildren ? `onclick="App.toggleNode('${pathStr}', event)"` : ''}>
-                        ${hasChildren ? `<span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>` : '<span style="width: 28px;"></span>'}
+                    <div class="hierarchy-row" onclick="App.toggleRecordNode('${pathStr}', event)">
+                        <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
                         <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
                         <span class="hierarchy-label">${name}</span>
                     </div>
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                        ${this.renderRecordLevel(item.children, currentPath)}
+                    </div>
                 `;
-                
-                if (hasChildren) {
-                    html += `
-                        <div class="hierarchy-children ${isExpanded ? 'show' : ''}">
-                            ${this.renderRecordLevel(item.children, currentPath)}
-                        </div>
-                    `;
-                }
             }
             
-            html += `</div>`;
+            html += '</div>';
         });
         
         return html;
     }
 
-    /**
-     * ノードの展開/折りたたみ
-     */
-    toggleNode(nodeId, event) {
-        if (event) event.stopPropagation();
+    toggleRecordNode(path, event) {
+        event.stopPropagation();
         
-        if (this.expandedNodes.has(nodeId)) {
-            this.expandedNodes.delete(nodeId);
+        if (this.expandedNodes.has(path)) {
+            this.expandedNodes.delete(path);
         } else {
-            this.expandedNodes.add(nodeId);
+            this.expandedNodes.add(path);
         }
         
         this.renderRecordHierarchy();
     }
 
-    /**
-     * 問題集カード描画（削除済み除外）
-     */
-    renderBookCards() {
-        const container = document.getElementById('bookCardsContainer');
-        if (!container) return;
-
-        let html = '';
+    showQuestions(pathStr) {
+        const pathArray = pathStr.split('/');
+        this.currentPath = pathArray;
+        this.updateBreadcrumb();
         
-        // 削除済みを除外してレンダリング
-        const orderedBooks = DataManager.bookOrder
-            .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
-            .map(id => DataManager.books[id]);
-        
-        // orderに含まれていない問題集も追加（削除済みは除外）
-        Object.values(DataManager.books).forEach(book => {
-            if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
-                orderedBooks.push(book);
-                DataManager.bookOrder.push(book.id);
+        let current = this.currentBook.structure;
+        for (let i = 0; i < pathArray.length; i++) {
+            if (current[pathArray[i]]) {
+                if (current[pathArray[i]].questions) {
+                    const item = current[pathArray[i]];
+                    
+                    const hierarchyContainer = document.getElementById('recordHierarchyContainer');
+                    const questionSection = document.getElementById('questionSection');
+                    
+                    if (hierarchyContainer) hierarchyContainer.style.display = 'none';
+                    if (questionSection) questionSection.style.display = 'block';
+                    
+                    const grid = document.getElementById('questionGrid');
+                    if (!grid) return;
+                    
+                    grid.innerHTML = '';
+                    this.questionStates = {};
+                    
+                    if (item.type === 'chapter' && item.questions.length > 50) {
+                        const note = document.createElement('div');
+                        note.style.cssText = 'grid-column: 1 / -1; font-size: 11px; color: var(--gray); padding: 5px;';
+                        note.textContent = `※ ${item.questions.length}問 - 年度別過去問`;
+                        grid.appendChild(note);
+                    }
+                    
+                    item.questions.forEach(num => {
+                        const cell = document.createElement('div');
+                        cell.className = 'question-cell';
+                        cell.textContent = num;
+                        cell.dataset.number = num;
+                        cell.onclick = () => this.toggleQuestion(num);
+                        
+                        grid.appendChild(cell);
+                        
+                        this.questionStates[num] = {
+                            state: null,
+                            bookmarked: false
+                        };
+                    });
+                    
+                    this.loadQuestionStatesForPath();
+                    return;
+                }
+                current = current[pathArray[i]].children || {};
             }
-        });
-        
-        orderedBooks.forEach(book => {
-            const questionCount = DataManager.countQuestionsInBook(book);
-            const sortClass = this.sortMode ? 'sortable' : '';
-            html += `
-                <div class="book-card ${sortClass}" id="book-card-${book.id}" 
-                     onclick="${this.sortMode ? '' : `App.selectBook('${book.id}')`}"
-                     data-book-id="${book.id}">
-                    ${this.sortMode ? '<span class="book-card-drag-handle">☰</span>' : ''}
-                    <div class="book-card-title">${book.name}</div>
-                    <div class="book-card-meta">${questionCount}問</div>
-                </div>
-            `;
-        });
-        
-        if (orderedBooks.length === 0) {
-            html = '<p style="color: var(--gray); text-align: center; padding: 20px;">問題集がありません</p>';
-        }
-        
-        container.innerHTML = html;
-        
-        if (this.sortMode) {
-            this.enableDragAndDrop();
         }
     }
 
-    // Part 1からの続き...
+    loadQuestionStatesForPath() {
+        if (!this.currentBook || this.currentPath.length === 0) return;
 
-    /**
-     * 問題集並び替えモード切り替え
-     */
+        const states = DataManager.getQuestionStates(this.currentBook.id, this.currentPath);
+        if (states && Object.keys(states).length > 0) {
+            this.questionStates = states;
+            this.applyQuestionStates();
+        }
+    }
+
+    applyQuestionStates() {
+        Object.entries(this.questionStates).forEach(([num, state]) => {
+            const cell = document.querySelector(`[data-number="${num}"]`);
+            if (cell) {
+                cell.classList.remove('correct', 'wrong', 'bookmarked');
+                if (state.state === 'correct') {
+                    cell.classList.add('correct');
+                } else if (state.state === 'wrong') {
+                    cell.classList.add('wrong');
+                }
+                if (state.bookmarked) {
+                    cell.classList.add('bookmarked');
+                }
+            }
+        });
+        this.updateStats();
+    }
+
+    toggleQuestion(num) {
+        if (this.bookmarkMode) {
+            this.questionStates[num].bookmarked = !this.questionStates[num].bookmarked;
+            const cell = document.querySelector(`[data-number="${num}"]`);
+            if (cell) {
+                cell.classList.toggle('bookmarked');
+            }
+        } else {
+            const cell = document.querySelector(`[data-number="${num}"]`);
+            const state = this.questionStates[num];
+            
+            if (state.state === null) {
+                state.state = 'correct';
+                cell.classList.add('correct');
+            } else if (state.state === 'correct') {
+                state.state = 'wrong';
+                cell.classList.remove('correct');
+                cell.classList.add('wrong');
+            } else {
+                state.state = null;
+                cell.classList.remove('wrong');
+            }
+        }
+        
+        this.saveQuestionStatesForPath();
+        this.updateStats();
+    }
+
+    saveQuestionStatesForPath() {
+        if (this.currentBook && this.currentPath.length > 0) {
+            DataManager.saveQuestionStates(this.currentBook.id, this.currentPath, this.questionStates);
+        }
+    }
+
+    markCorrect() {
+        Object.keys(this.questionStates).forEach(num => {
+            if (this.questionStates[num].state === null) {
+                this.questionStates[num].state = 'correct';
+                const cell = document.querySelector(`[data-number="${num}"]`);
+                if (cell) {
+                    cell.classList.add('correct');
+                }
+            }
+        });
+        this.saveQuestionStatesForPath();
+        this.updateStats();
+    }
+
+    markWrong() {
+        Object.keys(this.questionStates).forEach(num => {
+            if (this.questionStates[num].state === null) {
+                this.questionStates[num].state = 'wrong';
+                const cell = document.querySelector(`[data-number="${num}"]`);
+                if (cell) {
+                    cell.classList.add('wrong');
+                }
+            }
+        });
+        this.saveQuestionStatesForPath();
+        this.updateStats();
+    }
+
+    toggleBookmarkMode() {
+        this.bookmarkMode = !this.bookmarkMode;
+        const btn = document.getElementById('bookmarkBtn');
+        if (btn) {
+            btn.classList.toggle('active');
+        }
+    }
+
+    updateStats() {
+        let total = 0;
+        let correct = 0;
+        let wrong = 0;
+        
+        Object.values(this.questionStates).forEach(state => {
+            if (state.state !== null) {
+                total++;
+                if (state.state === 'correct') {
+                    correct++;
+                } else {
+                    wrong++;
+                }
+            }
+        });
+        
+        const rate = total > 0 ? Math.round((correct / total) * 100) : 0;
+        
+        const totalEl = document.getElementById('totalCount');
+        const correctEl = document.getElementById('correctCount');
+        const wrongEl = document.getElementById('wrongCount');
+        const rateEl = document.getElementById('correctRate');
+        
+        if (totalEl) totalEl.textContent = total;
+        if (correctEl) correctEl.textContent = correct;
+        if (wrongEl) wrongEl.textContent = wrong;
+        if (rateEl) rateEl.textContent = rate + '%';
+    }
+
+    saveRecord() {
+        if (!this.currentBook || this.currentPath.length === 0) {
+            alert('問題を選択してください');
+            return;
+        }
+
+        const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+        if (total === 0) {
+            alert('解答してください');
+            return;
+        }
+
+        const record = {
+            bookId: this.currentBook.id,
+            bookName: this.currentBook.name,
+            path: this.currentPath,
+            questions: this.questionStates,
+            timestamp: new Date().toISOString(),
+            stats: {
+                total: total,
+                correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
+                wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
+                rate: document.getElementById('correctRate')?.textContent || '0%'
+            }
+        };
+        
+        DataManager.saveToHistory(record);
+        DataManager.updateDailyStreak();
+        
+        alert('保存しました！');
+    }
+
     toggleBookSort() {
         this.sortMode = !this.sortMode;
-        
         const btn = document.querySelector('.book-order-btn');
         if (btn) {
             btn.textContent = this.sortMode ? '完了' : '並替え';
@@ -762,12 +791,13 @@ class Application {
         }
         
         this.renderBookCards();
+        
+        if (this.sortMode) {
+            this.enableBookDragAndDrop();
+        }
     }
 
-    /**
-     * ドラッグアンドドロップ有効化
-     */
-    enableDragAndDrop() {
+    enableBookDragAndDrop() {
         const container = document.getElementById('bookCardsContainer');
         if (!container) return;
 
@@ -837,11 +867,12 @@ class Application {
     }
 
     /**
-     * 分析タブ並び替えモード切り替え
+     * 分析タブ並び替え機能（記録入力と同じデザイン・挙動に修正）
      */
     toggleAnalysisSort() {
         this.analysisSortMode = !this.analysisSortMode;
         
+        // ボタンのテキストと色を更新
         const btn = document.querySelector('.card-sort-btn');
         if (btn) {
             btn.textContent = this.analysisSortMode ? '完了' : '並替え';
@@ -851,12 +882,13 @@ class Application {
         if (this.analysisSortMode) {
             this.enableAnalysisDragAndDrop();
         } else {
+            // 並び替えモード終了時にドラッグ機能を無効化
             this.disableAnalysisDragAndDrop();
         }
     }
 
     /**
-     * 分析カードのドラッグアンドドロップ有効化
+     * 分析カードのドラッグアンドドロップ機能（記録入力と同じ挙動に修正）
      */
     enableAnalysisDragAndDrop() {
         const container = document.getElementById('analysisCardsContainer');
@@ -864,6 +896,7 @@ class Application {
 
         let draggedElement = null;
         
+        // アコーディオンカードに並び替えクラスを追加
         const cards = container.querySelectorAll('.accordion');
         cards.forEach(card => {
             card.draggable = true;
@@ -902,15 +935,27 @@ class Application {
                     e.stopPropagation();
                 }
                 
+                // 新しい順序を保存
                 const newOrder = [];
                 container.querySelectorAll('.accordion').forEach(c => {
-                    const cardId = c.getAttribute('data-card-id');
-                    if (cardId) {
-                        newOrder.push(cardId);
-                    }
+                    const cardId = c.dataset.cardId;
+                    if (cardId) newOrder.push(cardId);
                 });
-                DataManager.analysisCardOrder = newOrder;
-                DataManager.saveAnalysisCardOrder();
+                
+                if (newOrder.length > 0) {
+                    DataManager.analysisCardOrder = newOrder;
+                    DataManager.saveAnalysisCardOrder();
+                    
+                    // Firebase保存強化
+                    if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                        DataManager.saveToFirestore({
+                            type: 'analysisCardOrder',
+                            action: 'save',
+                            order: newOrder,
+                            message: '分析カード順序を保存しました'
+                        });
+                    }
+                }
                 
                 return false;
             });
@@ -933,7 +978,7 @@ class Application {
     }
 
     /**
-     * 分析カードのドラッグアンドドロップ無効化
+     * 分析カードのドラッグアンドドロップ機能を無効化
      */
     disableAnalysisDragAndDrop() {
         const container = document.getElementById('analysisCardsContainer');
@@ -944,15 +989,14 @@ class Application {
             card.draggable = false;
             card.classList.remove('sortable', 'dragging');
             
+            // イベントリスナーをクローンして削除
             const newCard = card.cloneNode(true);
             card.parentNode.replaceChild(newCard, card);
         });
     }
 
-    /**
-     * アコーディオンの開閉
-     */
     toggleAccordion(header) {
+        // 並び替えモードの時はアコーディオンを開閉しない
         if (this.analysisSortMode) {
             return;
         }
@@ -964,18 +1008,12 @@ class Application {
         }
     }
 
-    /**
-     * タイマーモーダルを開く
-     */
     openTimerModal() {
         if (window.TimerModule && typeof TimerModule.openModal === 'function') {
             TimerModule.openModal();
         }
     }
 
-    /**
-     * ダイアログ表示
-     */
     showDialog(title, body, onConfirm) {
         const titleEl = document.getElementById('dialogTitle');
         const bodyEl = document.getElementById('dialogBody');
@@ -990,9 +1028,6 @@ class Application {
         if (dialog) dialog.style.display = 'block';
     }
 
-    /**
-     * ダイアログを閉じる
-     */
     closeDialog() {
         const overlay = document.getElementById('dialogOverlay');
         const dialog = document.getElementById('inputDialog');
@@ -1001,45 +1036,16 @@ class Application {
         if (dialog) dialog.style.display = 'none';
     }
 
-    /**
-     * フッターモーダルを閉じる
-     */
-    closeFooterModal() {
-        const modal = document.getElementById('footerModal');
-        if (modal) {
-            modal.classList.remove('active');
-        }
-    }
-
-    /**
-     * 階層アイコンを取得
-     */
     getHierarchyIcon(type) {
         const icons = {
             'subject': '📂',
             'chapter': '📄',
             'section': '📑',
-            'subsection': '📌'
+            'subsection': ''
         };
         return icons[type] || '📄';
     }
 
-    /**
-     * タイプのラベルを取得
-     */
-    getTypeLabel(type) {
-        const labels = {
-            'subject': '科目',
-            'chapter': '章',
-            'section': '節',
-            'subsection': '項'
-        };
-        return labels[type] || 'アイテム';
-    }
-
-    /**
-     * 登録タブのコンテンツを取得
-     */
     getRegisterContent() {
         return `
             <div class="save-button" style="margin: 10px;" onclick="App.showNewBookDialog()">新規作成</div>
@@ -1051,9 +1057,6 @@ class Application {
         `;
     }
 
-    /**
-     * 登録済み問題集階層を描画
-     */
     renderRegisterHierarchy() {
         const container = document.getElementById('registerHierarchy');
         if (!container) {
@@ -1078,18 +1081,18 @@ class Application {
             const isExpanded = this.expandedNodes.has(nodeId);
             
             html += `
-                <div class="hierarchy-item">
+                <div class="hierarchy-item" id="${nodeId}">
                     <div class="hierarchy-row" onclick="App.toggleRegisterNode('${nodeId}', event)">
                         <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
                         <span class="hierarchy-icon">📚</span>
                         <span class="hierarchy-label">${book.name}</span>
                         <div class="hierarchy-actions">
-                            <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}')" title="並び替え">並替え</button>
+                        　　 <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}', event)" title="並び替え">並替え</button>
                             <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
                             <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
                         </div>
                     </div>
-                    <div class="hierarchy-children ${isExpanded ? 'show' : ''}">
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
                         ${this.renderRegisterLevel(book.structure, book.id, [])}
                     </div>
                 </div>
@@ -1100,25 +1103,14 @@ class Application {
         container.innerHTML = html;
     }
 
-    /**
-     * 登録階層レベルを描画（順序保持）
-     */
     renderRegisterLevel(structure, bookId, path) {
         let html = '';
         
-        // 順序を保持して取得
-        const orderedItems = this.getOrderedStructure(structure);
-        
-        orderedItems.forEach(([name, item], index) => {
+        Object.entries(structure).forEach(([name, item]) => {
             const currentPath = [...path, name];
             const nodeId = `${bookId}_${currentPath.join('_')}`;
             const hasChildren = item.children && Object.keys(item.children).length > 0;
             const isExpanded = this.expandedNodes.has(nodeId);
-            
-            // orderプロパティを設定
-            if (item.order === undefined) {
-                item.order = index;
-            }
             
             html += `
                 <div class="hierarchy-item">
@@ -1148,23 +1140,20 @@ class Application {
             
             if (hasChildren) {
                 html += `
-                    <div class="hierarchy-children ${isExpanded ? 'show' : ''}">
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
                         ${this.renderRegisterLevel(item.children, bookId, currentPath)}
                     </div>
                 `;
             }
             
-            html += `</div>`;
+            html += '</div>';
         });
         
         return html;
     }
 
-    /**
-     * 登録ノードの展開/折りたたみ
-     */
     toggleRegisterNode(nodeId, event) {
-        if (event) event.stopPropagation();
+        event.stopPropagation();
         
         if (this.expandedNodes.has(nodeId)) {
             this.expandedNodes.delete(nodeId);
@@ -1175,122 +1164,114 @@ class Application {
         this.renderRegisterHierarchy();
     }
 
-    /**
-     * 新規問題集ダイアログ
-     */
     showNewBookDialog() {
         const dialogBody = `
             <div class="form-group">
                 <label class="form-label">問題集名</label>
-                <input type="text" class="form-control" id="newBookName" placeholder="問題集の名前を入力">
+                <input type="text" class="form-control" id="newBookName" placeholder="問題集名を入力">
             </div>
             <div class="form-group">
-                <label class="form-label">試験種別</label>
-                <select class="form-control" id="newBookType">
-                    <option value="gyousei">行政書士</option>
-                    <option value="other">その他</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">問題番号の管理方法</label>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label class="form-label">問題番号タイプ</label>
+                <div class="numbering-type">
                     <label>
                         <input type="radio" name="numberingType" value="reset" checked>
-                        <span>項目ごとリセット（節や項ごとに1から開始）</span>
+                        <span>項目ごとリセット</span>
                     </label>
                     <label>
                         <input type="radio" name="numberingType" value="continuous">
-                        <span>連番（全体を通した連番）</span>
+                        <span>連番</span>
                     </label>
                 </div>
             </div>
         `;
         
-        this.showDialog('新規問題集を作成', dialogBody, () => {
+        this.showDialog('新規問題集作成', dialogBody, () => {
             const name = document.getElementById('newBookName')?.value;
-            const type = document.getElementById('newBookType')?.value;
             const numberingType = document.querySelector('input[name="numberingType"]:checked')?.value;
             
-            if (name) {
-                const bookId = 'book_' + Date.now();
-                DataManager.books[bookId] = {
-                    id: bookId,
-                    name: name,
-                    examType: type || 'gyousei',
-                    numberingType: numberingType || 'reset',
-                    structure: {},
-                    createdAt: new Date().toISOString()
-                };
-                
-                DataManager.bookOrder.push(bookId);
-                DataManager.saveBooksToStorage();
-                DataManager.saveBookOrder();
-                
-                this.renderBookCards();
-                this.renderRegisterHierarchy();
-                
-                if (window.Analytics) {
-                    Analytics.updateHeatmapBookSelect();
-                    Analytics.updateRadarBookSelect();
-                }
-                
-                this.closeDialog();
+            if (!name) {
+                alert('問題集名を入力してください');
+                return;
             }
+            
+            const bookId = 'book_' + Date.now();
+            DataManager.books[bookId] = {
+                id: bookId,
+                name: name,
+                examType: 'gyousei',
+                numberingType: numberingType || 'reset',
+                structure: {},
+                createdAt: new Date().toISOString()
+            };
+            
+            DataManager.bookOrder.push(bookId);
+            DataManager.saveBooksToStorage();
+            DataManager.saveBookOrder();
+            
+            this.renderBookCards();
+            this.renderRegisterHierarchy();
+            
+            // Analyticsが存在する場合のみ更新
+            if (window.Analytics) {
+                Analytics.updateHeatmapBookSelect();
+                Analytics.updateRadarBookSelect();
+            }
+            
+            this.closeDialog();
+            alert('作成しました');
         });
     }
 
-    /**
-     * 問題集一覧ダイアログ
-     */
     showBookListDialog() {
         let dialogBody = '<div style="max-height: 400px; overflow-y: auto;">';
         
-        if (!DataManager.books || Object.keys(DataManager.books).length === 0) {
-            dialogBody += '<p style="text-align: center; color: var(--gray);">問題集がありません</p>';
-        } else {
-            Object.values(DataManager.books).forEach(book => {
-                if (DataManager.isDeleted('books', book.id)) {
-                    return;
-                }
-                
-                const questionCount = DataManager.countQuestionsInBook(book);
-                dialogBody += `
-                    <div style="padding: 10px; border-bottom: 1px solid var(--light); display: flex; justify-content: space-between; align-items: center;">
+        Object.values(DataManager.books).forEach(book => {
+            // 削除済みの問題集は表示しない
+            if (DataManager.isDeleted('books', book.id)) {
+                return;
+            }
+            
+            const questionCount = DataManager.countQuestionsInBook(book);
+            const numberingText = book.numberingType === 'continuous' ? '連番' : 'リセット';
+            dialogBody += `
+                <div style="padding: 10px; border-bottom: 1px solid var(--light);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
                             <div style="font-weight: 600;">${book.name}</div>
-                            <div style="font-size: 12px; color: var(--gray);">${questionCount}問</div>
+                            <div style="font-size: 12px; color: var(--gray);">
+                                ${Object.keys(book.structure).length}科目 | ${questionCount}問 | ${numberingText}
+                            </div>
                         </div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="edit-btn" onclick="App.editBook('${book.id}')">編集</button>
-                            <button class="delete-btn" onclick="App.deleteBook('${book.id}', event)">削除</button>
+                            <button class="hierarchy-action edit" onclick="App.editBookProperties('${book.id}')" title="編集">✏️</button>
+                            <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
                         </div>
                     </div>
-                `;
-            });
-        }
+                </div>
+            `;
+        });
         
         dialogBody += '</div>';
         
-        this.showDialog('問題集一覧', dialogBody, null);
+        this.showDialog('問題集一覧', dialogBody, () => {
+            this.closeDialog();
+        });
     }
 
-    /**
-     * 問題集編集
-     */
-    editBook(bookId) {
+    editBookProperties(bookId) {
         const book = DataManager.books[bookId];
         if (!book) return;
-        
+
         const dialogBody = `
             <div class="form-group">
                 <label class="form-label">問題集名</label>
                 <input type="text" class="form-control" id="editBookName" value="${book.name}">
             </div>
             <div class="form-group">
-                <label class="form-label">問題番号の管理方法</label>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
+                <label class="form-label">問題番号タイプ</label>
+                <div class="numbering-type">
                     <label>
-                        <input type="radio" name="editNumberingType" value="reset" ${book.numberingType !== 'continuous' ? 'checked' : ''}>
+                        <input type="radio" name="editNumberingType" value="reset" ${book.numberingType === 'reset' ? 'checked' : ''}>
                         <span>項目ごとリセット</span>
                     </label>
                     <label>
@@ -1311,6 +1292,7 @@ class Application {
                 DataManager.saveBooksToStorage();
                 this.renderBookCards();
                 
+                // Analyticsが存在する場合のみ更新
                 if (window.Analytics) {
                     Analytics.updateHeatmapBookSelect();
                     Analytics.updateRadarBookSelect();
@@ -1322,9 +1304,6 @@ class Application {
         });
     }
 
-    /**
-     * 階層追加
-     */
     addHierarchy(bookId, parentPath, type, event) {
         event.stopPropagation();
         
@@ -1399,14 +1378,10 @@ class Application {
                 });
             }
             
-            // orderプロパティを設定
-            const existingCount = Object.keys(target).length;
-            
             if (questions) {
                 target[name] = {
                     type: type,
-                    questions: questions,
-                    order: existingCount
+                    questions: questions
                 };
                 if (type === 'chapter' || type === 'section') {
                     target[name].children = {};
@@ -1414,8 +1389,7 @@ class Application {
             } else {
                 target[name] = {
                     type: type,
-                    children: {},
-                    order: existingCount
+                    children: {}
                 };
             }
             
@@ -1426,9 +1400,6 @@ class Application {
         });
     }
 
-    /**
-     * 階層編集
-     */
     editHierarchy(bookId, path, event) {
         event.stopPropagation();
         
@@ -1463,22 +1434,29 @@ class Application {
                 <div class="form-group">
                     <label class="form-label">問題番号範囲</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" class="form-control" id="editQuestionStart" value="${start}" min="1" style="width: 100px;">
+                        <input type="number" class="form-control" id="editQuestionStart" value="${start}" min="1" placeholder="開始番号" style="width: 100px;">
                         <span>〜</span>
-                        <input type="number" class="form-control" id="editQuestionEnd" value="${end}" min="1" style="width: 100px;">
+                        <input type="number" class="form-control" id="editQuestionEnd" value="${end}" min="1" placeholder="終了番号" style="width: 100px;">
                     </div>
                 </div>
             `;
         }
         
-        this.showDialog('項目を編集', dialogBody, () => {
+        this.showDialog('編集', dialogBody, () => {
             const newName = document.getElementById('editName')?.value;
-            const start = parseInt(document.getElementById('editQuestionStart')?.value || '0');
-            const end = parseInt(document.getElementById('editQuestionEnd')?.value || '0');
+            if (!newName) {
+                alert('名前を入力してください');
+                return;
+            }
             
-            if (newName && newName !== lastKey) {
+            if (newName !== lastKey) {
                 current[newName] = current[lastKey];
                 delete current[lastKey];
+            }
+            
+            if (item.type === 'chapter' || item.type === 'section' || item.type === 'subsection') {
+                const start = parseInt(document.getElementById('editQuestionStart')?.value || '0');
+                const end = parseInt(document.getElementById('editQuestionEnd')?.value || '0');
                 
                 if (start && end && start <= end) {
                     const questions = [];
@@ -1498,9 +1476,6 @@ class Application {
         });
     }
 
-    /**
-     * 階層削除
-     */
     deleteHierarchy(bookId, path, event) {
         event.stopPropagation();
         
@@ -1532,7 +1507,7 @@ class Application {
     }
 
     /**
-     * 問題集削除（削除済みマーク）
+     * 問題集削除（Firebase統合強化版）
      */
     deleteBook(bookId, event) {
         event.stopPropagation();
@@ -1542,7 +1517,7 @@ class Application {
         const book = DataManager.books[bookId];
         if (!book) return;
 
-        // 削除済みアイテムとしてマーク
+        // 削除済みアイテムとしてマーク（Firebase統合）
         DataManager.markAsDeleted('books', bookId, {
             bookName: book.name,
             bookType: book.examType,
@@ -1554,7 +1529,6 @@ class Application {
         DataManager.bookOrder = DataManager.bookOrder.filter(id => id !== bookId);
         DataManager.saveBooksToStorage();
         DataManager.saveBookOrder();
-        DataManager.saveDeletedItems();
         
         // ピン固定設定もクリア
         if (DataManager.heatmapPinnedBook === bookId) {
@@ -1567,6 +1541,7 @@ class Application {
         this.renderBookCards();
         this.renderRegisterHierarchy();
         
+        // Analyticsが存在する場合のみ更新
         if (window.Analytics) {
             Analytics.updateHeatmapBookSelect();
             Analytics.updateRadarBookSelect();
@@ -1576,221 +1551,338 @@ class Application {
     }
 
     /**
-     * 結果コンテンツを取得
+     * 階層並び替えモードの切り替え（新規追加）
      */
-    getResultsContent() {
-        const stats = DataManager.calculateStats();
-        const streakDays = DataManager.getStreakDays();
-        const subjectCount = Object.keys(DataManager.getSubjectStats()).length;
+    toggleHierarchySort(bookId, event) {  // event引数を追加
+    event.stopPropagation();  // 親要素のクリックを防ぐ
+        const book = DataManager.books[bookId];
+        if (!book) return;
         
-        const badges = [
-            { 
-                icon: '🔰', 
-                label: '初心者', 
-                unlocked: stats.totalAnswered >= 100,
-                value: stats.totalAnswered >= 100 ? '達成' : `${stats.totalAnswered}/100`
-            },
-            { 
-                icon: '🔥', 
-                label: '連続学習', 
-                unlocked: parseInt(streakDays) >= 7,
-                value: `${streakDays}日`
-            },
-            { 
-                icon: '⭐', 
-                label: '正答率80%', 
-                unlocked: stats.overallRate >= 80,
-                value: `${stats.overallRate}%`
-            },
-            { 
-                icon: '🎯', 
-                label: '1000問達成', 
-                unlocked: stats.totalAnswered >= 1000,
-                value: stats.totalAnswered >= 1000 ? '達成' : `${stats.totalAnswered}問`
-            },
-            { 
-                icon: '🚀', 
-                label: '全科目', 
-                unlocked: subjectCount >= 4,
-                value: `${subjectCount}科目`
-            },
-            { 
-                icon: '💎', 
-                label: '30日継続', 
-                unlocked: parseInt(streakDays) >= 30,
-                value: `${streakDays}日`
-            },
-            { 
-                icon: '👑', 
-                label: 'マスター', 
-                unlocked: stats.totalAnswered >= 5000 && stats.overallRate >= 85,
-                value: stats.totalAnswered >= 5000 ? '達成' : '未達成'
+        // 並び替えモードフラグ
+        if (!this.hierarchySortMode) {
+            this.hierarchySortMode = {};
+        }
+        
+        this.hierarchySortMode[bookId] = !this.hierarchySortMode[bookId];
+        
+        if (this.hierarchySortMode[bookId]) {
+            this.enableHierarchyDragAndDrop(bookId);
+        } else {
+            this.disableHierarchyDragAndDrop(bookId);
+            DataManager.saveBooksToStorage();
+            alert('並び替えを保存しました');
+        }
+        
+        // ボタンのテキストを更新
+        const btn = event.target;
+        if (btn) {
+            btn.textContent = this.hierarchySortMode[bookId] ? '完了' : '並替え';
+            btn.style.background = this.hierarchySortMode[bookId] ? '#27ae60' : '';
+        }
+    }
+
+    /**
+     * 階層ドラッグ&ドロップ有効化（新規追加）
+     */
+    enableHierarchyDragAndDrop(bookId) {
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        // 科目レベルで並び替え
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const subjects = container.querySelectorAll('.hierarchy-children > .hierarchy-item');
+        
+        subjects.forEach(subject => {
+            subject.draggable = true;
+            subject.style.cursor = 'move';
+            
+            subject.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                this.draggedElement = subject;
+                subject.style.opacity = '0.5';
+            });
+            
+            subject.addEventListener('dragend', (e) => {
+                e.stopPropagation();
+                subject.style.opacity = '';
+            });
+            
+            subject.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            
+            subject.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (this.draggedElement && this.draggedElement !== subject) {
+                    const parent = subject.parentNode;
+                    const draggedIndex = Array.from(parent.children).indexOf(this.draggedElement);
+                    const targetIndex = Array.from(parent.children).indexOf(subject);
+                    
+                    if (draggedIndex < targetIndex) {
+                        parent.insertBefore(this.draggedElement, subject.nextSibling);
+                    } else {
+                        parent.insertBefore(this.draggedElement, subject);
+                    }
+                    
+                    // データ構造を更新
+                    this.updateBookStructureOrder(bookId);
+                }
+            });
+        });
+    }
+
+    /**
+     * ドラッグ&ドロップ無効化（新規追加）
+     */
+    disableHierarchyDragAndDrop(bookId) {
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const subjects = container.querySelectorAll('.hierarchy-children > .hierarchy-item');
+        subjects.forEach(subject => {
+            subject.draggable = false;
+            subject.style.cursor = '';
+            // イベントリスナーは残しておく（再度有効化する場合のため）
+        });
+    }
+
+    /**
+     * DOM順序に基づいて構造を更新（新規追加）
+     */
+    updateBookStructureOrder(bookId) {
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const childrenContainer = container.querySelector('.hierarchy-children');
+        if (!childrenContainer) return;
+        
+        const newStructure = {};
+        const subjectElements = childrenContainer.querySelectorAll(':scope > .hierarchy-item');
+        
+        subjectElements.forEach(elem => {
+            const label = elem.querySelector('.hierarchy-label');
+            if (label) {
+                const subjectName = label.textContent.trim();
+                if (book.structure[subjectName]) {
+                    newStructure[subjectName] = book.structure[subjectName];
+                }
             }
-        ];
-        
-        let html = `
-            <div class="card" style="margin: 10px;">
-                <h4 style="text-align: center; margin-bottom: 20px;">獲得バッジ</h4>
-                <div class="achievement-grid">
-        `;
-        
-        badges.forEach(badge => {
-            html += `
-                <div class="achievement-card">
-                    <div class="achievement-icon ${!badge.unlocked ? 'disabled' : ''}">${badge.icon}</div>
-                    <div class="achievement-label">${badge.label}</div>
-                    <div class="achievement-value">${badge.value}</div>
-                </div>
-            `;
         });
         
-        html += `
-                </div>
-            </div>
-        `;
-        
-        return html;
+        book.structure = newStructure;
     }
 
-    /**
-     * 設定コンテンツを取得
-     */
+    getTypeLabel(type) {
+        const labels = {
+            'subject': '科目',
+            'chapter': '章',
+            'section': '節',
+            'subsection': '項'
+        };
+        return labels[type] || type;
+    }
+
     getSettingsContent() {
+        const currentExamDate = DataManager.examDate 
+            ? DataManager.examDate.toISOString().split('T')[0] 
+            : '';
+        
         return `
-            <div style="padding: 10px;">
-                <div class="card">
-                    <h4>試験日設定</h4>
-                    <div class="form-group">
-                        <label class="form-label">試験日</label>
-                        <input type="date" class="form-control" id="examDateInput" 
-                               value="${DataManager.examDate ? DataManager.examDate.toISOString().split('T')[0] : ''}">
-                    </div>
-                    <button class="save-button" onclick="App.saveExamDate()">保存</button>
+            <div class="card" style="margin: 10px;">
+                <h4>📅 試験日設定</h4>
+                <div class="form-group">
+                    <label class="form-label">試験日</label>
+                    <input type="date" class="form-control" id="examDateInput" value="${currentExamDate}">
+                    <button class="save-button" style="margin-top: 10px;" onclick="App.saveExamDate()">試験日を設定</button>
                 </div>
-                
-                <div class="card" style="margin-top: 20px;">
-                    <h4>CSVインポート（問題集）</h4>
-                    <div class="form-group">
-                        <label class="form-label">問題集名</label>
-                        <input type="text" class="form-control" id="importBookName" placeholder="問題集の名前">
+            </div>
+            
+            <div class="card" style="margin: 10px;">
+                <h4>📥 問題集CSVインポート</h4>
+                <div class="import-section">
+                    <label class="form-label">問題集名</label>
+                    <input type="text" class="form-control" id="importBookName" placeholder="問題集名を入力">
+                    
+                    <label class="form-label" style="margin-top: 15px;">番号タイプ</label>
+                    <div class="numbering-type">
+                        <label>
+                            <input type="radio" name="importNumberingType" value="reset" checked>
+                            <span>項目ごとリセット</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="importNumberingType" value="continuous">
+                            <span>連番</span>
+                        </label>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">問題番号の管理方法</label>
-                        <div>
-                            <label>
-                                <input type="radio" name="importNumberingType" value="reset" checked>
-                                <span>項目ごとリセット</span>
-                            </label>
-                            <label style="margin-left: 20px;">
-                                <input type="radio" name="importNumberingType" value="continuous">
-                                <span>連番</span>
-                            </label>
-                        </div>
+                    
+                    <label class="form-label" style="margin-top: 15px;">CSV形式の階層データ</label>
+                    <textarea class="import-textarea" id="importCsvData" placeholder="CSV形式のデータを貼り付けてください"></textarea>
+                    
+                    <div class="import-help">
+                        <strong>CSV形式の例：</strong><br>
+                        科目,章,節,項,開始番号,終了番号<br>
+                        民法,総則,権利能力,,1,5<br>
+                        民法,総則,意思能力,,6,8<br>
+                        民法,物権,物権変動,対抗要件,1,10<br>
+                        行政法,行政主体,,,1,20<br>
+                        <br>
+                        ※ 空欄は省略可能です<br>
+                        ※ 連番モードでは全体の通し番号を入力<br>
+                        ※ リセットモードでは各項目内での番号を入力
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">CSVデータ</label>
-                        <textarea class="import-textarea" id="importCsvData" 
-                                  placeholder="科目,章,節,項,開始番号,終了番号
-憲法,基本原理,,,,
-憲法,基本原理,国民主権,,,
-憲法,基本原理,国民主権,第1条,1,5"></textarea>
-                    </div>
-                    <button class="save-button" onclick="App.importCSV()">インポート</button>
+                    
+                    <button class="save-button" style="margin-top: 15px;" onclick="App.saveCSVTemplate()">テンプレートとして保存</button>
+                    <button class="save-button" style="margin-top: 10px; background: var(--success);" onclick="App.importCSV()">CSVを問題集に適用</button>
+                    
+                    <h5 style="margin-top: 20px;">保存済みテンプレート</h5>
+                    <div class="csv-list" id="csvTemplateList"></div>
                 </div>
-                
-                <div class="card" style="margin-top: 20px;">
-                    <h4>CSVインポート（一問一答）</h4>
-                    <div class="form-group">
-                        <label class="form-label">問題集名</label>
-                        <input type="text" class="form-control" id="importQASetName" placeholder="問題集の名前">
+            </div>
+            
+            <div class="card" style="margin: 10px;">
+                <h4>📥 一問一答CSVインポート</h4>
+                <div class="import-section">
+                    <label class="form-label">問題集名</label>
+                    <input type="text" class="form-control" id="importQASetName" placeholder="問題集名を入力">
+                    
+                    <label class="form-label" style="margin-top: 15px;">CSV形式の問題データ</label>
+                    <textarea class="import-textarea" id="importQACsvData" placeholder="CSV形式のデータを貼り付けてください"></textarea>
+                    
+                    <div class="import-help">
+                        <strong>CSV形式の例：</strong><br>
+                        問題,答え<br>
+                        "日本国憲法が保障する基本的人権の中で、最も重要とされる権利は何か？","個人の尊厳（憲法13条）"<br>
+                        "行政行為の効力のうち、公定力とは何か？","行政行為が違法であっても、権限ある機関により取り消されるまでは有効として扱われる効力"
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">CSVデータ</label>
-                        <textarea class="import-textarea" id="importQACsvData" 
-                                  placeholder="問題,答え
-日本の首都は？,東京
-富士山の高さは？,3776メートル"></textarea>
-                    </div>
-                    <button class="save-button" onclick="App.importQACSV()">インポート</button>
+                    
+                    <button class="save-button" style="margin-top: 15px;" onclick="App.importQACSV()">一問一答をインポート</button>
                 </div>
-                
-                <div class="card" style="margin-top: 20px;">
-                    <h4>CSVテンプレート管理</h4>
-                    <div id="csvTemplateList"></div>
-                </div>
+            </div>
+            
+            <div class="card" style="margin: 10px;">
+                <button class="save-button" style="background: var(--danger);" onclick="DataManager.clearAllData()">すべてのデータを削除</button>
             </div>
         `;
     }
 
-    /**
-     * 試験日保存
-     */
-    saveExamDate() {
-        const input = document.getElementById('examDateInput');
-        if (!input || !input.value) {
-            alert('試験日を入力してください');
-            return;
-        }
-
-        try {
-            const examDate = new Date(input.value);
-            const success = DataManager.saveExamDate(examDate);
-            
-            if (success) {
-                if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
-                    UIComponents.updateExamCountdown();
-                }
-                alert('試験日を保存しました');
-            } else {
-                alert('試験日の保存に失敗しました');
-            }
-        } catch (error) {
-            console.error('Error saving exam date:', error);
-            alert('試験日の保存に失敗しました');
-        }
-    }
-
-    /**
-     * CSVテンプレートリストを描画
-     */
     renderCSVTemplateList() {
         const container = document.getElementById('csvTemplateList');
         if (!container) return;
 
-        if (!DataManager.csvTemplates || Object.keys(DataManager.csvTemplates).length === 0) {
-            container.innerHTML = '<p style="color: var(--gray); text-align: center;">テンプレートがありません</p>';
+        if (Object.keys(DataManager.csvTemplates).length === 0) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center;">保存済みテンプレートはありません</p>';
             return;
         }
-
+        
         let html = '';
-        Object.entries(DataManager.csvTemplates).forEach(([id, template]) => {
+        Object.values(DataManager.csvTemplates).forEach(template => {
+            // 削除済みテンプレートは表示しない
+            if (DataManager.isDeleted('csvTemplates', template.id)) {
+                return;
+            }
+            
+            const date = new Date(template.createdAt);
+            const lines = template.data.trim().split('\n').length - 1;
+            
             html += `
-                <div class="delete-list-item">
-                    <div>
-                        <div style="font-weight: 600;">${template.name}</div>
-                        <div style="font-size: 12px; color: var(--gray);">
-                            ${template.type === 'book' ? '問題集' : '一問一答'} - ${template.data.length}行
+                <div class="csv-item">
+                    <div class="csv-item-info">
+                        <div class="csv-item-name">${template.name}</div>
+                        <div class="csv-item-meta">
+                            ${date.toLocaleDateString('ja-JP')} | ${lines}行
                         </div>
                     </div>
-                    <button class="delete-btn" onclick="App.deleteCSVTemplate('${id}')">削除</button>
+                    <div class="csv-item-actions">
+                        <button class="csv-btn edit" onclick="App.editCSVTemplate('${template.id}')">編集</button>
+                        <button class="csv-btn apply" onclick="App.applyCSVTemplate('${template.id}')">適用</button>
+                        <button class="csv-btn delete" onclick="App.deleteCSVTemplate('${template.id}')">削除</button>
+                    </div>
                 </div>
             `;
         });
-
+        
         container.innerHTML = html;
     }
 
+    saveCSVTemplate() {
+        const csvData = document.getElementById('importCsvData')?.value;
+        const bookName = document.getElementById('importBookName')?.value || '未命名テンプレート';
+        
+        if (!csvData) {
+            alert('CSVデータを入力してください');
+            return;
+        }
+        
+        const templateId = 'template_' + Date.now();
+        DataManager.csvTemplates[templateId] = {
+            id: templateId,
+            name: bookName,
+            data: csvData,
+            createdAt: new Date().toISOString()
+        };
+        
+        DataManager.saveCSVTemplates();
+        this.renderCSVTemplateList();
+        alert('テンプレートを保存しました');
+    }
+
+    editCSVTemplate(templateId) {
+        const template = DataManager.csvTemplates[templateId];
+        if (!template) return;
+
+        const nameEl = document.getElementById('importBookName');
+        const dataEl = document.getElementById('importCsvData');
+        
+        if (nameEl) nameEl.value = template.name;
+        if (dataEl) dataEl.value = template.data;
+    }
+
+    applyCSVTemplate(templateId) {
+        const template = DataManager.csvTemplates[templateId];
+        if (!template) return;
+
+        const bookName = prompt('問題集名を入力してください', template.name);
+        if (!bookName) return;
+
+        const numberingType = confirm('連番モードにしますか？（OKで連番、キャンセルでリセット）') 
+            ? 'continuous' 
+            : 'reset';
+        
+        if (DataManager.importCSV(bookName, template.data, numberingType)) {
+            this.renderBookCards();
+            
+            // Analyticsが存在する場合のみ更新
+            if (window.Analytics) {
+                Analytics.updateHeatmapBookSelect();
+                Analytics.updateRadarBookSelect();
+            }
+            
+            alert('CSVデータをインポートしました');
+        } else {
+            alert('インポートに失敗しました');
+        }
+    }
+
     /**
-     * CSVテンプレート削除
+     * CSVテンプレート削除（Firebase統合強化版）
      */
     deleteCSVTemplate(templateId) {
         if (confirm('このテンプレートを削除しますか？')) {
-            // 削除済みマーク（必要に応じて）
-            if (DataManager.csvTemplates[templateId]) {
-                DataManager.markAsDeleted('csvTemplate', templateId, {
-                    templateName: DataManager.csvTemplates[templateId].name,
-                    templateType: DataManager.csvTemplates[templateId].type,
-                    dataCount: DataManager.csvTemplates[templateId].data ? DataManager.csvTemplates[templateId].data.length : 0
+            const template = DataManager.csvTemplates[templateId];
+            
+            // 削除済みアイテムとしてマーク（Firebase統合）
+            if (template) {
+                DataManager.markAsDeleted('csvTemplates', templateId, {
+                    templateName: template.name,
+                    dataLength: template.data ? template.data.length : 0
                 });
             }
             
@@ -1800,9 +1892,6 @@ class Application {
         }
     }
 
-    /**
-     * CSVインポート
-     */
     importCSV() {
         const bookName = document.getElementById('importBookName')?.value;
         const csvData = document.getElementById('importCsvData')?.value;
@@ -1816,6 +1905,7 @@ class Application {
         if (DataManager.importCSV(bookName, csvData, numberingType || 'reset')) {
             this.renderBookCards();
             
+            // Analyticsが存在する場合のみ更新
             if (window.Analytics) {
                 Analytics.updateHeatmapBookSelect();
                 Analytics.updateRadarBookSelect();
@@ -1828,9 +1918,6 @@ class Application {
         }
     }
 
-    /**
-     * 一問一答CSVインポート
-     */
     importQACSV() {
         const setName = document.getElementById('importQASetName')?.value;
         const csvData = document.getElementById('importQACsvData')?.value;
@@ -1847,50 +1934,6 @@ class Application {
         } else {
             alert('一問一答モジュールが読み込まれていません');
         }
-    }
-
-    /**
-     * 階層並び替えモード切り替え
-     */
-    toggleHierarchySort(bookId) {
-        const book = DataManager.books[bookId];
-        if (!book) return;
-        
-        if (!this.hierarchySortMode) {
-            this.hierarchySortMode = {};
-        }
-        
-        this.hierarchySortMode[bookId] = !this.hierarchySortMode[bookId];
-        
-        if (this.hierarchySortMode[bookId]) {
-            this.enableHierarchyDragAndDrop(bookId);
-        } else {
-            this.disableHierarchyDragAndDrop(bookId);
-            DataManager.saveBooksToStorage();
-            alert('並び替えを保存しました');
-        }
-        
-        const btn = event.target;
-        if (btn) {
-            btn.textContent = this.hierarchySortMode[bookId] ? '完了' : '並替え';
-            btn.style.background = this.hierarchySortMode[bookId] ? 'var(--success)' : 'var(--primary)';
-        }
-    }
-
-    /**
-     * 階層のドラッグアンドドロップ有効化
-     */
-    enableHierarchyDragAndDrop(bookId) {
-        // 実装省略（必要に応じて実装）
-        console.log('Hierarchy drag and drop enabled for book:', bookId);
-    }
-
-    /**
-     * 階層のドラッグアンドドロップ無効化
-     */
-    disableHierarchyDragAndDrop(bookId) {
-        // 実装省略（必要に応じて実装）
-        console.log('Hierarchy drag and drop disabled for book:', bookId);
     }
 }
 
