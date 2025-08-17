@@ -1396,11 +1396,12 @@ body {
 
 /* アコーディオン（修正版：cardクラス削除対応） */
 .accordion {
-    margin-bottom: 10px;
+    margin: 10px;
     background: white;
     border-radius: 15px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    width: calc(100% - 20px); /* 横幅いっぱいに調整 */
 }
 
 .accordion-header {
@@ -1414,6 +1415,7 @@ body {
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
+    width: 100%; /* 横幅いっぱい */
 }
 
 .accordion-header:hover {
@@ -1433,6 +1435,7 @@ body {
     border-top: none;
     border-radius: 0 0 10px 10px;
     padding: 15px;
+    width: 100%; /* 横幅いっぱい */
 }
 
 .accordion-content.active {
@@ -1450,16 +1453,32 @@ body {
     color: white;
 }
 
+/* 固定アイコンの調整 */
+.accordion-pin-icon {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: var(--gray);
+    cursor: pointer;
+    padding: 5px;
+}
+
+.accordion-pin-icon.pinned {
+    color: var(--primary);
+}
+
 /* アコーディオンドラッグハンドル */
 .accordion .accordion-drag-handle {
     position: absolute;
-    left: 5px;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
     cursor: move;
     display: none;
     color: var(--gray);
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .accordion.sortable .accordion-drag-handle {
@@ -1467,12 +1486,156 @@ body {
 }
 
 .accordion.sortable .accordion-header {
-    padding-left: 30px;
+    padding-left: 35px;
 }
 
 .accordion.sortable.dragging {
     opacity: 0.5;
     transform: scale(0.98);
+}
+
+/* 分析タブコンテナの調整 */
+#analysisCardsContainer {
+    width: 100%;
+    padding: 0;
+}
+
+/* 並び替えボタンの配置調整 */
+.card-sort-btn {
+    position: fixed;
+    right: 20px;
+    top: 130px;
+    padding: 8px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.card-sort-btn:hover {
+    background: var(--primary-dark);
+}
+
+/* ===== 優先順位2: ページネーションボタンのスタイル ===== */
+
+.nav-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: scale(1.05);
+}
+
+.nav-btn:disabled {
+    background: var(--gray-light);
+    cursor: not-allowed;
+}
+
+/* 問題表示エリアの調整 */
+.question-display {
+    text-align: center;
+    padding: 30px;
+    min-height: 200px;
+}
+
+.question-cell {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+    font-size: 28px;
+    font-weight: bold;
+    border: 3px solid var(--light);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+}
+
+.question-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.question-cell.correct {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border-color: #4CAF50;
+}
+
+.question-cell.wrong {
+    background: linear-gradient(135deg, #f44336, #da190b);
+    color: white;
+    border-color: #f44336;
+}
+
+.question-cell.bookmarked::after {
+    content: '⭐';
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 20px;
+}
+
+/* ===== 優先順位4: 一問一答アコーディオンスタイル ===== */
+
+/* 一問一答専用のアコーディオン */
+.qa-accordion {
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.qa-accordion-header {
+    background: linear-gradient(135deg, var(--lighter), white);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid var(--light);
+    border-radius: 12px;
+}
+
+.qa-accordion-header:hover {
+    background: linear-gradient(135deg, var(--light), var(--lighter));
+}
+
+.qa-accordion-header.active {
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-color: var(--primary);
+}
+
+.qa-accordion-content {
+    display: none;
+    padding: 20px;
+    background: white;
+    border: 1px solid var(--light);
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+}
+
+.qa-accordion-content.active {
+    display: block;
 }
 
 /* フォーム */
@@ -1524,13 +1687,14 @@ body {
     line-height: 1.6;
 }
 
-/* 削除リスト */
+/* 削除ボタンの改善 */
 .delete-list-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 10px;
+    align-items: flex-start;
+    padding: 12px;
     border-bottom: 1px solid var(--light);
+    transition: background 0.3s;
 }
 
 .delete-list-item:hover {
@@ -1538,18 +1702,38 @@ body {
 }
 
 .delete-btn {
-    padding: 5px 10px;
+    padding: 6px 12px;
     background: var(--danger);
     color: white;
     border: none;
-    border-radius: 5px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .delete-btn:hover {
-    background: #dc2626;
+    background: var(--danger-dark);
+    transform: scale(1.05);
+}
+
+/* ===== 優先順位1: 階層リストのドラッグ対応 ===== */
+
+.hierarchy-item.draggable {
+    cursor: move;
+}
+
+.hierarchy-item.dragging {
+    opacity: 0.5;
+}
+
+.hierarchy-sort-handle {
+    display: inline-block;
+    cursor: move;
+    color: var(--gray);
+    margin-right: 8px;
+    font-size: 14px;
 }
 
 /* 保存ボタン */
@@ -1828,30 +2012,27 @@ body {
 
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
-    .achievement-grid {
-        grid-template-columns: repeat(4, 1fr);
+    .accordion {
+        margin: 5px;
+        width: calc(100% - 10px);
     }
     
-    .question-grid {
-        grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
-    }
-}
-
-@media (max-width: 480px) {
-    .app-title {
-        font-size: 18px;
+    .card-sort-btn {
+        right: 10px;
+        top: 120px;
+        padding: 6px 12px;
+        font-size: 12px;
     }
     
-    .main-tab {
-        padding: 12px 5px;
-        font-size: 14px;
+    .nav-btn {
+        font-size: 20px;
+        padding: 8px 12px;
     }
     
-    .footer-tab-icon {
-        font-size: 18px;
-    }
-    
-    .footer-tab-label {
-        font-size: 10px;
+    .question-cell {
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        font-size: 24px;
     }
 }
