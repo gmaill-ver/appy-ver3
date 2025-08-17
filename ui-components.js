@@ -352,10 +352,25 @@ class UIComponentsClass {
      */
     deletePlan(planId) {
         if (confirm('この計画を削除しますか？')) {
-            DataManager.studyPlans = DataManager.studyPlans.filter(p => p.id !== planId);
-            DataManager.saveStudyPlans();
-            this.renderCalendar();
-            this.renderPlanList();
+            const planIndex = DataManager.studyPlans.findIndex(p => p.id === planId);
+            
+            if (planIndex !== -1) {
+                const plan = DataManager.studyPlans[planIndex];
+                
+                // 削除済みアイテムとしてマーク
+                DataManager.markAsDeleted('studyPlan', planId, {
+                    title: plan.title,
+                    startDate: plan.startDate,
+                    endDate: plan.endDate
+                });
+                
+                // 配列から削除
+                DataManager.studyPlans.splice(planIndex, 1);
+                DataManager.saveStudyPlans();
+                
+                this.renderCalendar();
+                this.renderPlanList();
+            }
         }
     }
 
