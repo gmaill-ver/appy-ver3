@@ -1,5 +1,5 @@
 /**
- * QAModule - 一問一答専用モジュール
+ * QAModule - 一問一答専用モジュール（完全版）
  */
 class QAModuleClass {
     constructor() {
@@ -13,6 +13,7 @@ class QAModuleClass {
         };
         this.sessionActive = false;
         this.currentSetName = '';
+        this.addQuestionExpanded = false; // アコーディオンの状態
     }
 
     /**
@@ -24,6 +25,175 @@ class QAModuleClass {
             setTimeout(() => this.initialize(), 100);
             return;
         }
+    }
+
+    /**
+     * UIコンテンツを生成（問題開始エリアが上、手動追加がアコーディオン）
+     */
+    renderQAContent() {
+        const sets = this.getSetList();
+        
+        let html = '<div style="padding: 10px;">';
+        
+        // === 1. 問題開始エリア（上部に配置） ===
+        html += `
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎯</span>
+                    <span class="card-title">学習開始</span>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">問題集を選択</label>
+                    <select class="form-control" id="qaSetSelect" onchange="QAModule.selectSet(this.value)">
+                        <option value="">問題集を選択してください</option>
+        `;
+        
+        sets.forEach(name => {
+            const count = this.getQuestions(name).length;
+            html += `<option value="${name}">${name} (${count}問)</option>`;
+        });
+        
+        html += `
+                    </select>
+                </div>
+                
+                <div id="qaProgress" style="display: none; justify-content: space-around; margin: 15px 0;">
+                    <div class="qa-stat">
+                        <span class="qa-stat-label">進捗</span>
+                        <span class="qa-stat-value"><span id="qaCurrentNum">0</span>/<span id="qaTotalNum">0</span></span>
+                    </div>
+                    <div class="qa-stat">
+                        <span class="qa-stat-label">正解</span>
+                        <span class="qa-stat-value" id="qaCorrectCount">0</span>
+                    </div>
+                    <div class="qa-stat">
+                        <span class="qa-stat-label">不正解</span>
+                        <span class="qa-stat-value" id="qaWrongCount">0</span>
+                    </div>
+                </div>
+                
+                <div id="qaContent" style="min-height: 200px;">
+                    <div style="text-align: center; padding: 20px;">
+                        <p style="color: var(--gray);">問題集を選択して開始ボタンを押してください</p>
+                        <button class="save-button" style="margin-top: 20px;" onclick="QAModule.handleStart()">
+                            学習開始
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // === 2. 問題手動追加エリア（アコーディオン化） ===
+        html += `
+            <div class="accordion" style="margin-top: 20px;">
+                <div class="accordion-header ${this.addQuestionExpanded ? 'active' : ''}" 
+                     onclick="QAModule.toggleAddQuestionAccordion(this)">
+                    <span>➕ 問題を手動追加</span>
+                    <span class="accordion-arrow">${this.addQuestionExpanded ? '▲' : '▼'}</span>
+                </div>
+                <div class="accordion-content ${this.addQuestionExpanded ? 'active' : ''}">
+                    <div class="form-group">
+                        <label class="form-label">問題集名（任意）</label>
+                        <input type="text" class="form-control" id="qaNewSetName" 
+                               placeholder="未入力の場合は「その他」に追加されます">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">問題文</label>
+                        <textarea class="form-control" id="qaNewQuestion" 
+                                  rows="3" placeholder="問題文を入力"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">答え</label>
+                        <textarea class="form-control" id="qaNewAnswer" 
+                                  rows="3" placeholder="答えを入力"></textarea>
+                    </div>
+                    
+                    <button class="save-button" onclick="QAModule.handleAddQuestion()">
+                        問題を追加
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // === 3. 登録済み問題リスト ===
+        html += `
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <span class="card-title">登録済み問題</span>
+                </div>
+                <div id="qaListContent">${this.renderQAList()}</div>
+            </div>
+        `;
+        
+        html += '</div>';
+        
+        return html;
+    }
+
+    /**
+     * アコーディオンの開閉
+     */
+    toggleAddQuestionAccordion(header) {
+        this.addQuestionExpanded = !this.addQuestionExpanded;
+        header.classList.toggle('active');
+        const content = header.nextElementSibling;
+        if (content) {
+            content.classList.toggle('active');
+        }
+        
+        // アローアイコンの更新
+        const arrow = header.querySelector('.accordion-arrow');
+        if (arrow) {
+            arrow.textContent = this.addQuestionExpanded ? '▲' : '▼';
+        }
+    }
+
+    /**
+     * 問題リストを生成
+     */
+    renderQAList() {
+        let html = '';
+        
+        Object.entries(DataManager.qaQuestions || {}).forEach(([setName, questions]) => {
+            if (questions.length === 0) return;
+            
+            html += `
+                <div style="margin-bottom: 20px;">
+                    <h5 style="color: var(--primary); margin-bottom: 10px;">${setName} (${questions.length}問)</h5>
+            `;
+            
+            questions.forEach(q => {
+                html += `
+                    <div class="delete-list-item">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">
+                                Q: ${q.question}
+                            </div>
+                            <div style="font-size: 13px; color: var(--gray);">
+                                A: ${q.answer}
+                            </div>
+                        </div>
+                        <button class="delete-btn" 
+                                onclick="QAModule.deleteQuestion('${setName}', ${q.id})"
+                                style="min-width: 60px;">
+                            削除
+                        </button>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+        });
+        
+        if (!html) {
+            html = '<p style="color: var(--gray); text-align: center; padding: 20px;">問題がありません</p>';
+        }
+        
+        return html;
     }
 
     /**
@@ -61,6 +231,30 @@ class QAModuleClass {
     showManageDialog() {
         // 管理画面は親コンポーネントで表示されるため、ここでは何もしない
         console.log('Manage dialog requested');
+    }
+
+    /**
+     * 開始ボタンのハンドラ
+     */
+    handleStart() {
+        const select = document.getElementById('qaSetSelect');
+        if (!select || !select.value) {
+            alert('問題集を選択してください');
+            return;
+        }
+        
+        // DataManager.qaQuestionsが初期化されているか確認
+        if (!DataManager.qaQuestions || Object.keys(DataManager.qaQuestions).length === 0) {
+            alert('問題が登録されていません。先に問題を追加してください。');
+            return;
+        }
+        
+        if (!DataManager.qaQuestions[select.value]) {
+            alert('選択した問題集に問題がありません。');
+            return;
+        }
+        
+        this.startSession(select.value);
     }
 
     /**
@@ -200,26 +394,63 @@ class QAModuleClass {
 
         content.innerHTML = `
             <div style="text-align: center; padding: 20px;">
-                <h3>結果</h3>
-                <div class="stats-grid" style="margin: 20px 0;">
-                    <div class="stat-card">
-                        <div class="stat-value">${this.stats.correct}</div>
-                        <div class="stat-label">正解</div>
+                <h3>学習完了！</h3>
+                <div style="margin: 20px 0;">
+                    <div style="font-size: 48px; font-weight: bold; color: var(--primary);">
+                        ${rate}%
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${this.stats.wrong}</div>
-                        <div class="stat-label">不正解</div>
+                    <div style="font-size: 18px; color: var(--gray);">正答率</div>
+                </div>
+                <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">${this.stats.correct}</div>
+                        <div style="color: var(--success);">正解</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">${this.stats.wrong}</div>
+                        <div style="color: var(--danger);">不正解</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 24px; font-weight: bold;">${this.stats.total}</div>
+                        <div style="color: var(--gray);">総問題数</div>
                     </div>
                 </div>
-                <div style="font-size: 24px; font-weight: 700; color: var(--primary);">
-                    正答率: ${rate}%
-                </div>
-                <button class="save-button" style="margin-top: 20px;" 
-                        onclick="location.reload()">終了</button>
+                <button class="save-button" onclick="QAModule.resetSession()">
+                    別の問題集を選択
+                </button>
             </div>
         `;
 
-        // 進捗を非表示
+        // 学習記録を保存
+        this.saveSessionRecord();
+    }
+
+    /**
+     * セッションをリセット
+     */
+    resetSession() {
+        this.sessionActive = false;
+        this.currentSet = [];
+        this.currentIndex = 0;
+        this.answerShown = false;
+        this.stats = {
+            total: 0,
+            correct: 0,
+            wrong: 0
+        };
+        
+        const content = document.getElementById('qaContent');
+        if (content) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <p style="color: var(--gray);">問題集を選択して開始ボタンを押してください</p>
+                    <button class="save-button" style="margin-top: 20px;" onclick="QAModule.handleStart()">
+                        学習開始
+                    </button>
+                </div>
+            `;
+        }
+        
         const progress = document.getElementById('qaProgress');
         if (progress) {
             progress.style.display = 'none';
@@ -227,27 +458,127 @@ class QAModuleClass {
     }
 
     /**
+     * セッション記録を保存
+     */
+    saveSessionRecord() {
+        if (this.stats.total === 0) return;
+
+        const record = {
+            type: 'qa',
+            setName: this.currentSetName,
+            date: new Date().toISOString(),
+            stats: { ...this.stats },
+            rate: Math.round((this.stats.correct / this.stats.total) * 100)
+        };
+
+        // DataManagerに記録を追加
+        if (window.DataManager && DataManager.allRecords) {
+            DataManager.allRecords.push(record);
+            DataManager.saveAllRecords();
+        }
+    }
+
+    /**
+     * 問題追加のハンドラ
+     */
+    handleAddQuestion() {
+        const setNameEl = document.getElementById('qaNewSetName');
+        const questionEl = document.getElementById('qaNewQuestion');
+        const answerEl = document.getElementById('qaNewAnswer');
+        
+        if (!setNameEl || !questionEl || !answerEl) {
+            console.error('Required elements not found');
+            return;
+        }
+        
+        const setName = setNameEl.value.trim() || 'その他';
+        const question = questionEl.value.trim();
+        const answer = answerEl.value.trim();
+        
+        if (!question || !answer) {
+            alert('問題文と答えを入力してください');
+            return;
+        }
+        
+        // DataManager.qaQuestionsが初期化されているか確認
+        if (!DataManager.qaQuestions) {
+            DataManager.qaQuestions = {};
+        }
+        
+        if (this.addQuestion(setName, question, answer)) {
+            // フォームをクリア
+            questionEl.value = '';
+            answerEl.value = '';
+            // セット名は残しておく（連続入力しやすいように）
+            
+            // リストを更新
+            const listContent = document.getElementById('qaListContent');
+            if (listContent) {
+                listContent.innerHTML = this.renderQAList();
+            }
+            
+            // セレクトボックスも更新
+            const select = document.getElementById('qaSetSelect');
+            if (select) {
+                const currentValue = select.value;
+                const sets = this.getSetList();
+                
+                select.innerHTML = '<option value="">問題集を選択してください</option>';
+                sets.forEach(name => {
+                    const count = this.getQuestions(name).length;
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = `${name} (${count}問)`;
+                    select.appendChild(option);
+                });
+                
+                // 元の選択を復元
+                if (currentValue) {
+                    select.value = currentValue;
+                }
+            }
+            
+            // 成功メッセージ
+            const successMsg = document.createElement('div');
+            successMsg.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: var(--success);
+                color: white;
+                padding: 15px 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                z-index: 9999;
+                font-weight: 600;
+            `;
+            successMsg.textContent = '✅ 問題を追加しました';
+            document.body.appendChild(successMsg);
+            
+            setTimeout(() => {
+                successMsg.remove();
+            }, 1500);
+        }
+    }
+
+    /**
      * 問題を追加
      */
     addQuestion(setName, question, answer) {
-        if (!setName || !question || !answer) {
-            alert('必要な情報を入力してください');
-            return false;
-        }
-
+        if (!setName || !question || !answer) return false;
+        
         if (!DataManager.qaQuestions[setName]) {
             DataManager.qaQuestions[setName] = [];
         }
-
-        const newQuestion = {
+        
+        DataManager.qaQuestions[setName].push({
             id: Date.now(),
             question: question,
             answer: answer
-        };
-
-        DataManager.qaQuestions[setName].push(newQuestion);
-        DataManager.saveQAQuestions();
+        });
         
+        DataManager.saveQAQuestions();
         return true;
     }
 
@@ -255,22 +586,45 @@ class QAModuleClass {
      * 問題を削除
      */
     deleteQuestion(setName, questionId) {
-        if (!confirm('この問題を削除しますか？')) {
-            return false;
-        }
-
-        if (!DataManager.qaQuestions[setName]) {
-            return false;
-        }
-
-        DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName]
-            .filter(q => q.id !== questionId);
-
+        if (!DataManager.qaQuestions[setName]) return false;
+        
+        DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName].filter(q => q.id !== questionId);
+        
         if (DataManager.qaQuestions[setName].length === 0) {
             delete DataManager.qaQuestions[setName];
         }
-
+        
         DataManager.saveQAQuestions();
+        
+        // UIを更新
+        const listContent = document.getElementById('qaListContent');
+        if (listContent) {
+            listContent.innerHTML = this.renderQAList();
+        }
+        
+        // セレクトボックスも更新
+        const select = document.getElementById('qaSetSelect');
+        if (select) {
+            const currentValue = select.value;
+            const sets = this.getSetList();
+            
+            select.innerHTML = '<option value="">問題集を選択してください</option>';
+            sets.forEach(name => {
+                const count = this.getQuestions(name).length;
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = `${name} (${count}問)`;
+                select.appendChild(option);
+            });
+            
+            // 削除したセットが選択されていた場合はリセット
+            if (currentValue === setName && !DataManager.qaQuestions[setName]) {
+                select.value = '';
+            } else if (currentValue) {
+                select.value = currentValue;
+            }
+        }
+        
         return true;
     }
 
@@ -342,201 +696,6 @@ class QAModuleClass {
      */
     getQuestions(setName) {
         return DataManager.qaQuestions[setName] || [];
-    }
-
-    /**
-     * UIコンテンツを生成
-     */
-    renderQAContent() {
-        const sets = this.getSetList();
-        
-        let html = `
-            <div class="qa-card">
-                <div class="qa-selector">
-                    <select id="qaSetSelect">
-                        <option value="">問題集を選択</option>
-        `;
-        
-        sets.forEach(setName => {
-            const count = this.getQuestions(setName).length;
-            html += `<option value="${setName}">${setName} (${count}問)</option>`;
-        });
-        
-        html += `
-                    </select>
-                    <button onclick="QAModule.handleStart()">開始</button>
-                </div>
-                
-                <div class="qa-progress" id="qaProgress" style="display: none;">
-                    <span class="qa-progress-text">
-                        問題 <span id="qaCurrentNum">0</span> / <span id="qaTotalNum">0</span>
-                    </span>
-                    <div class="qa-stats">
-                        <span class="qa-stat">
-                            正解: <span class="qa-stat-value" id="qaCorrectCount">0</span>
-                        </span>
-                        <span class="qa-stat">
-                            不正解: <span class="qa-stat-value" id="qaWrongCount">0</span>
-                        </span>
-                    </div>
-                </div>
-                
-                <div id="qaContent"></div>
-            </div>
-            
-            <div class="card" style="margin-top: 20px;">
-                <h4>問題を手動追加</h4>
-                <div class="form-group">
-                    <label class="form-label">問題集名</label>
-                    <input type="text" class="form-control" id="qaNewSetName" 
-                           placeholder="問題集名">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">問題文</label>
-                    <textarea class="form-control" id="qaNewQuestion" rows="3" 
-                              placeholder="問題文を入力"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">答え</label>
-                    <textarea class="form-control" id="qaNewAnswer" rows="3" 
-                              placeholder="答えを入力"></textarea>
-                </div>
-                <button class="save-button" onclick="QAModule.handleAddQuestion()">
-                    問題を追加
-                </button>
-            </div>
-            
-            <div class="card" style="margin-top: 20px;">
-                <h4>登録済み問題</h4>
-                <div id="qaListContent">${this.renderQAList()}</div>
-            </div>
-        `;
-        
-        return html;
-    }
-
-    /**
-     * 問題リストを生成
-     */
-    renderQAList() {
-        let html = '';
-        
-        Object.entries(DataManager.qaQuestions || {}).forEach(([setName, questions]) => {
-            html += `<h5>${setName} (${questions.length}問)</h5>`;
-            
-            questions.forEach(q => {
-                html += `
-                    <div class="delete-list-item">
-                        <div>
-                            <div style="font-weight: 600; font-size: 14px;">
-                                ${q.question}
-                            </div>
-                            <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                                ${q.answer}
-                            </div>
-                        </div>
-                        <button class="delete-btn" 
-                                onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                            削除
-                        </button>
-                    </div>
-                `;
-            });
-        });
-        
-        if (!html) {
-            html = '<p style="color: var(--gray); text-align: center;">問題がありません</p>';
-        }
-        
-        return html;
-    }
-
-    /**
-     * 開始ボタンのハンドラ
-     */
-    handleStart() {
-        const select = document.getElementById('qaSetSelect');
-        if (!select || !select.value) {
-            alert('問題集を選択してください');
-            return;
-        }
-        
-        // DataManager.qaQuestionsが初期化されているか確認
-        if (!DataManager.qaQuestions || Object.keys(DataManager.qaQuestions).length === 0) {
-            alert('問題が登録されていません。先に問題を追加してください。');
-            return;
-        }
-        
-        if (!DataManager.qaQuestions[select.value]) {
-            alert('選択した問題集に問題がありません。');
-            return;
-        }
-        
-        this.startSession(select.value);
-    }
-
-    /**
-     * 問題追加のハンドラ
-     */
-    handleAddQuestion() {
-        const setNameEl = document.getElementById('qaNewSetName');
-        const questionEl = document.getElementById('qaNewQuestion');
-        const answerEl = document.getElementById('qaNewAnswer');
-        
-        if (!setNameEl || !questionEl || !answerEl) {
-            console.error('Required elements not found');
-            return;
-        }
-        
-        const setName = setNameEl.value.trim() || 'その他';
-        const question = questionEl.value.trim();
-        const answer = answerEl.value.trim();
-        
-        if (!question || !answer) {
-            alert('問題文と答えを入力してください');
-            return;
-        }
-        
-        // DataManager.qaQuestionsが初期化されているか確認
-        if (!DataManager.qaQuestions) {
-            DataManager.qaQuestions = {};
-        }
-        
-        if (this.addQuestion(setName, question, answer)) {
-            // フォームをクリア
-            questionEl.value = '';
-            answerEl.value = '';
-            
-            // リストを更新
-            const listContent = document.getElementById('qaListContent');
-            if (listContent) {
-                listContent.innerHTML = this.renderQAList();
-            }
-            
-            // セレクトボックスも更新
-            const select = document.getElementById('qaSetSelect');
-            if (select) {
-                // 新しいセットが追加された場合、セレクトボックスを更新
-                const currentValue = select.value;
-                const sets = this.getSetList();
-                
-                select.innerHTML = '<option value="">問題集を選択</option>';
-                sets.forEach(name => {
-                    const count = this.getQuestions(name).length;
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = `${name} (${count}問)`;
-                    select.appendChild(option);
-                });
-                
-                // 元の選択を復元
-                if (currentValue) {
-                    select.value = currentValue;
-                }
-            }
-            
-            alert('問題を追加しました');
-        }
     }
 }
 
