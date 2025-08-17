@@ -189,9 +189,14 @@ class AnalyticsClass {
         select.innerHTML = '<option value="">問題集を選択</option>';
         
         if (DataManager && DataManager.books) {
-            Object.values(DataManager.books).forEach(book => {
-                const option = document.createElement('option');
-                option.value = book.id;
+            Object.values(DataManager.books || {}).forEach(book => {
+        // 削除済みチェックを追加
+        if (DataManager.isDeleted('books', book.id)) {
+            return; // 削除済みはスキップ
+        }
+        
+        const option = document.createElement('option');
+        option.value = book.id;
                 option.textContent = book.name;
                 select.appendChild(option);
             });
@@ -362,9 +367,14 @@ class AnalyticsClass {
         select.innerHTML = '<option value="">問題集を選択</option>';
         
         if (DataManager && DataManager.books) {
-            Object.values(DataManager.books).forEach(book => {
-                const option = document.createElement('option');
-                option.value = book.id;
+            Object.values(DataManager.books || {}).forEach(book => {
+        // 削除済みチェックを追加
+        if (DataManager.isDeleted('books', book.id)) {
+            return; // 削除済みはスキップ
+        }
+        
+        const option = document.createElement('option');
+        option.value = book.id;
                 option.textContent = book.name;
                 select.appendChild(option);
             });
