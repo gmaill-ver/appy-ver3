@@ -825,6 +825,12 @@
                 existingData.bookOrder = DataManager.bookOrder || [];
                 existingData.analysisCardOrder = DataManager.analysisCardOrder || [];
                 existingData.keyPointsData = KeyPointsModule.subjects || {};
+
+                // 【重要】削除済みアイテムリストも保存
+                existingData.deletedItems = DataManager.deletedItems || [];
+                
+                // 【重要】問題チェック状態も保存
+                existingData.savedQuestionStates = DataManager.savedQuestionStates || {};
                 
                 // メタデータ更新
                 existingData.lastUpdated = new Date().toISOString();
@@ -1008,7 +1014,7 @@
         }
     }
 
-    // 🖥️ UI更新
+    // 🖥️ UI更新（カレンダー再描画を強化）
     function updateAllUI() {
         setTimeout(() => {
             try {
@@ -1020,8 +1026,20 @@
                     Analytics.updateHeatmapBookSelect();
                     Analytics.updateRadarBookSelect();
                 }
-                if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
-                    UIComponents.updateExamCountdown();
+                if (window.UIComponents) {
+                    // カレンダーを強制的に再描画
+                    if (typeof UIComponents.renderCalendar === 'function') {
+                        UIComponents.renderCalendar();
+                        console.log("✅ カレンダー再描画完了");
+                    }
+                    if (typeof UIComponents.updateExamCountdown === 'function') {
+                        UIComponents.updateExamCountdown();
+                    }
+                }
+                // KeyPointsModuleの再初期化
+                if (window.KeyPointsModule && typeof KeyPointsModule.loadKeyPointsData === 'function') {
+                    KeyPointsModule.loadKeyPointsData();
+                    console.log("✅ KeyPointsModule再読み込み完了");
                 }
                 console.log("✅ UI更新完了");
             } catch (error) {
