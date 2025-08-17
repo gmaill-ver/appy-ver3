@@ -888,6 +888,11 @@ class KeyPointsModuleClass {
      */
     onSubjectChangeCard() {
         const subjectSelect = document.getElementById('keyPointSubjectSelect');
+        if (!subjectSelect) {
+            console.warn('Subject select not found');
+            return;
+        }
+        
         const chapterCardsArea = document.getElementById('chapterCardsArea');
         const sectionCardsArea = document.getElementById('sectionCardsArea');
         const topicCardsArea = document.getElementById('topicCardsArea');
