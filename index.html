@@ -2,1536 +2,1034 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>学習トラッカー - 行政書士試験対策</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学習トラッカー - 資格試験対策</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5282 0%, #2d3748 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .lock-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+
+        .countdown {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .tab-container {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: space-around;
+            padding: 0;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-size: 16px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #2563eb;
+        }
+
+        .content {
+            padding: 20px;
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        /* 記録入力タブ */
+        .subject-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .subject-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .subject-header {
+            padding: 15px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .subject-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .pin-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: #64748b;
+            transition: color 0.3s;
+        }
+
+        .pin-button.pinned {
+            color: #f59e0b;
+        }
+
+        .subject-body {
+            display: none;
+        }
+
+        .subject-body.expanded {
+            display: block;
+            padding: 15px;
+        }
+
+        .study-section {
+            margin-top: 15px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .hierarchy-item {
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .hierarchy-item:hover {
+            background: #e2e8f0;
+        }
+
+        .hierarchy-content {
+            display: none;
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+
+        .hierarchy-content.expanded {
+            display: block;
+        }
+
+        /* 問題ヒートマップ */
+        .heatmap-container {
+            margin-top: 20px;
+        }
+
+        .questions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .question-box {
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            min-height: 60px;
+        }
+
+        .question-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .question-box.correct {
+            background: #22c55e;
+        }
+
+        .question-box.incorrect {
+            background: #ef4444;
+        }
+
+        .question-box.bookmarked {
+            background: #fbbf24;
+        }
+
+        .question-box.pending {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        .question-number {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        /* 要点確認ボタン */
+        .point-check-button {
+            padding: 3px 6px;
+            background: rgba(255,255,255,0.9);
+            color: #1e293b;
+            border: none;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 4px;
+        }
+
+        .point-check-button:hover {
+            background: white;
+        }
+
+        .point-display {
+            display: none;
+            margin-top: 10px;
+            padding: 12px;
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .point-display.show {
+            display: block;
+        }
+
+        .point-display h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        /* 分析タブ - 改善版 */
+        .analysis-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            width: 100%;
+        }
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .analysis-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .analysis-pin {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #cbd5e1;
+            padding: 4px;
+            transition: color 0.3s;
+        }
+
+        .analysis-pin:hover {
+            color: #94a3b8;
+        }
+
+        .analysis-pin.pinned {
+            color: #f59e0b;
+        }
+
+        /* 進捗タブ */
+        .progress-overview {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .progress-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 5px;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 12px;
+            transition: color 0.3s;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+        }
+
+        .nav-icon {
+            font-size: 20px;
+        }
+
+        /* CSVインポート */
+        .csv-import {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .csv-import input[type="file"] {
+            display: none;
+        }
+
+        .csv-import-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .csv-import-label:hover {
+            background: #2563eb;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #475569;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-button {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .form-button:hover {
+            background: #2563eb;
+        }
+    </style>
 </head>
 <body>
-    <!-- ヘッダー -->
-    <header class="app-header">
-        <button class="timer-icon-btn" onclick="App.openTimerModal()" title="タイマー">⏰</button>
-        <div class="timer-display" id="timerDisplay">00:00:00</div>
-        <div class="app-logo">
-            <span class="app-logo-icon">📚</span>
-            <span class="app-title">学習トラッカー</span>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <span class="lock-icon">🔒</span>
+                <span>学習トラッカー</span>
+            </h1>
+            <div class="countdown">試験日まで 84 日</div>
         </div>
-        <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
-    </header>
-    
-    <!-- メインタブ -->
-    <div class="main-tabs">
-        <button class="main-tab active" onclick="App.switchMainTab('record', event)">記録入力</button>
-        <button class="main-tab" onclick="App.switchMainTab('analysis', event)">分析</button>
-        <button class="main-tab" onclick="App.switchMainTab('progress', event)">進捗</button>
-    </div>
-    
-    <!-- コンテンツエリア -->
-    <div class="content-area">
+
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('record')">記録入力</button>
+                <button class="tab" onclick="switchTab('analysis')">分析</button>
+                <button class="tab" onclick="switchTab('progress')">進捗</button>
+            </div>
+        </div>
+
         <!-- 記録入力タブ -->
-        <div id="record-tab" class="tab-content active">
-            <!-- 問題集選択 -->
-            <div class="book-cards-wrapper">
-                <button class="book-order-btn" onclick="App.toggleBookSort()">並替え</button>
-                <div id="bookCardsContainer"></div>
+        <div id="record" class="content active">
+            <div class="subject-cards">
+                <div class="subject-card" data-subject="gouhou">
+                    <div class="subject-header" onclick="toggleSubject('gouhou')">
+                        <div class="subject-title">
+                            <span>📚</span>
+                            <span>合格革命 肢別過去問集 2024年版</span>
+                        </div>
+                        <button class="pin-button" onclick="togglePin(event, 'gouhou')">📌</button>
+                    </div>
+                    <div class="subject-body" id="gouhou-body">
+                        <div class="study-section">
+                            <div class="section-header">
+                                <span>📂</span>
+                                <span>民法</span>
+                            </div>
+                            <div class="hierarchy-item" onclick="toggleHierarchy('minpou-sousoku')">
+                                <span>▶ 総則</span>
+                            </div>
+                            <div id="minpou-sousoku" class="hierarchy-content">
+                                <div class="heatmap-container">
+                                    <div class="questions-grid">
+                                        <div class="question-box correct" data-question="1">
+                                            <div class="question-number">1</div>
+                                            <button class="point-check-button" onclick="togglePoint(event, 'minpou-1')">要点確認</button>
+                                        </div>
+                                        <div class="question-box correct" data-question="2">
+                                            <div class="question-number">2</div>
+                                            <button class="point-check-button" onclick="togglePoint(event, 'minpou-2')">要点確認</button>
+                                        </div>
+                                        <div class="question-box incorrect" data-question="3">
+                                            <div class="question-number">3</div>
+                                            <button class="point-check-button" onclick="togglePoint(event, 'minpou-3')">要点確認</button>
+                                        </div>
+                                        <div class="question-box pending" data-question="4">
+                                            <div class="question-number">4</div>
+                                        </div>
+                                        <div class="question-box incorrect" data-question="5">
+                                            <div class="question-number">5</div>
+                                            <button class="point-check-button" onclick="togglePoint(event, 'minpou-5')">要点確認</button>
+                                        </div>
+                                        <div class="question-box correct" data-question="6">
+                                            <div class="question-number">6</div>
+                                        </div>
+                                        <div class="question-box incorrect" data-question="7">
+                                            <div class="question-number">7</div>
+                                        </div>
+                                        <div class="question-box incorrect" data-question="8">
+                                            <div class="question-number">8</div>
+                                            <button class="point-check-button" onclick="togglePoint(event, 'minpou-8')">要点確認</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="minpou-1" class="point-display">
+                                        <h4>📖 要点確認 - 問題1</h4>
+                                        <p>民法総則における意思表示の基本原則について、虚偽表示は無効となる（民法94条）</p>
+                                    </div>
+                                    <div id="minpou-2" class="point-display">
+                                        <h4>📖 要点確認 - 問題2</h4>
+                                        <p>法人の能力について、権利能力は定款に定められた目的の範囲内で認められる</p>
+                                    </div>
+                                    <div id="minpou-3" class="point-display">
+                                        <h4>📖 要点確認 - 問題3</h4>
+                                        <p>代理人の権限について、表見代理が成立する3つのパターンを理解する必要がある</p>
+                                    </div>
+                                    <div id="minpou-5" class="point-display">
+                                        <h4>📖 要点確認 - 問題5</h4>
+                                        <p>時効の中断事由：請求、差押え、承認の3つを覚える</p>
+                                    </div>
+                                    <div id="minpou-8" class="point-display">
+                                        <h4>📖 要点確認 - 問題8</h4>
+                                        <p>条件と期限の違い：条件は成就が不確実、期限は到来が確実</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="hierarchy-item" onclick="toggleHierarchy('minpou-bukken')">
+                                <span>▶ 物権</span>
+                            </div>
+                            <div id="minpou-bukken" class="hierarchy-content">
+                                <div class="heatmap-container">
+                                    <div class="questions-grid">
+                                        <!-- 物権の問題 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="study-section">
+                            <div class="section-header">
+                                <span>📂</span>
+                                <span>行政法</span>
+                            </div>
+                            <div class="hierarchy-item" onclick="toggleHierarchy('gyousei-sousoku')">
+                                <span>▶ 総則</span>
+                            </div>
+                            <div id="gyousei-sousoku" class="hierarchy-content">
+                                <div class="heatmap-container">
+                                    <div class="questions-grid">
+                                        <!-- 行政法の問題 -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="subject-card" data-subject="gyosei">
+                    <div class="subject-header" onclick="toggleSubject('gyosei')">
+                        <div class="subject-title">
+                            <span>📖</span>
+                            <span>行政書士試験 過去問集</span>
+                        </div>
+                        <button class="pin-button" onclick="togglePin(event, 'gyosei')">📌</button>
+                    </div>
+                    <div class="subject-body" id="gyosei-body">
+                        <!-- 行政書士試験の内容 -->
+                    </div>
+                </div>
             </div>
-            
-            <!-- パンくずリスト -->
-            <div class="breadcrumb" id="breadcrumb" style="display: none;"></div>
-            
-            <!-- 階層リスト -->
-            <div id="recordHierarchyContainer" style="display: none;"></div>
-            
-            <!-- 問題入力 -->
-            <div class="card" id="questionSection" style="display: none;">
-                <div class="card-header">
-                    <span class="card-icon">✍️</span>
-                    <span class="card-title">問題別正誤入力</span>
-                </div>
-                
-                <div class="action-buttons">
-                    <button class="action-btn correct" onclick="App.markCorrect()">
-                        <span>⭕</span><span>正解</span>
-                    </button>
-                    <button class="action-btn wrong" onclick="App.markWrong()">
-                        <span>❌</span><span>不正解</span>
-                    </button>
-                    <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()">
-                        <span>⭐</span><span>マーク</span>
-                    </button>
-                </div>
-                
-                <div class="question-grid" id="questionGrid"></div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" id="totalCount">0</div>
-                        <div class="stat-label">解答数</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="correctCount">0</div>
-                        <div class="stat-label">正解数</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="wrongCount">0</div>
-                        <div class="stat-label">不正解数</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="correctRate">0%</div>
-                        <div class="stat-label">正答率</div>
-                    </div>
-                </div>
-                
-                <button class="save-button" onclick="App.saveRecord()">学習記録を保存</button>
-            </div>
-            
-            <!-- カレンダー -->
-            <div class="calendar-container">
-                <div class="calendar-header">
-                    <div class="calendar-nav">
-                        <button class="calendar-nav-btn" onclick="UIComponents.changeMonth(-1)">◀</button>
-                        <span class="calendar-month" id="calendarMonth">2025年1月</span>
-                        <button class="calendar-nav-btn" onclick="UIComponents.changeMonth(1)">▶</button>
-                    </div>
-                    <button class="calendar-nav-btn" onclick="UIComponents.goToToday()">今日</button>
-                </div>
-                <div class="calendar-grid" id="calendarGrid"></div>
-                <div class="calendar-actions">
-                    <button class="calendar-btn add-plan" onclick="UIComponents.openPlanModal()">📝 学習計画を追加</button>
-                    <button class="calendar-btn view-plans" onclick="UIComponents.viewPlans()">📋 計画一覧</button>
-                </div>
+
+            <div class="csv-import">
+                <p style="margin-bottom: 10px; color: #64748b;">要点データをCSVで一括インポート</p>
+                <label for="csv-file" class="csv-import-label">
+                    CSVファイルを選択
+                </label>
+                <input type="file" id="csv-file" accept=".csv" onchange="importCSV(event)">
             </div>
         </div>
-        
+
         <!-- 分析タブ -->
-        <div id="analysis-tab" class="tab-content">
-            <button class="card-sort-btn" onclick="App.toggleAnalysisSort()">並替え</button>
-            <div id="analysisCardsContainer">
-                <!-- 学習グラフ -->
-                <div class="accordion card" data-card-id="chart">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
-                        <span>📊 学習グラフ</span>
-                        <span class="accordion-arrow">▼</span>
+        <div id="analysis" class="content">
+            <div class="analysis-card">
+                <div class="analysis-header">
+                    <div class="analysis-title">
+                        <span>📊</span>
+                        <span>学習グラフ</span>
                     </div>
-                    <div class="accordion-content">
-                        <div class="chart-controls">
-                            <button class="chart-btn active" onclick="Analytics.switchChartView('day', this)">日別</button>
-                            <button class="chart-btn" onclick="Analytics.switchChartView('week', this)">週間</button>
-                            <button class="chart-btn" onclick="Analytics.switchChartView('month', this)">月間</button>
-                        </div>
-                        <div class="chart-wrapper">
-                            <div class="chart-bars" id="chartBars"></div>
-                        </div>
-                    </div>
+                    <button class="analysis-pin" onclick="toggleAnalysisPin(this)">📌</button>
                 </div>
-                
-                <!-- 学習履歴 -->
-                <div class="accordion card" data-card-id="history">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
-                        <span>📅 学習履歴</span>
-                        <span class="accordion-arrow">▼</span>
+                <canvas id="studyChart" style="max-height: 300px;"></canvas>
+            </div>
+
+            <div class="analysis-card">
+                <div class="analysis-header">
+                    <div class="analysis-title">
+                        <span>📈</span>
+                        <span>学習履歴</span>
                     </div>
-                    <div class="accordion-content">
-                        <div id="historyContent"></div>
-                    </div>
+                    <button class="analysis-pin" onclick="toggleAnalysisPin(this)">📌</button>
                 </div>
-                
-                <!-- ヒートマップ -->
-                <div class="accordion card" data-card-id="heatmap">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
-                        <span>🗺️ 問題ヒートマップ</span>
-                        <span class="accordion-arrow">▼</span>
+                <div class="progress-stats">
+                    <div class="stat-item" style="background: #f0f9ff;">
+                        <div class="stat-label">今週の学習時間</div>
+                        <div class="stat-value" style="color: #3b82f6;">12.5時間</div>
                     </div>
-                    <div class="accordion-content">
-                        <div class="heatmap-controls">
-                            <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()">
-                                <option value="">問題集を選択</option>
-                            </select>
-                            <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()">📌 固定</button>
-                        </div>
-                        <div class="heatmap-grid" id="heatmapGrid"></div>
-                    </div>
-                </div>
-                
-                <!-- 弱点分析 -->
-                <div class="accordion card" data-card-id="weakness">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
-                        <span>🎯 弱点分析</span>
-                        <span class="accordion-arrow">▼</span>
-                    </div>
-                    <div class="accordion-content">
-                        <div id="weaknessAnalysis"></div>
+                    <div class="stat-item" style="background: #f0fdf4;">
+                        <div class="stat-label">正答率</div>
+                        <div class="stat-value" style="color: #22c55e;">78%</div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- 進捗タブ -->
-        <div id="progress-tab" class="tab-content">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📊</span>
-                    <span class="card-title">全体進捗状況</span>
+        <div id="progress" class="content">
+            <div class="progress-overview">
+                <div class="progress-title">📊 学習進捗サマリー</div>
+                <div class="progress-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">総問題数</div>
+                        <div class="stat-value">1,250</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">完了済み</div>
+                        <div class="stat-value">856</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">正答率</div>
+                        <div class="stat-value">78.5%</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">残り日数</div>
+                        <div class="stat-value">84日</div>
+                    </div>
                 </div>
-                <div id="overallProgress"></div>
             </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📈</span>
-                    <span class="card-title">科目別進捗</span>
+
+            <div class="analysis-card">
+                <div class="analysis-title">
+                    <span>📚</span>
+                    <span>科目別進捗</span>
                 </div>
-                <div class="radar-chart-container">
-                    <div class="radar-chart-controls">
-                        <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()">
-                            <option value="">問題集を選択</option>
-                        </select>
-                        <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()">📌 固定表示</button>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button class="chart-btn active" id="radarModeSubject" onclick="Analytics.setRadarMode('subject', this)">科目別</button>
-                            <button class="chart-btn" id="radarModeCompare" onclick="Analytics.setRadarMode('compare', this)">問題集比較</button>
+                <div style="margin-top: 15px;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>民法</span>
+                            <span style="color: #3b82f6; font-weight: bold;">85%</span>
+                        </div>
+                        <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="width: 85%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa);"></div>
                         </div>
                     </div>
-                    <canvas id="radarChart" width="300" height="300"></canvas>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>行政法</span>
+                            <span style="color: #22c55e; font-weight: bold;">72%</span>
+                        </div>
+                        <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="width: 72%; height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80);"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>憲法</span>
+                            <span style="color: #f59e0b; font-weight: bold;">58%</span>
+                        </div>
+                        <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div style="width: 58%; height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24);"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- フッタータブ -->
-    <div class="footer-tabs">
-        <button class="footer-tab active" onclick="App.switchFooterTab('register', event)">
-            <span class="footer-tab-icon">📝</span>
-            <span class="footer-tab-label">登録</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('qa', event)">
-            <span class="footer-tab-icon">❓</span>
-            <span class="footer-tab-label">一問一答</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('keypoints', event)">
-            <span class="footer-tab-icon">📚</span>
-            <span class="footer-tab-label">要点確認</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('results', event)">
-            <span class="footer-tab-icon">🏆</span>
-            <span class="footer-tab-label">実績</span>
-        </button>
-        <button class="footer-tab" onclick="App.switchFooterTab('settings', event)">
-            <span class="footer-tab-icon">⚙️</span>
-            <span class="footer-tab-label">設定</span>
-        </button>
-    </div>
-    
-    <!-- タイマーモーダル -->
-    <div id="timerModal" class="timer-modal">
-        <div class="timer-modal-content">
-            <div class="modal-header">
-                <h3>⏰ タイマー</h3>
-                <button class="modal-close" onclick="TimerModule.closeModal()">×</button>
+
+        <!-- 底部導航 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('record')">
+                <span class="nav-icon">📝</span>
+                <span>登録</span>
             </div>
-            
-            <div class="timer-tabs">
-                <button class="timer-tab active" onclick="TimerModule.switchTab('stopwatch', this)">ストップウォッチ</button>
-                <button class="timer-tab" onclick="TimerModule.switchTab('countdown', this)">タイマー</button>
-                <button class="timer-tab" onclick="TimerModule.switchTab('interval', this)">インターバル</button>
+            <div class="nav-item">
+                <span class="nav-icon">❓</span>
+                <span>一問一答</span>
             </div>
-            
-            <div id="stopwatchTab" class="timer-tab-content">
-                <div class="timer-display-large" id="stopwatchDisplay">00:00:00</div>
-                <div class="timer-controls">
-                    <button class="timer-btn start" onclick="TimerModule.startStopwatch()">開始</button>
-                    <button class="timer-btn pause" onclick="TimerModule.pauseStopwatch()">一時停止</button>
-                    <button class="timer-btn reset" onclick="TimerModule.resetStopwatch()">リセット</button>
-                </div>
+            <div class="nav-item">
+                <span class="nav-icon">📚</span>
+                <span>要点確認</span>
             </div>
-            
-            <div id="countdownTab" class="timer-tab-content" style="display: none;">
-                <div class="timer-input-group">
-                    <label class="timer-input-label">タイマー設定</label>
-                    <div class="timer-input-row">
-                        <input type="number" class="timer-input" id="countdownHours" placeholder="時" min="0" max="23">
-                        <span>時間</span>
-                        <input type="number" class="timer-input" id="countdownMinutes" placeholder="分" min="0" max="59">
-                        <span>分</span>
-                        <input type="number" class="timer-input" id="countdownSeconds" placeholder="秒" min="0" max="59">
-                        <span>秒</span>
-                    </div>
-                </div>
-                <div class="timer-display-large" id="countdownDisplay">00:00:00</div>
-                <div class="timer-controls">
-                    <button class="timer-btn start" onclick="TimerModule.startCountdown()">開始</button>
-                    <button class="timer-btn pause" onclick="TimerModule.pauseCountdown()">一時停止</button>
-                    <button class="timer-btn reset" onclick="TimerModule.resetCountdown()">リセット</button>
-                </div>
+            <div class="nav-item">
+                <span class="nav-icon">🏆</span>
+                <span>実績</span>
             </div>
-            
-            <div id="intervalTab" class="timer-tab-content" style="display: none;">
-                <div class="timer-input-group">
-                    <label class="timer-input-label">作業時間</label>
-                    <div class="timer-input-row">
-                        <input type="number" class="timer-input" id="workMinutes" value="25" min="1">
-                        <span>分</span>
-                    </div>
-                </div>
-                <div class="timer-input-group">
-                    <label class="timer-input-label">休憩時間</label>
-                    <div class="timer-input-row">
-                        <input type="number" class="timer-input" id="breakMinutes" value="5" min="1">
-                        <span>分</span>
-                    </div>
-                </div>
-                <div class="timer-input-group">
-                    <label class="timer-input-label">セット数</label>
-                    <div class="timer-input-row">
-                        <input type="number" class="timer-input" id="intervalSets" value="4" min="1">
-                        <span>セット</span>
-                    </div>
-                </div>
-                <div class="timer-display-large" id="intervalDisplay">00:00</div>
-                <div style="text-align: center; margin: 10px 0;">
-                    <span id="intervalStatus">待機中</span> | 
-                    <span id="intervalSetCount">0/0 セット</span>
-                </div>
-                <div class="timer-controls">
-                    <button class="timer-btn start" onclick="TimerModule.startInterval()">開始</button>
-                    <button class="timer-btn pause" onclick="TimerModule.pauseInterval()">一時停止</button>
-                    <button class="timer-btn reset" onclick="TimerModule.resetInterval()">リセット</button>
-                </div>
+            <div class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span>設定</span>
             </div>
         </div>
     </div>
-    
-    <!-- 学習計画モーダル -->
-    <div id="planModal" class="plan-modal">
-        <div class="plan-modal-content">
-            <div class="modal-header">
-                <h3 id="planModalTitle">📅 学習計画</h3>
-                <button class="modal-close" onclick="UIComponents.closePlanModal()">×</button>
-            </div>
-            
-            <div id="planFormSection">
-                <div class="plan-form-group">
-                    <label class="plan-form-label">計画タイトル</label>
-                    <input type="text" class="plan-form-control" id="planTitle" placeholder="例：民法総則の復習">
-                </div>
-                
-                <div class="plan-form-group">
-                    <label class="plan-form-label">計画内容</label>
-                    <textarea class="plan-form-control" id="planContent" rows="3" placeholder="学習内容の詳細を入力"></textarea>
-                </div>
-                
-                <div class="plan-form-group">
-                    <label class="plan-form-label">表示形式</label>
-                    <div class="plan-display-type">
-                        <label>
-                            <input type="radio" name="displayType" value="bullet" checked>
-                            <span>・</span>
-                        </label>
-                        <label>
-                            <input type="radio" name="displayType" value="text">
-                            <span>通常表示</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="plan-form-group">
-                    <label class="plan-form-label">日付範囲</label>
-                    <div class="date-range-inputs">
-                        <input type="date" class="plan-form-control" id="planStartDate">
-                        <span>〜</span>
-                        <input type="date" class="plan-form-control" id="planEndDate">
-                    </div>
-                </div>
-                
-                <div class="plan-form-group">
-                    <label class="plan-form-label">色設定</label>
-                    <div class="color-picker" id="colorPicker">
-                        <div class="color-option selected" style="background: #3498db;" data-color="#3498db"></div>
-                        <div class="color-option" style="background: #10b981;" data-color="#10b981"></div>
-                        <div class="color-option" style="background: #f59e0b;" data-color="#f59e0b"></div>
-                        <div class="color-option" style="background: #ef4444;" data-color="#ef4444"></div>
-                        <div class="color-option" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
-                        <div class="color-option" style="background: #ec4899;" data-color="#ec4899"></div>
-                        <div class="color-option" style="background: #6b7280;" data-color="#6b7280"></div>
-                    </div>
-                </div>
-                
-                <input type="hidden" id="editPlanId" value="">
-                <button class="save-button" onclick="UIComponents.savePlan()">計画を保存</button>
-            </div>
-            
-            <div id="planListSection" style="display: none;">
-                <h4>登録済みの計画</h4>
-                <div class="plan-list" id="planListContent"></div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- フッターモーダル -->
-    <div id="footerModal" class="modal">
+
+    <!-- 要点登録モーダル -->
+    <div id="pointModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">タイトル</h3>
-                <button class="modal-close" onclick="App.closeFooterModal()">×</button>
+                <h3 class="modal-title">要点を登録</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
-            <div id="modalBody"></div>
-        </div>
-        <div class="modal-footer">
-            <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
-        </div>
-    </div>
-    
-    <!-- 入力ダイアログ -->
-    <div id="dialogOverlay" class="dialog-overlay" style="display: none;"></div>
-    <div id="inputDialog" class="input-dialog" style="display: none;">
-        <h3 id="dialogTitle">タイトル</h3>
-        <div id="dialogBody"></div>
-        <div class="dialog-buttons">
-            <button class="dialog-btn secondary" onclick="App.closeDialog()">キャンセル</button>
-            <button class="dialog-btn primary" id="dialogConfirmBtn">確定</button>
+            <div class="form-group">
+                <label class="form-label">問題番号（ID）</label>
+                <input type="text" class="form-input" id="pointQuestionId" placeholder="例: minpou-1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">要点内容</label>
+                <textarea class="form-textarea" id="pointContent" placeholder="要点を入力してください"></textarea>
+            </div>
+            <button class="form-button" onclick="savePoint()">保存</button>
         </div>
     </div>
 
-    <!-- 🔥 Firebase SDK v9 (Compat版) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-    <!-- 🔧 Firebase設定＆初期化 -->
     <script>
-    // Firebase設定
-    const firebaseConfig = {
-        apiKey: "AIzaSyCa3-o7VIbxDzZDy7_SPHTk1kqpq23I79s",
-        authDomain: "gakushusintyoku.firebaseapp.com",
-        projectId: "gakushusintyoku",
-        storageBucket: "gakushusintyoku.firebasestorage.app",
-        messagingSenderId: "386582438890",
-        appId: "1:386582438890:web:78cd619f0d7ad3ae5a0893"
-    };
-
-    // Firebase初期化
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    </script>
-
-    <!-- 📱 JavaScript モジュール読み込み（順序重要） -->
-    <script src="data-manager.js"></script>
-    <script src="ui-components.js"></script>
-    <script src="analytics.js"></script>
-    <script src="qa-module.js"></script>
-    <script src="timer-module.js"></script>
-    <script src="keypoints-module.js"></script>
-    <script src="app.js"></script>
-
-    <!-- 🔥 完全固定ユーザーID版Firebase統合コード（キャッシュクリア完全対応） -->
-    <script>
-    console.log("🚀 完全固定Firebase統合開始（キャッシュクリア対応版）");
-
-    // 🔧 Firebase設定とオフライン永続化
-    try {
-        // Firestoreのオフライン永続化（重要：他の処理より先に実行）
-        firebase.firestore().enablePersistence({ 
-            synchronizeTabs: true,
-            experimentalForceOwningTab: true 
-        }).then(() => {
-            console.log("✅ Firebase オフライン永続化有効");
-        }).catch((err) => {
-            if (err.code === 'failed-precondition') {
-                console.log("⚠️ 複数タブ開いているため永続化無効");
-            } else if (err.code === 'unimplemented') {
-                console.log("⚠️ ブラウザが永続化非対応");
-            }
-        });
-    } catch (error) {
-        console.error("Firebase設定エラー:", error);
-    }
-
-    // 🔑 超安定固定ユーザーID生成（完全固定版）
-    function generateUltraStableUserId() {
-        // より安定した要素のみ使用
-        const stableElements = [
-            navigator.userAgent.split(' ')[0], // ブラウザ名のみ
-            navigator.platform,
-            screen.width,
-            screen.height,
-            navigator.language,
-            navigator.hardwareConcurrency || '4',
-            new Date().getTimezoneOffset().toString()
-        ];
-        
-        // 最も安定したハッシュ生成
-        let hash = 'stable';
-        const combined = stableElements.join('|');
-        
-        for (let i = 0; i < combined.length; i++) {
-            const char = combined.charCodeAt(i);
-            hash = ((hash << 5) - hash + char) & 0xffffffff;
-        }
-        
-        // デバイスタイプ判定（簡素化）
-        const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-        const deviceType = isMobile ? 'mobile' : 'desktop';
-        
-        // 完全固定ID（時間要素一切なし）
-        const baseId = Math.abs(hash).toString(36).padStart(8, '0');
-        return `${deviceType}_${baseId}_permanent`;
-    }
-
-    // 🏪 複数ストレージからの確実なID取得
-    async function getOrCreateFixedUserId() {
-        console.log("🔍 固定ID取得・生成開始");
-        
-        // 1. 既存IDを複数の場所から検索
-        let existingId = null;
-        
-        // LocalStorage
-        existingId = localStorage.getItem('ultraStableUserId');
-        if (existingId) {
-            console.log("✅ LocalStorageから固定ID取得");
-            await backupIdToAllStorages(existingId);
-            return existingId;
-        }
-        
-        // SessionStorage
-        existingId = sessionStorage.getItem('ultraStableUserId');
-        if (existingId) {
-            console.log("✅ SessionStorageから固定ID復元");
-            await backupIdToAllStorages(existingId);
-            return existingId;
-        }
-        
-        // Cookie
-        existingId = getCookieValue('ultraStableUserId');
-        if (existingId) {
-            console.log("✅ Cookieから固定ID復元");
-            await backupIdToAllStorages(existingId);
-            return existingId;
-        }
-        
-        // IndexedDB
-        existingId = await loadFromIndexedDB('ultraStableUserId');
-        if (existingId) {
-            console.log("✅ IndexedDBから固定ID復元");
-            await backupIdToAllStorages(existingId);
-            return existingId;
-        }
-        
-        // 2. Firebase検索（既存データがあるかもしれない）
-        const calculatedId = generateUltraStableUserId();
-        const firebaseId = await searchExistingDataInFirebase(calculatedId);
-        if (firebaseId) {
-            console.log("✅ Firebaseから既存データ発見");
-            await backupIdToAllStorages(firebaseId);
-            return firebaseId;
-        }
-        
-        // 3. 新規ID生成
-        console.log("🆕 新しい超安定固定ID生成");
-        const newId = calculatedId;
-        await backupIdToAllStorages(newId);
-        return newId;
-    }
-
-    // 🔍 Firebaseで既存データ検索
-    async function searchExistingDataInFirebase(calculatedId) {
-        try {
-            console.log("🔍 Firebase既存データ検索中...");
-            
-            // 1. 直接IDで検索
-            const directDoc = await db.collection('permanentUsers').doc(calculatedId).get();
-            if (directDoc.exists) {
-                console.log("✅ Firebase直接検索ヒット");
-                return calculatedId;
-            }
-            
-            // 2. デバイス指紋でクエリ検索
-            const fingerprint = generateUltraStableUserId().split('_')[1]; // ハッシュ部分
-            const querySnapshot = await db.collection('permanentUsers')
-                .where('deviceFingerprint', '==', fingerprint)
-                .limit(1)
-                .get();
-            
-            if (!querySnapshot.empty) {
-                const doc = querySnapshot.docs[0];
-                console.log("✅ Firebase指紋検索ヒット");
-                return doc.id;
-            }
-            
-            console.log("📭 Firebase既存データなし");
-            return null;
-        } catch (error) {
-            console.error("Firebase検索エラー:", error);
-            return null;
-        }
-    }
-
-    // 💾 全ストレージにバックアップ
-    async function backupIdToAllStorages(userId) {
-        // LocalStorage
-        localStorage.setItem('ultraStableUserId', userId);
-        
-        // SessionStorage  
-        sessionStorage.setItem('ultraStableUserId', userId);
-        
-        // Cookie（1年間有効）
-        setCookie('ultraStableUserId', userId, 365);
-        
-        // IndexedDB
-        await saveToIndexedDB('ultraStableUserId', userId);
-        
-        console.log("💾 全ストレージにID保存完了:", userId);
-    }
-
-    // 🍪 Cookie操作
-    function setCookie(name, value, days) {
-        const expires = new Date();
-        expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax;Secure`;
-    }
-
-    function getCookieValue(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    }
-
-    // 💿 IndexedDB操作（Promise版・エラー修正）
-    function saveToIndexedDB(key, value) {
-        return new Promise((resolve) => {
-            try {
-                const request = indexedDB.open('StudyTrackerPermanentDB', 1);
-                
-                request.onupgradeneeded = function(e) {
-                    const db = e.target.result;
-                    console.log("🔧 IndexedDB初期化中...");
-                    if (!db.objectStoreNames.contains('permanentData')) {
-                        const store = db.createObjectStore('permanentData', { keyPath: 'key' });
-                        console.log("✅ IndexedDBオブジェクトストア作成");
-                    }
-                };
-                
-                request.onsuccess = function(e) {
-                    const db = e.target.result;
-                    try {
-                        // オブジェクトストアの存在確認
-                        if (!db.objectStoreNames.contains('permanentData')) {
-                            console.warn("⚠️ オブジェクトストアが存在しません");
-                            resolve(false);
-                            return;
-                        }
-                        
-                        const transaction = db.transaction(['permanentData'], 'readwrite');
-                        const store = transaction.objectStore('permanentData');
-                        
-                        const putRequest = store.put({ 
-                            key: key, 
-                            value: value, 
-                            timestamp: Date.now(),
-                            version: '2.1'
-                        });
-                        
-                        putRequest.onsuccess = () => {
-                            console.log("✅ IndexedDB保存成功:", key);
-                            resolve(true);
-                        };
-                        
-                        putRequest.onerror = (error) => {
-                            console.error("❌ IndexedDB保存エラー:", error);
-                            resolve(false);
-                        };
-                        
-                        transaction.onerror = (error) => {
-                            console.error("❌ IndexedDBトランザクションエラー:", error);
-                            resolve(false);
-                        };
-                        
-                    } catch (error) {
-                        console.error("❌ IndexedDB操作エラー:", error);
-                        resolve(false);
-                    }
-                };
-                
-                request.onerror = (error) => {
-                    console.error("❌ IndexedDBオープンエラー:", error);
-                    resolve(false);
-                };
-                
-                request.onblocked = () => {
-                    console.warn("⚠️ IndexedDBがブロックされています");
-                    resolve(false);
-                };
-                
-            } catch (error) {
-                console.error("❌ IndexedDB初期化エラー:", error);
-                resolve(false);
-            }
-        });
-    }
-
-    function loadFromIndexedDB(key) {
-        return new Promise((resolve) => {
-            try {
-                const request = indexedDB.open('StudyTrackerPermanentDB', 1);
-                
-                request.onupgradeneeded = function(e) {
-                    const db = e.target.result;
-                    console.log("🔧 IndexedDB初期化中（読み込み）...");
-                    if (!db.objectStoreNames.contains('permanentData')) {
-                        const store = db.createObjectStore('permanentData', { keyPath: 'key' });
-                        console.log("✅ IndexedDBオブジェクトストア作成（読み込み時）");
-                    }
-                };
-                
-                request.onsuccess = function(e) {
-                    const db = e.target.result;
-                    try {
-                        // オブジェクトストアの存在確認
-                        if (!db.objectStoreNames.contains('permanentData')) {
-                            console.log("📭 IndexedDBオブジェクトストアなし");
-                            resolve(null);
-                            return;
-                        }
-                        
-                        const transaction = db.transaction(['permanentData'], 'readonly');
-                        const store = transaction.objectStore('permanentData');
-                        const getRequest = store.get(key);
-                        
-                        getRequest.onsuccess = function() {
-                            if (getRequest.result && getRequest.result.value) {
-                                console.log("✅ IndexedDB読み込み成功:", key);
-                                resolve(getRequest.result.value);
-                            } else {
-                                console.log("📭 IndexedDBにデータなし:", key);
-                                resolve(null);
-                            }
-                        };
-                        
-                        getRequest.onerror = (error) => {
-                            console.error("❌ IndexedDB取得エラー:", error);
-                            resolve(null);
-                        };
-                        
-                        transaction.onerror = (error) => {
-                            console.error("❌ IndexedDBトランザクションエラー:", error);
-                            resolve(null);
-                        };
-                        
-                    } catch (error) {
-                        console.error("❌ IndexedDB操作エラー:", error);
-                        resolve(null);
-                    }
-                };
-                
-                request.onerror = (error) => {
-                    console.error("❌ IndexedDBオープンエラー:", error);
-                    resolve(null);
-                };
-                
-                request.onblocked = () => {
-                    console.warn("⚠️ IndexedDBがブロックされています");
-                    resolve(null);
-                };
-                
-            } catch (error) {
-                console.error("❌ IndexedDB読み込みエラー:", error);
-                resolve(null);
-            }
-        });
-    }
-
-    // 🆔 グローバル固定ID（初期化後設定）
-    let ULTRA_STABLE_USER_ID = null;
-
-    // ⚡ 初期化メイン処理
-    (async function initializeFirebaseIntegration() {
-        try {
-            console.log("🔄 Firebase統合初期化開始");
-            
-            // 固定ID取得・生成
-            ULTRA_STABLE_USER_ID = await getOrCreateFixedUserId();
-            console.log("🔒 確定した超安定固定ID:", ULTRA_STABLE_USER_ID);
-            
-            // グローバルからアクセス可能に
-            window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
-            
-            // Firebase操作を設定
-            setupFirebaseOperations();
-            
-            // 初期データ読み込み
-            await loadFromFirebaseInstantly();
-            
-            console.log("✅ Firebase統合初期化完了");
-            
-        } catch (error) {
-            console.error("❌ Firebase統合初期化エラー:", error);
-        }
-    })();
-
-    // 🔥 Firebase操作設定
-    function setupFirebaseOperations() {
-        // 保存処理
-        DataManager.saveToFirestore = async function(data) {
-            try {
-                if (!ULTRA_STABLE_USER_ID) {
-                    console.error("❌ 固定IDが未設定");
-                    return false;
-                }
-                
-                console.log("📤 超安定ID保存開始:", ULTRA_STABLE_USER_ID);
-                
-                const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-                
-                // 現在のデータを取得
-                const userDoc = await userRef.get();
-                let existingData = userDoc.exists ? userDoc.data() : {
-                    userId: ULTRA_STABLE_USER_ID,
-                    deviceFingerprint: ULTRA_STABLE_USER_ID.split('_')[1],
-                    createdAt: new Date().toISOString(),
-                    deviceInfo: {
-                        userAgent: navigator.userAgent,
-                        platform: navigator.platform,
-                        language: navigator.language
-                    }
-                };
-                
-                // 学習記録追加
-                if (!existingData.studyRecords) {
-                    existingData.studyRecords = [];
-                }
-                
-                const newRecord = {
-                    ...data,
-                    timestamp: new Date().toISOString(),
-                    deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-                    recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
-                };
-                
-                existingData.studyRecords.unshift(newRecord);
-                
-                // 最新100件まで保持
-                if (existingData.studyRecords.length > 100) {
-                    existingData.studyRecords = existingData.studyRecords.slice(0, 100);
-                }
-                
-                // 全データ統合保存
-                existingData.allRecords = DataManager.allRecords || [];
-                existingData.books = DataManager.books || {};
-                existingData.studyPlans = DataManager.studyPlans || [];
-                existingData.qaQuestions = DataManager.qaQuestions || {};
-                existingData.csvTemplates = DataManager.csvTemplates || {};
-                existingData.examDate = DataManager.examDate ? DataManager.examDate.toISOString() : null;
-                existingData.heatmapPinnedBook = DataManager.heatmapPinnedBook || null;
-                existingData.radarPinnedBook = DataManager.radarPinnedBook || null;
-                existingData.bookOrder = DataManager.bookOrder || [];
-                existingData.analysisCardOrder = DataManager.analysisCardOrder || [];
-                existingData.keyPointsData = KeyPointsModule.subjects || {};
-
-                // 【重要】削除済みアイテムリストも保存
-                existingData.deletedItems = DataManager.deletedItems || [];
-                
-                // 【重要】問題チェック状態も保存
-                existingData.savedQuestionStates = DataManager.savedQuestionStates || {};
-                
-                // メタデータ更新
-                existingData.lastUpdated = new Date().toISOString();
-                existingData.lastDevice = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-                existingData.syncCount = (existingData.syncCount || 0) + 1;
-                
-                // Firestore保存
-                await userRef.set(existingData, { merge: true });
-                
-                console.log("✅ 超安定ID保存成功");
-                showSuccessNotification(existingData.studyRecords.length, existingData.syncCount);
-                
-                return true;
-            } catch (error) {
-                console.error("❌ Firebase保存エラー:", error);
-                showErrorNotification(error.message);
-                return false;
-            }
-        };
-        
-        // 読み込み処理
-        DataManager.loadFromFirestore = async function() {
-            if (!ULTRA_STABLE_USER_ID) return;
-            
-            console.log("📥 超安定ID読み込み開始:", ULTRA_STABLE_USER_ID);
-            
-            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-            
-            // リアルタイム監視
-            userRef.onSnapshot((doc) => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    console.log("📥 リアルタイム更新検知");
-                    restoreAllDataFromFirebase(userData);
-                } else {
-                    console.log("📭 Firebaseデータなし");
-                }
-            }, (error) => {
-                console.error("❌ リアルタイム監視エラー:", error);
-            });
-        };
-    }
-
-    // 📥 即座にデータ読み込み
-    async function loadFromFirebaseInstantly() {
-        if (!ULTRA_STABLE_USER_ID) return;
-        
-        try {
-            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-            const doc = await userRef.get();
-            
-            if (doc.exists) {
-                console.log("📥 即座にFirebaseデータ復元");
-                restoreAllDataFromFirebase(doc.data());
-            } else {
-                console.log("📭 Firebaseに初回データなし");
-                // 初回データ移行スケジュール
-                setTimeout(() => {
-                    if (DataManager.books && Object.keys(DataManager.books).length > 0) {
-                        DataManager.saveToFirestore({
-                            type: "initialMigration",
-                            message: "初回データ移行"
-                        });
-                    }
-                }, 2000);
-            }
-        } catch (error) {
-            console.error("❌ 即座読み込みエラー:", error);
-        }
-    }
-
-    // 🔄 全データ復元処理（修正版）
-    function restoreAllDataFromFirebase(userData) {
-        let restoredCount = 0;
-        
-        try {
-            // 学習履歴
-            if (userData.allRecords && Array.isArray(userData.allRecords)) {
-                DataManager.allRecords = userData.allRecords;
-                localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
-                restoredCount++;
-            }
-            
-            // 問題集
-            if (userData.books && typeof userData.books === 'object') {
-                DataManager.books = userData.books;
-                localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
-                restoredCount++;
-            }
-            
-            // 【重要】削除済みアイテムリストの復元を追加
-            if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
-                DataManager.deletedItems = userData.deletedItems;
-                localStorage.setItem('deletedItems', JSON.stringify(userData.deletedItems));
-                restoredCount++;
-                console.log(`✅ 削除済みアイテム復元: ${userData.deletedItems.length}件`);
-            }
-            
-            // 学習計画
-            if (userData.studyPlans && Array.isArray(userData.studyPlans)) {
-                DataManager.studyPlans = userData.studyPlans;
-                localStorage.setItem('studyPlans', JSON.stringify(userData.studyPlans));
-                restoredCount++;
-            }
-            
-            // 一問一答
-            if (userData.qaQuestions && typeof userData.qaQuestions === 'object') {
-                DataManager.qaQuestions = userData.qaQuestions;
-                localStorage.setItem('qaQuestions', JSON.stringify(userData.qaQuestions));
-                restoredCount++;
-            }
-
-            // CSVテンプレート
-            if (userData.csvTemplates && typeof userData.csvTemplates === 'object') {
-                DataManager.csvTemplates = userData.csvTemplates;
-                localStorage.setItem('csvTemplates', JSON.stringify(userData.csvTemplates));
-                restoredCount++;
-            }
-            
-            // 【重要】問題チェック状態の復元を追加
-            if (userData.savedQuestionStates && typeof userData.savedQuestionStates === 'object') {
-                DataManager.savedQuestionStates = userData.savedQuestionStates;
-                localStorage.setItem('savedQuestionStates', JSON.stringify(userData.savedQuestionStates));
-                restoredCount++;
-                console.log(`✅ 問題チェック状態復元: ${Object.keys(userData.savedQuestionStates).length}件`);
-            }
-
-            // 要点確認データ（修正版）
-            if (userData.keyPointsData && typeof userData.keyPointsData === 'object') {
-                localStorage.setItem('keyPointsData', JSON.stringify(userData.keyPointsData));
-                
-                // KeyPointsModuleが読み込まれている場合は直接更新
-                if (window.KeyPointsModule && KeyPointsModule.subjects) {
-                    // 完全にデータを置き換える
-                    KeyPointsModule.subjects = userData.keyPointsData;
-                    console.log(`✅ 要点確認データ復元: ${Object.keys(userData.keyPointsData).length}科目`);
-                }
-                restoredCount++;
-            }
-            
-            // その他設定
-            if (userData.examDate) {
-                DataManager.examDate = new Date(userData.examDate);
-                localStorage.setItem('examDate', userData.examDate);
-                restoredCount++;
-            }
-            
-            if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
-                DataManager.bookOrder = userData.bookOrder;
-                localStorage.setItem('bookOrder', JSON.stringify(userData.bookOrder));
-                restoredCount++;
-            }
-
-            if (userData.heatmapPinnedBook) {
-                DataManager.heatmapPinnedBook = userData.heatmapPinnedBook;
-                localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
-                restoredCount++;
-            }
-
-            if (userData.radarPinnedBook) {
-                DataManager.radarPinnedBook = userData.radarPinnedBook;
-                localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
-                restoredCount++;
-            }
-
-            if (userData.analysisCardOrder && Array.isArray(userData.analysisCardOrder)) {
-                DataManager.analysisCardOrder = userData.analysisCardOrder;
-                localStorage.setItem('analysisCardOrder', JSON.stringify(userData.analysisCardOrder));
-                restoredCount++;
-            }
-            
-            console.log(`✅ 全データ復元完了 - ${restoredCount}項目`);
-            
-            if (restoredCount > 0) {
-                showRestoreNotification(restoredCount, userData.syncCount || 0);
-                updateAllUI();
-            }
-            
-        } catch (error) {
-            console.error("❌ データ復元エラー:", error);
-        }
-    }
-
-    // 🖥️ UI更新（カレンダー再描画を強化）
-    function updateAllUI() {
-        setTimeout(() => {
-            try {
-                if (window.App && typeof App.renderBookCards === 'function') {
-                    App.renderBookCards();
-                }
-                if (window.Analytics && typeof Analytics.updateHistoryContent === 'function') {
-                    Analytics.updateHistoryContent();
-                    Analytics.updateHeatmapBookSelect();
-                    Analytics.updateRadarBookSelect();
-                }
-                if (window.UIComponents) {
-                    // カレンダーを強制的に再描画
-                    if (typeof UIComponents.renderCalendar === 'function') {
-                        UIComponents.renderCalendar();
-                        console.log("✅ カレンダー再描画完了");
-                    }
-                    if (typeof UIComponents.updateExamCountdown === 'function') {
-                        UIComponents.updateExamCountdown();
-                    }
-                }
-                // KeyPointsModuleの再初期化
-                if (window.KeyPointsModule && typeof KeyPointsModule.loadKeyPointsData === 'function') {
-                    KeyPointsModule.loadKeyPointsData();
-                    console.log("✅ KeyPointsModule再読み込み完了");
-                }
-                console.log("✅ UI更新完了");
-            } catch (error) {
-                console.error("⚠️ UI更新エラー:", error);
-            }
-        }, 200);
-    }
-
-    // 🔔 通知機能
-    function showSuccessNotification(recordCount, syncCount) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #4caf50, #66bb6a);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
-            z-index: 9999;
-            font-weight: 600;
-            animation: slideInRight 0.3s ease;
-        `;
-        notification.innerHTML = `
-            ✅ 保存完了！<br>
-            記録: ${recordCount}件<br>
-            同期: ${syncCount}回<br>
-            ID: ${ULTRA_STABLE_USER_ID?.substr(0, 12)}...
-        `;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 3000);
-    }
-
-    function showRestoreNotification(restoredCount, syncCount) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: linear-gradient(135deg, #2196f3, #42a5f5);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
-            z-index: 9999;
-            font-weight: 600;
-            animation: slideInRight 0.3s ease;
-        `;
-        notification.innerHTML = `
-            🔄 データ復元完了！<br>
-            復元: ${restoredCount}項目<br>
-            同期: ${syncCount}回<br>
-            固定ID使用中
-        `;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 4000);
-    }
-
-    function showErrorNotification(message) {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, #f44336, #ef5350);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4);
-            z-index: 9999;
-            font-weight: 600;
-            animation: slideInRight 0.3s ease;
-        `;
-        notification.innerHTML = `❌ エラー<br>${message}`;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 5000);
-    }
-
-    // 🎯 全保存処理のFirebase統合拡張
-    
-    // 1. 学習記録保存の拡張
-    const originalSaveRecord = App.saveRecord;
-    App.saveRecord = function() {
-        console.log("💾 学習記録保存（超安定ID版）");
-        originalSaveRecord.call(this);
-        
-        if (!ULTRA_STABLE_USER_ID) {
-            console.error("❌ 固定IDが未設定のため保存スキップ");
-            return;
-        }
-        
-        const record = {
-            type: "studyRecord",
-            bookId: this.currentBook?.id,
-            bookName: this.currentBook?.name,
-            path: this.currentPath ? [...this.currentPath] : [],
-            questionsCount: this.questionStates ? Object.keys(this.questionStates).length : 0,
-            stats: {
-                total: parseInt(document.getElementById('totalCount')?.textContent || '0'),
-                correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
-                wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
-                rate: document.getElementById('correctRate')?.textContent || '0%'
-            }
-        };
-        
-        DataManager.saveToFirestore(record);
-    };
-
-    // 2. カレンダー（学習計画）保存の拡張
-    const originalSavePlan = UIComponents.savePlan;
-    UIComponents.savePlan = function() {
-        console.log("📅 学習計画保存（Firebase統合版）");
-        originalSavePlan.call(this);
-        
-        if (ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "studyPlan",
-                action: "save",
-                planCount: DataManager.studyPlans ? DataManager.studyPlans.length : 0,
-                message: "学習計画を保存しました"
-            });
-        }
-    };
-
-    // 3. 問題集データ保存の拡張
-    const originalSaveBooksToStorage = DataManager.saveBooksToStorage;
-    DataManager.saveBooksToStorage = function() {
-        console.log("📚 問題集データ保存（Firebase統合版）");
-        originalSaveBooksToStorage.call(this);
-        
-        if (ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "bookData",
-                action: "save",
-                bookCount: Object.keys(this.books || {}).length,
-                message: "問題集データを保存しました"
-            });
-        }
-    };
-
-    // 4. 一問一答保存の拡張
-    const originalSaveQAQuestions = DataManager.saveQAQuestions;
-    DataManager.saveQAQuestions = function() {
-        console.log("❓ 一問一答保存（Firebase統合版）");
-        originalSaveQAQuestions.call(this);
-        
-        if (ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "qaQuestions",
-                action: "save",
-                setCount: Object.keys(this.qaQuestions || {}).length,
-                message: "一問一答を保存しました"
-            });
-        }
-    };
-
-    // 5. 要点確認データ保存の拡張（KeyPointsModuleが読み込まれた後に適用）
-    function extendKeyPointsModule() {
-        if (window.KeyPointsModule && typeof KeyPointsModule.saveKeyPointsData === 'function') {
-            const originalSaveKeyPointsData = KeyPointsModule.saveKeyPointsData;
-            KeyPointsModule.saveKeyPointsData = function() {
-                console.log("📚 要点確認保存（Firebase統合版）");
-                originalSaveKeyPointsData.call(this);
-                
-                if (ULTRA_STABLE_USER_ID) {
-                    DataManager.saveToFirestore({
-                        type: "keyPoints",
-                        action: "save",
-                        message: "要点確認データを保存しました"
-                    });
-                }
-            };
-            console.log("✅ KeyPointsModule Firebase統合完了");
-        }
-    }
-
-    // 6. 試験日設定保存の拡張
-    const originalSaveExamDate = DataManager.saveExamDate;
-    DataManager.saveExamDate = function(date) {
-        console.log("📅 試験日設定保存（Firebase統合版）");
-        const result = originalSaveExamDate.call(this, date);
-        
-        if (result && ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "examDate",
-                action: "save",
-                examDate: date ? date.toISOString() : null,
-                message: "試験日を設定しました"
-            });
-        }
-        
-        return result;
-    };
-
-    // 7. CSVテンプレート保存の拡張
-    const originalSaveCSVTemplates = DataManager.saveCSVTemplates;
-    DataManager.saveCSVTemplates = function() {
-        console.log("📄 CSVテンプレート保存（Firebase統合版）");
-        originalSaveCSVTemplates.call(this);
-        
-        if (ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "csvTemplates",
-                action: "save",
-                templateCount: Object.keys(this.csvTemplates || {}).length,
-                message: "CSVテンプレートを保存しました"
-            });
-        }
-    };
-
-    // 8. 問題状態保存の拡張
-    const originalSaveQuestionStates = DataManager.saveQuestionStates;
-    DataManager.saveQuestionStates = function(bookId, path, states) {
-        console.log("✍️ 問題状態保存（Firebase統合版）");
-        originalSaveQuestionStates.call(this, bookId, path, states);
-        
-        if (ULTRA_STABLE_USER_ID) {
-            DataManager.saveToFirestore({
-                type: "questionStates",
-                action: "save",
-                bookId: bookId,
-                path: path ? path.join('/') : '',
-                stateCount: Object.keys(states || {}).length,
-                message: "問題状態を保存しました"
-            });
-        }
-    };
-
-    // 🎛️ 管理ボタン追加 + 全モジュール拡張
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log("🎛️ 管理ボタン追加 + 全モジュール拡張");
-        
-        // モジュール拡張を少し遅延して実行（全モジュール読み込み後）
-        setTimeout(() => {
-            extendKeyPointsModule();
-            extendQAModule();
-            extendAppModule();
-            console.log("✅ 全モジュールFirebase統合拡張完了");
-        }, 500);
-        
-        setTimeout(() => {
-            const header = document.querySelector('.app-header');
-            if (header && ULTRA_STABLE_USER_ID) {
-                // 既存ボタン削除
-                const existing = header.querySelector('[data-firebase-btn]');
-                if (existing) existing.remove();
-                
-                // 保存テストボタン
-                const testBtn = document.createElement('button');
-                testBtn.setAttribute('data-firebase-btn', 'true');
-                testBtn.textContent = '🔒超安定';
-                testBtn.style.cssText = `
-                    position: absolute;
-                    top: 20px;
-                    left: 20px;
-                    background: linear-gradient(135deg, #9c27b0, #673ab7);
-                    border: none;
-                    border-radius: 8px;
-                    color: white;
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    font-weight: bold;
-                    box-shadow: 0 3px 15px rgba(156, 39, 176, 0.4);
-                    z-index: 1000;
-                `;
-                testBtn.onclick = function() {
-                    const testData = {
-                        test: "超安定IDテスト_" + Date.now(),
-                        message: "キャッシュクリア対応テスト",
-                        stableId: ULTRA_STABLE_USER_ID,
-                        randomValue: Math.random(),
-                        testTime: new Date().toISOString()
-                    };
-                    DataManager.saveToFirestore(testData);
-                };
-                header.appendChild(testBtn);
-                
-                // ID情報ボタン
-                const infoBtn = document.createElement('button');
-                infoBtn.textContent = 'ℹ️';
-                infoBtn.style.cssText = `
-                    position: absolute;
-                    top: 20px;
-                    left: 85px;
-                    background: rgba(156, 39, 176, 0.8);
-                    border: none;
-                    border-radius: 50%;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    z-index: 1000;
-                `;
-                infoBtn.onclick = function() {
-                    showIdInfo();
-                };
-                header.appendChild(infoBtn);
-                
-                // 全保存テストボタン
-                const allSaveBtn = document.createElement('button');
-                allSaveBtn.textContent = '💾';
-                allSaveBtn.style.cssText = `
-                    position: absolute;
-                    top: 20px;
-                    left: 118px;
-                    background: rgba(76, 175, 80, 0.8);
-                    border: none;
-                    border-radius: 50%;
-                    color: white;
-                    width: 28px;
-                    height: 28px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    z-index: 1000;
-                `;
-                allSaveBtn.title = "全データ同期テスト";
-                allSaveBtn.onclick = function() {
-                    performFullDataSync();
-                };
-                header.appendChild(allSaveBtn);
-            }
-        }, 1000);
-    });
-
-    // 🔧 QAModule拡張関数
-    function extendQAModule() {
-        if (window.QAModule && typeof QAModule.addQuestion === 'function') {
-            const originalAddQuestion = QAModule.addQuestion;
-            QAModule.addQuestion = function(setName, question, answer) {
-                console.log("❓ 一問一答追加（Firebase統合版）");
-                const result = originalAddQuestion.call(this, setName, question, answer);
-                
-                if (result && ULTRA_STABLE_USER_ID) {
-                    DataManager.saveToFirestore({
-                        type: "qaQuestion",
-                        action: "add",
-                        setName: setName,
-                        message: "一問一答を追加しました"
-                    });
-                }
-                
-                return result;
-            };
-
-            const originalDeleteQuestion = QAModule.deleteQuestion;
-            QAModule.deleteQuestion = function(setName, questionId) {
-                console.log("❓ 一問一答削除（Firebase統合版）");
-                const result = originalDeleteQuestion.call(this, setName, questionId);
-                
-                if (result && ULTRA_STABLE_USER_ID) {
-                    DataManager.saveToFirestore({
-                        type: "qaQuestion",
-                        action: "delete",
-                        setName: setName,
-                        questionId: questionId,
-                        message: "一問一答を削除しました"
-                    });
-                }
-                
-                return result;
-            };
-            
-            console.log("✅ QAModule Firebase統合完了");
-        }
-    }
-
-    // 🔧 App.js内の各種保存処理拡張
-    function extendAppModule() {
-        if (window.App) {
-            // 問題集作成・編集の拡張
-            const originalShowNewBookDialog = App.showNewBookDialog;
-            if (typeof originalShowNewBookDialog === 'function') {
-                // 新規問題集作成時のFirebase保存は既に DataManager.saveBooksToStorage で対応済み
-                console.log("✅ App問題集作成 Firebase統合済み");
-            }
-
-            // 階層追加・編集の拡張
-            const originalAddHierarchy = App.addHierarchy;
-            if (typeof originalAddHierarchy === 'function') {
-                // 階層追加時のFirebase保存は既に DataManager.saveBooksToStorage で対応済み
-                console.log("✅ App階層管理 Firebase統合済み");
-            }
-            
-            console.log("✅ App全体 Firebase統合完了");
-        }
-    }
-
-    // 🔄 全データ同期テスト
-    function performFullDataSync() {
-        if (!ULTRA_STABLE_USER_ID) {
-            alert("固定IDが未設定です");
-            return;
-        }
-
-        const syncData = {
-            type: "fullDataSync",
-            action: "manual",
-            timestamp: new Date().toISOString(),
-            dataSnapshot: {
-                books: Object.keys(DataManager.books || {}).length,
-                records: (DataManager.allRecords || []).length,
-                plans: (DataManager.studyPlans || []).length,
-                qaQuestions: Object.keys(DataManager.qaQuestions || {}).length,
-                csvTemplates: Object.keys(DataManager.csvTemplates || {}).length
+        // データストレージ
+        let studyData = {
+            subjects: {},
+            points: {
+                'minpou-1': '民法総則における意思表示の基本原則について、虚偽表示は無効となる（民法94条）',
+                'minpou-2': '法人の能力について、権利能力は定款に定められた目的の範囲内で認められる',
+                'minpou-3': '代理人の権限について、表見代理が成立する3つのパターンを理解する必要がある',
+                'minpou-5': '時効の中断事由：請求、差押え、承認の3つを覚える',
+                'minpou-8': '条件と期限の違い：条件は成就が不確実、期限は到来が確実'
             },
-            message: "手動全データ同期実行"
+            pinnedItems: []
         };
 
-        DataManager.saveToFirestore(syncData);
-        
-        // 成功通知
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 140px;
-            right: 20px;
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(255, 152, 0, 0.3);
-            z-index: 9999;
-            font-weight: 600;
-            animation: slideInRight 0.3s ease;
-        `;
-        notification.innerHTML = `
-            🔄 全データ同期実行！<br>
-            問題集: ${syncData.dataSnapshot.books}<br>
-            記録: ${syncData.dataSnapshot.records}<br>
-            計画: ${syncData.dataSnapshot.plans}
-        `;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 4000);
-    }
-
-    // 📋 ID情報表示
-    function showIdInfo() {
-        const info = `🔒 超安定固定ユーザーID
-
-    現在のID: ${ULTRA_STABLE_USER_ID}
-
-    保存状況:
-    ├ LocalStorage: ${localStorage.getItem('ultraStableUserId') ? '✅' : '❌'}
-    ├ SessionStorage: ${sessionStorage.getItem('ultraStableUserId') ? '✅' : '❌'}
-    ├ Cookie: ${getCookieValue('ultraStableUserId') ? '✅' : '❌'}
-    └ IndexedDB: 保存済み
-
-    このIDの特徴:
-    • 完全固定（時間要素なし）
-    • キャッシュクリア対応
-    • 複数ストレージ自動復元
-    • Firebase既存データ検索
-
-    キャッシュクリア後も安全に復元されます！`;
-
-        alert(info);
-    }
-
-    // 🎨 アニメーション追加
-    const style = document.createElement('style');
-    style.textContent = `
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    `;
-    document.head.appendChild(style);
-
-    // 🧹 リセット機能（デバッグ用）
-    window.resetUltraStableId = function() {
-        if (confirm('超安定IDをリセットしますか？\n\n⚠️新しいIDが生成されます')) {
-            localStorage.removeItem('ultraStableUserId');
-            sessionStorage.removeItem('ultraStableUserId');
-            setCookie('ultraStableUserId', '', -1);
-            location.reload();
+        // タブ切り替え
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.content');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            navItems.forEach(item => item.classList.remove('active'));
+            
+            // タブをアクティブにする
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            // 対応するナビゲーションもアクティブにする
+            if (tabName === 'record') {
+                navItems[0].classList.add('active');
+            }
         }
-    };
 
-    // デバッグ用関数をグローバルに
-    window.showIdInfo = showIdInfo;
-    window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
+        // 教材の展開/折りたたみ（改善版）
+        function toggleSubject(subjectId) {
+            const body = document.getElementById(subjectId + '-body');
+            const allBodies = document.querySelectorAll('.subject-body');
+            
+            // 他の教材を閉じる
+            allBodies.forEach(otherBody => {
+                if (otherBody.id !== subjectId + '-body') {
+                    otherBody.classList.remove('expanded');
+                }
+            });
+            
+            // 選択した教材をトグル
+            body.classList.toggle('expanded');
+        }
 
-    console.log("🔒 超安定Firebase統合完了");
-    console.log("🆔 現在のID:", ULTRA_STABLE_USER_ID);
-    console.log("🛠️ デバッグ: showIdInfo(), resetUltraStableId()");
+        // 階層の展開/折りたたみ
+        function toggleHierarchy(hierarchyId) {
+            const content = document.getElementById(hierarchyId);
+            const item = content.previousElementSibling;
+            const arrow = item.querySelector('span');
+            
+            content.classList.toggle('expanded');
+            
+            if (content.classList.contains('expanded')) {
+                arrow.textContent = arrow.textContent.replace('▶', '▼');
+            } else {
+                arrow.textContent = arrow.textContent.replace('▼', '▶');
+            }
+        }
+
+        // ピン留め機能
+        function togglePin(event, subjectId) {
+            event.stopPropagation();
+            const button = event.target;
+            button.classList.toggle('pinned');
+            
+            if (button.classList.contains('pinned')) {
+                studyData.pinnedItems.push(subjectId);
+            } else {
+                const index = studyData.pinnedItems.indexOf(subjectId);
+                if (index > -1) {
+                    studyData.pinnedItems.splice(index, 1);
+                }
+            }
+            
+            saveData();
+        }
+
+        // 分析タブのピン留め
+        function toggleAnalysisPin(button) {
+            button.classList.toggle('pinned');
+            saveData();
+        }
+
+        // 要点確認の表示/非表示
+        function togglePoint(event, pointId) {
+            event.stopPropagation();
+            const pointDisplay = document.getElementById(pointId);
+            const allPointDisplays = document.querySelectorAll('.point-display');
+            
+            // 他の要点を閉じる
+            allPointDisplays.forEach(display => {
+                if (display.id !== pointId) {
+                    display.classList.remove('show');
+                }
+            });
+            
+            // 選択した要点をトグル
+            pointDisplay.classList.toggle('show');
+        }
+
+        // モーダルを閉じる
+        function closeModal() {
+            document.getElementById('pointModal').classList.remove('active');
+        }
+
+        // 要点を保存
+        function savePoint() {
+            const questionId = document.getElementById('pointQuestionId').value;
+            const content = document.getElementById('pointContent').value;
+            
+            if (questionId && content) {
+                studyData.points[questionId] = content;
+                
+                // 既存の要点表示を更新
+                const existingDisplay = document.getElementById(questionId);
+                if (existingDisplay) {
+                    existingDisplay.innerHTML = `
+                        <h4>📖 要点確認 - ${questionId}</h4>
+                        <p>${content}</p>
+                    `;
+                }
+                
+                saveData();
+                closeModal();
+                
+                // フォームをクリア
+                document.getElementById('pointQuestionId').value = '';
+                document.getElementById('pointContent').value = '';
+                
+                alert('要点を保存しました');
+            } else {
+                alert('問題番号と要点内容を入力してください');
+            }
+        }
+
+        // CSVインポート機能
+        function importCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csv = e.target.result;
+                const lines = csv.split('\n');
+                
+                // ヘッダー行をスキップ
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line) {
+                        const [questionId, content] = line.split(',');
+                        if (questionId && content) {
+                            studyData.points[questionId.trim()] = content.trim();
+                        }
+                    }
+                }
+                
+                saveData();
+                alert('CSVファイルから要点をインポートしました');
+                updatePointDisplays();
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // 要点表示を更新
+        function updatePointDisplays() {
+            for (const [questionId, content] of Object.entries(studyData.points)) {
+                const existingDisplay = document.getElementById(questionId);
+                if (existingDisplay) {
+                    existingDisplay.innerHTML = `
+                        <h4>📖 要点確認 - ${questionId}</h4>
+                        <p>${content}</p>
+                    `;
+                }
+            }
+        }
+
+        // データ保存
+        function saveData() {
+            localStorage.setItem('studyData', JSON.stringify(studyData));
+        }
+
+        // データ読み込み
+        function loadData() {
+            const saved = localStorage.getItem('studyData');
+            if (saved) {
+                studyData = JSON.parse(saved);
+                updatePointDisplays();
+            }
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
     </script>
 </body>
 </html>
