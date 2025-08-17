@@ -1855,3 +1855,93 @@ body {
         font-size: 10px;
     }
 }
+
+/* ⭐ 一問一答アコーディオン用のスタイルを追加 */
+
+/* QAアコーディオン */
+.qa-accordion {
+    background: white;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: all 0.3s;
+}
+
+.qa-accordion-header {
+    padding: 20px;
+    background: var(--lighter);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+    font-weight: 600;
+    color: var(--dark);
+    border-radius: 15px;
+}
+
+.qa-accordion-header:hover {
+    background: var(--light);
+}
+
+.qa-accordion-header.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 15px 15px 0 0;
+}
+
+.qa-accordion-content {
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    background: white;
+}
+
+.qa-accordion-content.active {
+    max-height: 600px;
+    padding: 20px;
+    border-top: 1px solid var(--light);
+}
+
+.qa-accordion-arrow {
+    transition: transform 0.3s;
+    font-size: 14px;
+    color: var(--gray);
+}
+
+.qa-accordion-header.active .qa-accordion-arrow {
+    transform: rotate(180deg);
+    color: white;
+}
+
+/* ⭐ 選択された問題集コンテンツ用のスタイル */
+#selectedBookContent {
+    margin-top: 15px;
+    padding: 0 10px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ⭐ 階層リストのアニメーション改善 */
+.hierarchy-children {
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.hierarchy-children.expanded {
+    max-height: 2000px;
+    opacity: 1;
+}
