@@ -179,21 +179,51 @@ class DataManagerClass {
     }
 
     /**
-     * 削除済みアイテムを除外してフィルタリング
+     * 削除済みアイテムを除外してフィルタリング（一問一答対応版）
      */
     filterDeletedItems(data, type) {
         if (Array.isArray(data)) {
             return data.filter(item => !this.isDeleted(type, item.id));
         } else if (typeof data === 'object') {
-            const filtered = {};
-            Object.keys(data).forEach(key => {
-                if (!this.isDeleted(type, key)) {
-                    filtered[key] = data[key];
-                }
-            });
-            return filtered;
+            if (type === 'qaQuestions') {
+                // ★追加: 一問一答の場合は個別問題も除外
+                const filtered = {};
+                Object.keys(data).forEach(setName => {
+                    if (!this.isDeleted('qaQuestions', setName)) {
+                        // 問題集レベルで削除されていない場合、個別問題をチェック
+                        if (Array.isArray(data[setName])) {
+                            const filteredQuestions = data[setName].filter(q => 
+                                !this.isDeletedQAQuestion(setName, q.id)
+                            );
+                            if (filteredQuestions.length > 0) {
+                                filtered[setName] = filteredQuestions;
+                            }
+                        }
+                    }
+                });
+                return filtered;
+            } else {
+                const filtered = {};
+                Object.keys(data).forEach(key => {
+                    if (!this.isDeleted(type, key)) {
+                        filtered[key] = data[key];
+                    }
+                });
+                return filtered;
+            }
         }
         return data;
+    }
+
+    /**
+     * 一問一答の個別問題が削除済みかチェック（★追加）
+     */
+    isDeletedQAQuestion(setName, questionId) {
+        return this.deletedItems.some(item => 
+            item.type === 'qa' && 
+            item.setName === setName && 
+            item.questionId === questionId
+        );
     }
 
     /**
@@ -216,6 +246,16 @@ class DataManagerClass {
             this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
             this.saveBooksToStorage();
             this.saveBookOrder();
+        } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
+            // ★追加: 一問一答の個別問題削除対応
+            if (this.qaQuestions[additionalData.setName]) {
+                this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
+                    .filter(q => q.id !== additionalData.questionId);
+                if (this.qaQuestions[additionalData.setName].length === 0) {
+                    delete this.qaQuestions[additionalData.setName];
+                }
+                this.saveQAQuestions();
+            }
         }
         
         // Firebaseにも保存
@@ -609,11 +649,31 @@ class DataManagerClass {
     }
 
     /**
-     * 一問一答問題の保存
+     * 一問一答問題の保存（削除済み除外強化版）
      */
     saveQAQuestions() {
         try {
-            localStorage.setItem('qaQuestions', JSON.stringify(this.qaQuestions));
+            // ★追加: 削除済み問題を除外してから保存
+            const filteredQuestions = {};
+            Object.keys(this.qaQuestions).forEach(setName => {
+                if (!this.isDeleted('qaQuestions', setName)) {
+                    const questions = this.qaQuestions[setName];
+                    if (Array.isArray(questions)) {
+                        const filteredQuestionsInSet = questions.filter(q => 
+                            !this.isDeletedQAQuestion(setName, q.id)
+                        );
+                        if (filteredQuestionsInSet.length > 0) {
+                            filteredQuestions[setName] = filteredQuestionsInSet;
+                        }
+                    }
+                }
+            });
+            
+            localStorage.setItem('qaQuestions', JSON.stringify(filteredQuestions));
+            this.qaQuestions = filteredQuestions; // ★追加: 内部データも更新
+            
+            console.log(`💾 一問一答保存: ${Object.keys(filteredQuestions).length}セット（削除済み除外済み）`);
+            
             if (this.firebaseEnabled) {
                 this.saveToFirebase().catch(error => {
                     console.warn('Firebase save failed:', error);
