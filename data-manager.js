@@ -1063,10 +1063,11 @@ class DataManagerClass {
             }
             
             for (let i = startIndex; i < lines.length; i++) {
-                const parts = lines[i].split(',').map(p => p.trim());
-                const [subject, chapter, section, subsection, startNum, endNum] = parts;
-                
-                if (!subject) continue;
+    // ★追加: より堅牢なCSVパース処理
+    const parts = this.parseCSVLine(lines[i]);
+    const [subject, chapter, section, subsection, startNum, endNum] = parts;
+    
+    if (!subject || subject.trim() === '') continue;
                 
                 // 科目を追加
                 if (!book.structure[subject]) {
