@@ -463,40 +463,18 @@ class DataManagerClass {
      * 問題集順序の読み込み（削除済み除外）
      */
     loadBookOrder() {
-    try {
-        const saved = localStorage.getItem('bookOrder');
-        if (saved) {
-            this.bookOrder = JSON.parse(saved).filter(id => !this.isDeleted('books', id));
-        } else {
-            // ★追加: createdAt順で安定した初期順序を作成
-            this.bookOrder = Object.keys(this.books)
-                .filter(id => !this.isDeleted('books', id))
-                .sort((a, b) => {
-                    const bookA = this.books[a];
-                    const bookB = this.books[b];
-                    const timeA = bookA.createdAt ? new Date(bookA.createdAt).getTime() : 0;
-                    const timeB = bookB.createdAt ? new Date(bookB.createdAt).getTime() : 0;
-                    return timeA - timeB;
-                });
+        try {
+            const saved = localStorage.getItem('bookOrder');
+            if (saved) {
+                this.bookOrder = JSON.parse(saved).filter(id => !this.isDeleted('books', id));
+            } else {
+                this.bookOrder = Object.keys(this.books);
+            }
+        } catch (error) {
+            console.error('Error loading book order:', error);
+            this.bookOrder = Object.keys(this.books);
         }
-        
-        // ★追加: 順序が変更された場合は保存
-        this.saveBookOrder();
-    } catch (error) {
-        console.error('Error loading book order:', error);
-        // ★追加: エラー時もcreatedAt順で安定した順序を作成
-        this.bookOrder = Object.keys(this.books)
-            .filter(id => !this.isDeleted('books', id))
-            .sort((a, b) => {
-                const bookA = this.books[a];
-                const bookB = this.books[b];
-                const timeA = bookA.createdAt ? new Date(bookA.createdAt).getTime() : 0;
-                const timeB = bookB.createdAt ? new Date(bookB.createdAt).getTime() : 0;
-                return timeA - timeB;
-            });
-        this.saveBookOrder();
     }
-}
 
     /**
      * 問題集順序の保存
