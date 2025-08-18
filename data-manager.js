@@ -1023,125 +1023,199 @@ class DataManagerClass {
     }
 
     /**
-     * CSVインポート処理
-     */
-    importCSV(bookName, csvData, numberingType) {
-        try {
-            const lines = csvData.trim().split('\n');
+ * CSVインポート処理
+ */
+importCSV(bookName, csvData, numberingType) {
+    try {
+        const lines = csvData.trim().split('\n');
+        
+        // 既存の問題集を探す
+        let bookId = null;
+        let book = null;
+        
+        for (let id in this.books) {
+            if (this.books[id].name === bookName && !this.isDeleted('books', id)) {
+                bookId = id;
+                book = this.books[id];
+                break;
+            }
+        }
+        
+        // 新規作成または既存に追加
+        if (!book) {
+            bookId = 'book_' + Date.now();
+            book = {
+                id: bookId,
+                name: bookName,
+                examType: 'gyousei',
+                numberingType: numberingType,
+                structure: {},
+                hierarchyOrder: {}, // ★追加: 階層順序管理
+                createdAt: new Date().toISOString()
+            };
+            this.books[bookId] = book;
+            this.bookOrder.push(bookId);
+        }
+        
+        // ★追加: 階層順序管理の初期化
+        if (!book.hierarchyOrder) {
+            book.hierarchyOrder = {};
+        }
+        
+        // ヘッダー行をスキップ
+        let startIndex = 0;
+        if (lines[0].includes('科目') || lines[0].includes('章')) {
+            startIndex = 1;
+        }
+        
+        // ★追加: 順序管理用カウンター
+        let subjectOrder = 0;
+        let chapterOrder = {};
+        let sectionOrder = {};
+        let subsectionOrder = {};
+        
+        for (let i = startIndex; i < lines.length; i++) {
+            const parts = lines[i].split(',').map(p => p.trim());
+            const [subject, chapter, section, subsection, startNum, endNum] = parts;
             
-            // 既存の問題集を探す
-            let bookId = null;
-            let book = null;
+            if (!subject) continue;
             
-            for (let id in this.books) {
-                if (this.books[id].name === bookName && !this.isDeleted('books', id)) {
-                    bookId = id;
-                    book = this.books[id];
-                    break;
+            // 科目を追加
+            if (!book.structure[subject]) {
+                book.structure[subject] = {
+                    type: 'subject',
+                    children: {}
+                };
+                // ★追加: 科目順序を記録
+                if (!book.hierarchyOrder[subject]) {
+                    book.hierarchyOrder[subject] = { order: subjectOrder++ };
                 }
             }
             
-            // 新規作成または既存に追加
-            if (!book) {
-                bookId = 'book_' + Date.now();
-                book = {
-                    id: bookId,
-                    name: bookName,
-                    examType: 'gyousei',
-                    numberingType: numberingType,
-                    structure: {},
-                    createdAt: new Date().toISOString()
-                };
-                this.books[bookId] = book;
-                this.bookOrder.push(bookId);
-            }
-            
-            // ヘッダー行をスキップ
-            let startIndex = 0;
-            if (lines[0].includes('科目') || lines[0].includes('章')) {
-                startIndex = 1;
-            }
-            
-            for (let i = startIndex; i < lines.length; i++) {
-                const parts = lines[i].split(',').map(p => p.trim());
-                const [subject, chapter, section, subsection, startNum, endNum] = parts;
-                
-                if (!subject) continue;
-                
-                // 科目を追加
-                if (!book.structure[subject]) {
-                    book.structure[subject] = {
-                        type: 'subject',
+            if (chapter) {
+                // 章を追加
+                if (!book.structure[subject].children[chapter]) {
+                    book.structure[subject].children[chapter] = {
+                        type: 'chapter',
                         children: {}
                     };
+                    // ★追加: 章順序を記録
+                    const chapterKey = `${subject}/${chapter}`;
+                    if (!chapterOrder[chapterKey]) {
+                        chapterOrder[chapterKey] = Object.keys(book.structure[subject].children).length - 1;
+                        if (!book.hierarchyOrder[subject].children) {
+                            book.hierarchyOrder[subject].children = {};
+                        }
+                        book.hierarchyOrder[subject].children[chapter] = { order: chapterOrder[chapterKey] };
+                    }
                 }
                 
-                if (chapter) {
-                    // 章を追加
-                    if (!book.structure[subject].children[chapter]) {
-                        book.structure[subject].children[chapter] = {
-                            type: 'chapter',
+                if (section) {
+                    // 節を追加
+                    if (!book.structure[subject].children[chapter].children[section]) {
+                        book.structure[subject].children[chapter].children[section] = {
+                            type: 'section',
                             children: {}
                         };
+                        // ★追加: 節順序を記録
+                        const sectionKey = `${subject}/${chapter}/${section}`;
+                        if (!sectionOrder[sectionKey]) {
+                            sectionOrder[sectionKey] = Object.keys(book.structure[subject].children[chapter].children).length - 1;
+                            if (!book.hierarchyOrder[subject].children[chapter].children) {
+                                book.hierarchyOrder[subject].children[chapter].children = {};
+                            }
+                            book.hierarchyOrder[subject].children[chapter].children[section] = { order: sectionOrder[sectionKey] };
+                        }
                     }
                     
-                    if (section) {
-                        // 節を追加
-                        if (!book.structure[subject].children[chapter].children[section]) {
-                            book.structure[subject].children[chapter].children[section] = {
-                                type: 'section',
-                                children: {}
+                    if (subsection) {
+                        // 項を追加
+                        if (!book.structure[subject].children[chapter].children[section].children[subsection]) {
+                            book.structure[subject].children[chapter].children[section].children[subsection] = {
+                                type: 'subsection'
                             };
+                            // ★追加: 項順序を記録
+                            const subsectionKey = `${subject}/${chapter}/${section}/${subsection}`;
+                            if (!subsectionOrder[subsectionKey]) {
+                                subsectionOrder[subsectionKey] = Object.keys(book.structure[subject].children[chapter].children[section].children).length - 1;
+                                if (!book.hierarchyOrder[subject].children[chapter].children[section].children) {
+                                    book.hierarchyOrder[subject].children[chapter].children[section].children = {};
+                                }
+                                book.hierarchyOrder[subject].children[chapter].children[section].children[subsection] = { order: subsectionOrder[subsectionKey] };
+                            }
                         }
                         
-                        if (subsection) {
-                            // 項を追加
-                            if (!book.structure[subject].children[chapter].children[section].children[subsection]) {
-                                book.structure[subject].children[chapter].children[section].children[subsection] = {
-                                    type: 'subsection'
-                                };
-                            }
-                            
-                            // 項に問題を追加
-                            if (startNum && endNum) {
-                                const questions = [];
-                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
-                                    questions.push(j);
-                                }
-                                book.structure[subject].children[chapter].children[section].children[subsection].questions = questions;
-                            }
-                        } else {
-                            // 節に問題を追加
-                            if (startNum && endNum) {
-                                const questions = [];
-                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
-                                    questions.push(j);
-                                }
-                                book.structure[subject].children[chapter].children[section].questions = questions;
-                            }
-                        }
-                    } else {
-                        // 章に問題を追加
+                        // 項に問題を追加
                         if (startNum && endNum) {
                             const questions = [];
                             for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
                                 questions.push(j);
                             }
-                            book.structure[subject].children[chapter].questions = questions;
+                            book.structure[subject].children[chapter].children[section].children[subsection].questions = questions;
                         }
+                    } else {
+                        // 節に問題を追加
+                        if (startNum && endNum) {
+                            const questions = [];
+                            for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
+                                questions.push(j);
+                            }
+                            book.structure[subject].children[chapter].children[section].questions = questions;
+                        }
+                    }
+                } else {
+                    // 章に問題を追加
+                    if (startNum && endNum) {
+                        const questions = [];
+                        for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
+                            questions.push(j);
+                        }
+                        book.structure[subject].children[chapter].questions = questions;
                     }
                 }
             }
-            
-            this.saveBooksToStorage();
-            this.saveBookOrder();
-            
-            return true;
-        } catch (error) {
-            console.error('CSV import error:', error);
-            return false;
+        }
+        
+        this.saveBooksToStorage();
+        this.saveBookOrder();
+        
+        return true;
+    } catch (error) {
+        console.error('CSV import error:', error);
+        return false;
+    }
+}
+
+/**
+ * ★追加: 階層を順序に従ってソートするヘルパー関数
+ */
+getSortedHierarchyEntries(structure, hierarchyOrder, currentPath = []) {
+    if (!structure || !hierarchyOrder) {
+        return Object.entries(structure || {});
+    }
+    
+    // 現在の階層の順序情報を取得
+    let currentOrder = hierarchyOrder;
+    for (const pathPart of currentPath) {
+        if (currentOrder && currentOrder.children) {
+            currentOrder = currentOrder.children[pathPart];
+        } else {
+            currentOrder = null;
+            break;
         }
     }
+    
+    // 順序情報が存在する場合はソート、存在しない場合は元の順序を維持
+    const entries = Object.entries(structure);
+    if (currentOrder && currentOrder.children) {
+        return entries.sort((a, b) => {
+            const aOrder = currentOrder.children[a[0]]?.order ?? 999;
+            const bOrder = currentOrder.children[b[0]]?.order ?? 999;
+            return aOrder - bOrder;
+        });
+    }
+    
+    return entries;
 }
 
 // グローバルに公開（シングルトンインスタンス）
