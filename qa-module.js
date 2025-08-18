@@ -494,22 +494,29 @@ class QAModuleClass {
                 html += `<h5>${setName} (${questions.length}問)</h5>`;
                 
                 questions.forEach(q => {
-                    html += `
-                        <div class="delete-list-item">
-                            <div>
-                                <div style="font-weight: 600; font-size: 14px;">
-                                    ${q.question}
-                                </div>
-                                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                                    ${q.answer}
-                                </div>
-                            </div>
-                            <button class="delete-btn" 
-                                    onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                                🗑️
-                            </button>
-                        </div>
-                    `;
+    html += `
+        <div class="delete-list-item">
+            <div>
+                <div style="font-weight: 600; font-size: 14px;">
+                    ${q.question}
+                </div>
+                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                    ${q.answer}
+                </div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button class="edit-btn" 
+                        onclick="QAModule.editQuestion('${setName}', ${q.id})"
+                        style="background: var(--secondary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    ✏️編集
+                </button>
+                <button class="delete-btn" 
+                        onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `;
                 });
             }
         });
