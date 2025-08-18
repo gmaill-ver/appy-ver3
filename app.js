@@ -159,10 +159,44 @@ class Application {
             }
         }
         
-        // 兄弟要素のリストを作成（ソート済み）
+        // ★修正: 自然順ソート関数（renderRecordLevelと同じ）
+        const naturalSort = (a, b) => {
+            const extractNumbers = (str) => {
+                const parts = str.split(/(\d+)/);
+                return parts.map(part => {
+                    const num = parseInt(part, 10);
+                    return isNaN(num) ? part : num;
+                });
+            };
+            
+            const aParts = extractNumbers(a[0]);
+            const bParts = extractNumbers(b[0]);
+            
+            for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i];
+                const bPart = bParts[i];
+                
+                if (typeof aPart === 'number' && typeof bPart === 'number') {
+                    if (aPart !== bPart) return aPart - bPart;
+                } else if (typeof aPart === 'string' && typeof bPart === 'string') {
+                    const comp = aPart.localeCompare(bPart);
+                    if (comp !== 0) return comp;
+                } else {
+                    return typeof aPart === 'number' ? -1 : 1;
+                }
+            }
+            return aParts.length - bParts.length;
+        };
+        
+        // ★修正: orderプロパティ優先、なければ自然順ソート
         const siblings = Object.entries(parentStructure)
             .filter(([name, item]) => item.questions && item.questions.length > 0)
-            .sort((a, b) => a[0].localeCompare(b[0]));
+            .sort((a, b) => {
+                const orderA = a[1].order !== undefined ? a[1].order : Infinity;
+                const orderB = b[1].order !== undefined ? b[1].order : Infinity;
+                if (orderA !== orderB) return orderA - orderB;
+                return naturalSort(a, b);
+            });
         
         // 現在のインデックスを見つける
         const currentIndex = siblings.findIndex(([name]) => name === currentName);
