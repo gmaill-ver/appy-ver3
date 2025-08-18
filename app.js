@@ -553,10 +553,48 @@ class Application {
     renderRecordLevel(structure, basePath) {
         let html = '';
         
-        // ★追加: キーをソートして順序を固定（この行を Object.entries の前に追加）
-        const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
+        // ★修正: 数値を含む文字列を正しくソートする関数
+        const naturalSort = (a, b) => {
+            // 数字を含む文字列を分解して比較
+            const extractNumbers = (str) => {
+                const parts = str.split(/(\d+)/);
+                return parts.map(part => {
+                    const num = parseInt(part, 10);
+                    return isNaN(num) ? part : num;
+                });
+            };
+            
+            const aParts = extractNumbers(a);
+            const bParts = extractNumbers(b);
+            
+            for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i];
+                const bPart = bParts[i];
+                
+                if (typeof aPart === 'number' && typeof bPart === 'number') {
+                    if (aPart !== bPart) return aPart - bPart;
+                } else if (typeof aPart === 'string' && typeof bPart === 'string') {
+                    const comp = aPart.localeCompare(bPart);
+                    if (comp !== 0) return comp;
+                } else {
+                    return typeof aPart === 'number' ? -1 : 1;
+                }
+            }
+            return aParts.length - bParts.length;
+        };
         
-        sortedEntries.forEach(([name, item]) => {  // ★変更: Object.entries(structure) を sortedEntries に変更
+        // ★修正: orderプロパティがある場合はそれを使用、なければ自然順ソート
+        const sortedEntries = Object.entries(structure).sort((a, b) => {
+            // orderプロパティを優先
+            const orderA = a[1].order !== undefined ? a[1].order : Infinity;
+            const orderB = b[1].order !== undefined ? b[1].order : Infinity;
+            if (orderA !== orderB) return orderA - orderB;
+            
+            // orderがない場合は自然順ソート
+            return naturalSort(a[0], b[0]);
+        });
+        
+        sortedEntries.forEach(([name, item]) => {
             const currentPath = [...basePath, name];
             const pathStr = currentPath.join('/');
             const hasChildren = item.children && Object.keys(item.children).length > 0;
