@@ -639,10 +639,23 @@
                             resolve(true);
                         };
                         
-                        putRequest.onerror = (error) => {
-                            console.error("❌ IndexedDB保存エラー:", error);
-                            resolve(false);
-                        };
+                        request.onerror = (event) => {
+    console.error("❌ IndexedDBオープンエラー:", event);
+    // ★追加: エラー時でもアプリ継続のためにフォールバック
+    try {
+        // LocalStorageで代替
+        const fallbackValue = localStorage.getItem(key);
+        if (fallbackValue) {
+            console.log("📝 LocalStorageからフォールバック取得");
+            resolve(fallbackValue);
+        } else {
+            resolve(false);
+        }
+    } catch (fallbackError) {
+        console.error("フォールバックも失敗:", fallbackError);
+        resolve(false);
+    }
+};
                         
                         transaction.onerror = (error) => {
                             console.error("❌ IndexedDBトランザクションエラー:", error);
