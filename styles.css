@@ -604,6 +604,7 @@ body {
     align-items: center;
     gap: 10px;
     margin-bottom: 15px;
+    position: relative; 
     padding-bottom: 10px;
     border-bottom: 1px solid var(--light);
 }
@@ -1228,6 +1229,31 @@ body {
 }
 
 /* 問題グリッド */
+/* ★追加: ナビゲーションボタンのスタイル */
+.question-nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.nav-btn {
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.nav-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
 .question-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
