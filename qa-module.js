@@ -258,22 +258,38 @@ class QAModuleClass {
         if (!confirm('この問題を削除しますか？')) {
             return false;
         }
-
         if (!DataManager.qaQuestions[setName]) {
             return false;
         }
-
+        
+        // ★追加: 削除済みアイテムリストに追加
+        if (!DataManager.deletedItems) {
+            DataManager.deletedItems = [];
+        }
+        DataManager.deletedItems.push({
+            type: 'qa',
+            setName: setName,
+            questionId: questionId,
+            deletedAt: new Date().toISOString()
+        });
+        localStorage.setItem('deletedItems', JSON.stringify(DataManager.deletedItems));
+        
         DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName]
             .filter(q => q.id !== questionId);
-
         if (DataManager.qaQuestions[setName].length === 0) {
             delete DataManager.qaQuestions[setName];
         }
-
         DataManager.saveQAQuestions();
+        
+        // ★追加: リストを更新
+        const listContent = document.getElementById('qaListContent');
+        if (listContent) {
+            listContent.innerHTML = this.renderQAList();
+        }
+        
         return true;
     }
-
+    
     /**
      * アコーディオントグル ★追加
      */
@@ -282,7 +298,7 @@ class QAModuleClass {
         const icon = document.getElementById('accordionIcon');
         
         if (section && icon) {
-            if (section.style.display === 'none') {
+            if (section.style.display === 'none' || section.style.display === '') {
                 section.style.display = 'block';
                 icon.textContent = '▼';
             } else {
