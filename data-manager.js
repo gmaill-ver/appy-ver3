@@ -249,14 +249,21 @@ class DataManagerClass {
         } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
             // ★追加: 一問一答の個別問題削除対応
             if (this.qaQuestions[additionalData.setName]) {
-                this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
-                    .filter(q => q.id !== additionalData.questionId);
-                if (this.qaQuestions[additionalData.setName].length === 0) {
-                    delete this.qaQuestions[additionalData.setName];
-                }
+                this.qaQuestions[additionalData.setName] = 
+                    this.qaQuestions[additionalData.setName].filter(q => 
+                        q.id !== additionalData.questionId
+                    );
                 this.saveQAQuestions();
             }
         }
+        
+        // Firebase同期
+        if (this.firebaseEnabled) {
+            this.saveToFirebase().catch(error => {
+                console.warn('Firebase delete sync failed:', error);
+            });
+        }
+    }
         
         // Firebaseにも保存
         if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
