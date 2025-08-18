@@ -1155,10 +1155,18 @@ _scheduleFirebaseSave() {
                 }
             }
             
-            this.saveBooksToStorage();
-            this.saveBookOrder();
-            
-            return true;
+            // ★追加: インポート中フラグを設定
+this._isImporting = true;
+
+this.saveBooksToStorage();
+this.saveBookOrder();
+
+// ★追加: インポート完了後にフラグをクリア
+setTimeout(() => {
+    this._isImporting = false;
+}, 5000); // 5秒後にフラグクリア
+
+return true;
         } catch (error) {
             console.error('CSV import error:', error);
             return false;
