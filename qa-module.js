@@ -506,7 +506,7 @@ class QAModuleClass {
                             </div>
                             <button class="delete-btn" 
                                     onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                                削除
+                                🗑️
                             </button>
                         </div>
                     `;
