@@ -558,11 +558,11 @@ editQuestion(setName, questionId) {
                 <button class="edit-btn" 
                         onclick="QAModule.editQuestion('${setName}', ${q.id})"
                         style="background: var(--secondary); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                    ✏️
+                    ✏️編集
                 </button>
                 <button class="delete-btn" 
                         onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                    🗑️
+                    削除
                 </button>
             </div>
         </div>
