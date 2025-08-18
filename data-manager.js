@@ -1061,20 +1061,12 @@ class DataManagerClass {
             if (lines[0].includes('科目') || lines[0].includes('章')) {
                 startIndex = 1;
             }
-
-            // ★追加: インポート成功数をカウント
-        let importedCount = 0;
-        let errorCount = 0;
-        
-        for (let i = startIndex; i < lines.length; i++) {
-            try {
             
             for (let i = startIndex; i < lines.length; i++) {
-    // ★追加: より堅牢なCSVパース処理
-    const parts = this.parseCSVLine(lines[i]);
-    const [subject, chapter, section, subsection, startNum, endNum] = parts;
-    
-    if (!subject || subject.trim() === '') continue;
+                const parts = lines[i].split(',').map(p => p.trim());
+                const [subject, chapter, section, subsection, startNum, endNum] = parts;
+                
+                if (!subject) continue;
                 
                 // 科目を追加
                 if (!book.structure[subject]) {
@@ -1140,63 +1132,6 @@ class DataManagerClass {
                     }
                 }
             }
-
-            importedCount++; // ★追加
-            } catch (lineError) {
-                console.error(`Line ${i + 1} parse error:`, lineError);
-                errorCount++; // ★追加
-            }
-        }
-        
-        // ★追加: 結果ログ出力
-        console.log(`CSV Import Results: ${importedCount} success, ${errorCount} errors`);
-        
-        this.saveBooksToStorage();
-        this.saveBookOrder();
-        
-        return true;
-    } catch (error) {
-        console.error('CSV import error:', error);
-        return false;
-    }
-}
-
-// ★追加: CSVライン解析メソッド
-parseCSVLine(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    let i = 0;
-    
-    while (i < line.length) {
-        const char = line[i];
-        
-        if (char === '"') {
-            if (inQuotes && line[i + 1] === '"') {
-                // エスケープされた引用符
-                current += '"';
-                i += 2;
-            } else {
-                // 引用符の開始または終了
-                inQuotes = !inQuotes;
-                i++;
-            }
-        } else if (char === ',' && !inQuotes) {
-            // フィールドの区切り
-            result.push(current.trim());
-            current = '';
-            i++;
-        } else {
-            current += char;
-            i++;
-        }
-    }
-    
-    // 最後のフィールドを追加
-    result.push(current.trim());
-    
-    return result;
-}
             
             this.saveBooksToStorage();
             this.saveBookOrder();
