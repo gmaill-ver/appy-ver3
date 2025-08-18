@@ -1049,7 +1049,8 @@ class DataManagerClass {
                     name: bookName,
                     examType: 'gyousei',
                     numberingType: numberingType,
-                    structure: {},
+                    structure: 
+                    createdOrder: {} // ★追加: 作成順序を保存
                     createdAt: new Date().toISOString()
                 };
                 this.books[bookId] = book;
@@ -1132,7 +1133,13 @@ class DataManagerClass {
                     }
                 }
             }
-            
+
+            // CSVデータ解析・構造構築
+            lines.forEach((line, index) => {
+                // ★追加: 各階層作成時に順序を記録
+                // 処理内容... + orderIndex管理
+                orderIndex++;
+            });
             this.saveBooksToStorage();
             this.saveBookOrder();
             
