@@ -640,20 +640,23 @@ class Application {
                         grid.appendChild(note);
                     }
                     
-                    item.questions.forEach(num => {
-                        const cell = document.createElement('div');
-                        cell.className = 'question-cell';
-                        cell.textContent = num;
-                        cell.dataset.number = num;
-                        cell.onclick = () => this.toggleQuestion(num);
-                        
-                        grid.appendChild(cell);
-                        
-                        this.questionStates[num] = {
-                            state: null,
-                            bookmarked: false
-                        };
-                    });
+                    // ★修正: 問題番号を数値として正しくソート
+const sortedQuestions = [...item.questions].sort((a, b) => parseInt(a) - parseInt(b));
+
+sortedQuestions.forEach(num => {
+    const cell = document.createElement('div');
+    cell.className = 'question-cell';
+    cell.textContent = num;
+    cell.dataset.number = num;
+    cell.onclick = () => this.toggleQuestion(num);
+    
+    grid.appendChild(cell);
+    
+    this.questionStates[num] = {
+        state: null,
+        bookmarked: false
+    };
+});
                     
                     this.loadQuestionStatesForPath();
                     return;
