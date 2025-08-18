@@ -115,10 +115,22 @@ class DataManagerClass {
             
             if (userDoc.exists) {
                 const data = userDoc.data();
+                
+                // ★追加: 削除済みアイテムリストを先に読み込む
+                if (data.deletedItems && Array.isArray(data.deletedItems)) {
+                    this.deletedItems = data.deletedItems;
+                }
+                
                 // Firebaseからデータを復元（削除済みアイテムチェック付き）
                 if (data.books && typeof data.books === 'object') {
-                    // 削除済みアイテムを除外して復元
-                    this.books = this.filterDeletedItems(data.books, 'books');
+                    // ★追加: 削除済みの問題集を除外
+                    const filteredBooks = {};
+                    Object.keys(data.books).forEach(bookId => {
+                        if (!this.isDeleted('books', bookId)) {
+                            filteredBooks[bookId] = data.books[bookId];
+                        }
+                    });
+                    this.books = filteredBooks;
                 }
                 if (data.bookOrder && Array.isArray(data.bookOrder)) {
                     this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
@@ -141,9 +153,6 @@ class DataManagerClass {
                     } catch (e) {
                         console.warn('Invalid exam date from Firebase');
                     }
-                }
-                if (data.deletedItems && Array.isArray(data.deletedItems)) {
-                    this.deletedItems = data.deletedItems;
                 }
                 
                 // ローカルにも保存
@@ -356,11 +365,38 @@ class DataManagerClass {
     }
 
     /**
-     * 問題集データの保存
+     * 問題集データの保存（階層順序を保持）
      */
     saveBooksToStorage() {
         try {
-            localStorage.setItem('studyTrackerBooks', JSON.stringify(this.books));
+            // ★追加: 階層の順序を固定化
+            const orderedBooks = {};
+            Object.keys(this.books).forEach(bookId => {
+                const book = this.books[bookId];
+                const orderedStructure = {};
+                
+                // 階層の順序を保持して再構築
+                if (book.structure) {
+                    Object.keys(book.structure).sort().forEach(subjectKey => {
+                        orderedStructure[subjectKey] = book.structure[subjectKey];
+                    });
+                }
+                
+                orderedBooks[bookId] = {
+                    ...book,
+                    structure: orderedStructure
+                };
+            });
+            
+            localStorage.setItem('studyTrackerBooks', JSON.stringify(orderedBooks));
+            this.books = orderedBooks; // ★追加: 内部データも更新
+            
+            // Firebaseにも保存（エラーが発生しても継続）
+            if (this.firebaseEnabled) {
+                this.saveToFirebase().catch(error => {
+                    console.warn('Firebase save failed:', error);
+                });
+            }
         } catch (error) {
             console.error('Error saving books:', error);
             if (error.name === 'QuotaExceededError') {
