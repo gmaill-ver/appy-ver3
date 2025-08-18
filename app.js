@@ -139,45 +139,6 @@ class Application {
     }
 
     /**
-     * 問題ナビゲーション（前後移動） ★追加
-     */
-    navigateQuestion(direction) {
-        if (!this.currentPath || this.currentPath.length === 0) return;
-        
-        const currentBook = this.currentBook;
-        if (!currentBook) return;
-        
-        // 現在の階層パスから親階層を取得
-        const parentPath = this.currentPath.slice(0, -1);
-        const currentName = this.currentPath[this.currentPath.length - 1];
-        
-        // 親階層の構造を取得
-        let parentStructure = currentBook.structure;
-        for (let i = 0; i < parentPath.length; i++) {
-            if (parentStructure[parentPath[i]]) {
-                parentStructure = parentStructure[parentPath[i]].children || {};
-            }
-        }
-        
-        // 兄弟要素のリストを作成（ソート済み）
-        const siblings = Object.entries(parentStructure)
-            .filter(([name, item]) => item.questions && item.questions.length > 0)
-            .sort((a, b) => a[0].localeCompare(b[0]));
-        
-        // 現在のインデックスを見つける
-        const currentIndex = siblings.findIndex(([name]) => name === currentName);
-        if (currentIndex === -1) return;
-        
-        // 次/前の要素を取得
-        const newIndex = currentIndex + direction;
-        if (newIndex >= 0 && newIndex < siblings.length) {
-            const [newName] = siblings[newIndex];
-            const newPath = [...parentPath, newName].join('/');
-            this.showQuestions(newPath);
-        }
-    }
-
-    /**
      * フッタータブ切り替え（カレンダー予定保存強化版）
      */
     switchFooterTab(tabName, event) {
@@ -552,12 +513,6 @@ class Application {
 
     renderRecordLevel(structure, basePath) {
         let html = '';
-        
-        // ★追加: キーをソートして順序を固定
-        const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
-        
-        sortedEntries.forEach(([name, item]) => {
-            const currentPath = [...basePath, name];
         
         Object.entries(structure).forEach(([name, item]) => {
             const currentPath = [...basePath, name];
