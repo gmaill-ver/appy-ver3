@@ -426,16 +426,35 @@ class Application {
 
         let html = '';
         
+        // ★修正: bookOrderが正しく読み込まれていることを確認
+        if (!DataManager.bookOrder || DataManager.bookOrder.length === 0) {
+            DataManager.loadBookOrder();
+        }
+        
         const orderedBooks = DataManager.bookOrder
             .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
             .map(id => DataManager.books[id]);
         
-        Object.values(DataManager.books).forEach(book => {
-            if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
-                orderedBooks.push(book);
-                DataManager.bookOrder.push(book.id);
-            }
+        // ★修正: 順序に含まれていない問題集はcreatedAt順で追加
+        const missingBooks = Object.values(DataManager.books)
+            .filter(book => !DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id))
+            .sort((a, b) => {
+                const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return timeA - timeB;
+            });
+        
+        missingBooks.forEach(book => {
+            orderedBooks.push(book);
+            DataManager.bookOrder.push(book.id);
         });
+        
+        // ★追加: 順序が更新された場合は保存
+        if (missingBooks.length > 0) {
+            DataManager.saveBookOrder();
+        }
+        
+        orderedBooks.forEach(book => {
         
         orderedBooks.forEach(book => {
             const questionCount = DataManager.countQuestionsInBook(book);
