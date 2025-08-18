@@ -351,7 +351,9 @@ class QAModuleClass {
         const sets = this.getSetList();
         
         let html = `
+            <!-- ★順序入れ替え: 問題開始を先に -->
             <div class="qa-card">
+                <h4>問題開始</h4>
                 <div class="qa-selector">
                     <select id="qaSetSelect">
                         <option value="">問題集を選択</option>
@@ -384,26 +386,32 @@ class QAModuleClass {
                 <div id="qaContent"></div>
             </div>
             
+            <!-- ★アコーディオン化: 問題を手動追加 -->
             <div class="card" style="margin-top: 20px;">
-                <h4>問題を手動追加</h4>
-                <div class="form-group">
-                    <label class="form-label">問題集名</label>
-                    <input type="text" class="form-control" id="qaNewSetName" 
-                           placeholder="問題集名">
+                <div class="accordion-header" onclick="QAModule.toggleAddSection()" style="cursor: pointer; padding: 10px; background: var(--light); border-radius: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <h4 style="margin: 0;">問題を手動追加</h4>
+                    <span id="accordionIcon">▶</span>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">問題文</label>
-                    <textarea class="form-control" id="qaNewQuestion" rows="3" 
-                              placeholder="問題文を入力"></textarea>
+                <div id="addQuestionSection" style="display: none; padding-top: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">問題集名</label>
+                        <input type="text" class="form-control" id="qaNewSetName" 
+                               placeholder="問題集名">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">問題文</label>
+                        <textarea class="form-control" id="qaNewQuestion" rows="3" 
+                                  placeholder="問題文を入力"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">答え</label>
+                        <textarea class="form-control" id="qaNewAnswer" rows="3" 
+                                  placeholder="答えを入力"></textarea>
+                    </div>
+                    <button class="save-button" onclick="QAModule.handleAddQuestion()">
+                        問題を追加
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">答え</label>
-                    <textarea class="form-control" id="qaNewAnswer" rows="3" 
-                              placeholder="答えを入力"></textarea>
-                </div>
-                <button class="save-button" onclick="QAModule.handleAddQuestion()">
-                    問題を追加
-                </button>
             </div>
             
             <div class="card" style="margin-top: 20px;">
