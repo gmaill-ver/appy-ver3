@@ -281,10 +281,10 @@ class QAModuleClass {
         }
         DataManager.saveQAQuestions();
         
-        // ★追加: リストを更新
+        // ★修正: this.renderQAList() にする
         const listContent = document.getElementById('qaListContent');
         if (listContent) {
-            listContent.innerHTML = this.renderQAList();
+            listContent.innerHTML = this.renderQAList();  // ★this. を追加
         }
         
         return true;
