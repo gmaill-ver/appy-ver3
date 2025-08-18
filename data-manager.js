@@ -1,6 +1,6 @@
 /**
  * DataManager - データ管理・LocalStorage操作モジュール
- * Firebase対応版（削除処理統合）
+ * Firebase対応版（削除処理統合・根本修正版）
  */
 class DataManagerClass {
     constructor() {
@@ -101,7 +101,7 @@ class DataManagerClass {
     }
 
     /**
-     * Firebaseとの同期（削除済みアイテム対応）
+     * Firebaseとの同期（削除済みアイテム対応・根本修正版）
      */
     async syncWithFirebase() {
         if (!this.firebaseEnabled || !this.currentUser) return;
@@ -116,14 +116,15 @@ class DataManagerClass {
             if (userDoc.exists) {
                 const data = userDoc.data();
                 
-                // ★追加: 削除済みアイテムリストを先に読み込む
+                // ★追加: 削除済みアイテムリストを最初に読み込み（重要！）
                 if (data.deletedItems && Array.isArray(data.deletedItems)) {
                     this.deletedItems = data.deletedItems;
+                    this.saveDeletedItems(); // ローカルにも即座に保存
+                    console.log(`🗑️ 削除済みアイテム読み込み: ${data.deletedItems.length}件`);
                 }
                 
-                // Firebaseからデータを復元（削除済みアイテムチェック付き）
+                // ★修正: 削除済みアイテムを除外してからデータ復元
                 if (data.books && typeof data.books === 'object') {
-                    // ★追加: 削除済みの問題集を除外
                     const filteredBooks = {};
                     Object.keys(data.books).forEach(bookId => {
                         if (!this.isDeleted('books', bookId)) {
@@ -131,6 +132,7 @@ class DataManagerClass {
                         }
                     });
                     this.books = filteredBooks;
+                    console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
                 }
                 if (data.bookOrder && Array.isArray(data.bookOrder)) {
                     this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
@@ -195,7 +197,7 @@ class DataManagerClass {
     }
 
     /**
-     * アイテム削除処理（Firebase統合）
+     * アイテム削除処理（Firebase統合・強化版）
      */
     markAsDeleted(type, id, additionalData = {}) {
         const deletedItem = {
@@ -208,6 +210,14 @@ class DataManagerClass {
         this.deletedItems.push(deletedItem);
         this.saveDeletedItems();
         
+        // ★追加: ローカルからも即座に削除
+        if (type === 'books') {
+            delete this.books[id];
+            this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
+            this.saveBooksToStorage();
+            this.saveBookOrder();
+        }
+        
         // Firebaseにも保存
         if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
             this.saveToFirestore({
@@ -219,7 +229,7 @@ class DataManagerClass {
             });
         }
         
-        console.log(`✅ ${type}:${id} を削除済みとしてマーク`);
+        console.log(`✅ ${type}:${id} を削除済みとしてマーク＆即座削除`);
     }
 
     /**
@@ -282,6 +292,7 @@ class DataManagerClass {
      */
     loadAllData() {
         try {
+            this.loadDeletedItems(); // ★重要: 削除済みアイテムを最初に読み込み
             this.loadBooksFromStorage();
             this.loadBookOrder();
             this.loadAllRecords();
@@ -292,7 +303,6 @@ class DataManagerClass {
             this.loadExamDate();
             this.loadAnalysisCardOrder();
             this.loadPinnedSettings();
-            this.loadDeletedItems(); // 削除済みアイテムも読み込み
         } catch (error) {
             console.error('Error loading data:', error);
             // 個別のエラーがあっても他のデータは読み込む
@@ -365,31 +375,35 @@ class DataManagerClass {
     }
 
     /**
-     * 問題集データの保存（階層順序を保持）
+     * 問題集データの保存（階層順序を保持・削除済み除外強化版）
      */
     saveBooksToStorage() {
         try {
-            // ★追加: 階層の順序を固定化
-            const orderedBooks = {};
+            // ★追加: 削除済みアイテムを除外してから保存
+            const filteredBooks = {};
             Object.keys(this.books).forEach(bookId => {
-                const book = this.books[bookId];
-                const orderedStructure = {};
-                
-                // 階層の順序を保持して再構築
-                if (book.structure) {
-                    Object.keys(book.structure).sort().forEach(subjectKey => {
-                        orderedStructure[subjectKey] = book.structure[subjectKey];
-                    });
+                if (!this.isDeleted('books', bookId)) {
+                    const book = this.books[bookId];
+                    const orderedStructure = {};
+                    
+                    // ★追加: 階層の順序を固定化
+                    if (book.structure) {
+                        Object.keys(book.structure).sort().forEach(subjectKey => {
+                            orderedStructure[subjectKey] = book.structure[subjectKey];
+                        });
+                    }
+                    
+                    filteredBooks[bookId] = {
+                        ...book,
+                        structure: orderedStructure
+                    };
                 }
-                
-                orderedBooks[bookId] = {
-                    ...book,
-                    structure: orderedStructure
-                };
             });
             
-            localStorage.setItem('studyTrackerBooks', JSON.stringify(orderedBooks));
-            this.books = orderedBooks; // ★追加: 内部データも更新
+            localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
+            this.books = filteredBooks; // ★追加: 内部データも更新
+            
+            console.log(`💾 問題集保存: ${Object.keys(filteredBooks).length}件（削除済み除外済み）`);
             
             // Firebaseにも保存（エラーが発生しても継続）
             if (this.firebaseEnabled) {
@@ -427,7 +441,10 @@ class DataManagerClass {
      */
     saveBookOrder() {
         try {
-            localStorage.setItem('bookOrder', JSON.stringify(this.bookOrder));
+            // ★追加: 削除済み除外
+            const filteredOrder = this.bookOrder.filter(id => !this.isDeleted('books', id));
+            localStorage.setItem('bookOrder', JSON.stringify(filteredOrder));
+            this.bookOrder = filteredOrder;
         } catch (error) {
             console.error('Error saving book order:', error);
         }
