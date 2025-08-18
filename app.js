@@ -1747,17 +1747,24 @@ class Application {
         const newStructure = {};
         const subjectElements = childrenContainer.querySelectorAll(':scope > .hierarchy-item');
         
-        subjectElements.forEach(elem => {
+        // ★追加: 順序情報を付与
+        subjectElements.forEach((elem, index) => {
             const label = elem.querySelector('.hierarchy-label');
             if (label) {
                 const subjectName = label.textContent.trim();
                 if (book.structure[subjectName]) {
-                    newStructure[subjectName] = book.structure[subjectName];
+                    newStructure[subjectName] = {
+                        ...book.structure[subjectName],
+                        order: index  // ★追加: 順序情報を保存
+                    };
                 }
             }
         });
         
         book.structure = newStructure;
+        
+        // ★追加: 即座に保存して記録入力タブに反映
+        DataManager.saveBooksToStorage();
     }
 
     getTypeLabel(type) {
