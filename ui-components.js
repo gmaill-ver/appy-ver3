@@ -80,7 +80,7 @@ class UIComponentsClass {
             if (plans.length > 0) {
                 planTexts = '<div class="calendar-day-plans">';
                 plans.forEach(plan => {
-                    const displayText = plan.displayType === 'bullet' ? '・' : plan.title.substring(0, 8);
+                    const displayText = plan.displayType === 'bullet' ? '・' : (plan.title || '').substring(0, 8);
                     planTexts += `<div class="calendar-plan-text" style="color: ${plan.color};">${displayText}</div>`;
                 });
                 planTexts += '</div>';
