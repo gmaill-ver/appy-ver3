@@ -267,6 +267,56 @@ class QAModuleClass {
             setName: setName,
             questionId: questionId
         });
+
+    /**
+ * 問題を編集（★追加）
+ */
+editQuestion(setName, questionId) {
+    if (!DataManager.qaQuestions[setName]) {
+        return false;
+    }
+    
+    // 該当の問題を探す
+    const questions = DataManager.qaQuestions[setName];
+    const questionIndex = questions.findIndex(q => q.id === questionId);
+    
+    if (questionIndex === -1) {
+        alert('問題が見つかりません');
+        return false;
+    }
+    
+    const question = questions[questionIndex];
+    
+    // 編集ダイアログを表示
+    const newQuestion = prompt('問題文を編集してください:', question.question);
+    if (newQuestion === null) return false; // キャンセル
+    
+    const newAnswer = prompt('答えを編集してください:', question.answer);
+    if (newAnswer === null) return false; // キャンセル
+    
+    if (!newQuestion.trim() || !newAnswer.trim()) {
+        alert('問題文と答えを入力してください');
+        return false;
+    }
+    
+    // 問題を更新
+    questions[questionIndex] = {
+        ...question,
+        question: newQuestion.trim(),
+        answer: newAnswer.trim()
+    };
+    
+    DataManager.saveQAQuestions();
+    
+    // リストを更新
+    const listContent = document.getElementById('qaListContent');
+    if (listContent) {
+        listContent.innerHTML = this.renderQAList();
+    }
+    
+    alert('問題を更新しました');
+    return true;
+}
         
         // リストを更新
         const listContent = document.getElementById('qaListContent');
