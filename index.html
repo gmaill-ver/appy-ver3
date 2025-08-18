@@ -807,7 +807,7 @@
                     ...data,
                     timestamp: new Date().toISOString(),
                     deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-                    recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6)
+                    recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
                 };
                 
                 existingData.studyRecords.unshift(newRecord);
@@ -1072,7 +1072,7 @@
             ✅ 保存完了！<br>
             記録: ${recordCount}件<br>
             同期: ${syncCount}回<br>
-            ID: ${ULTRA_STABLE_USER_ID?.substr(0, 12)}...
+            ID: ${ULTRA_STABLE_USER_ID?.substring(0, 12)}...
         `;
         document.body.appendChild(notification);
         
