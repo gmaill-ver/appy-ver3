@@ -514,7 +514,10 @@ class Application {
     renderRecordLevel(structure, basePath) {
         let html = '';
         
-        Object.entries(structure).forEach(([name, item]) => {
+        // ★追加: キーをソートして順序を固定（この行を Object.entries の前に追加）
+        const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
+        
+        sortedEntries.forEach(([name, item]) => {  // ★変更: Object.entries(structure) を sortedEntries に変更
             const currentPath = [...basePath, name];
             const pathStr = currentPath.join('/');
             const hasChildren = item.children && Object.keys(item.children).length > 0;
