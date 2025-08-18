@@ -1,5 +1,5 @@
 /**
- * QAModule - 一問一答専用モジュール
+ * QAModule - 一問一答専用モジュール（削除済み問題復活防止版）
  */
 class QAModuleClass {
     constructor() {
@@ -72,7 +72,7 @@ class QAModuleClass {
             return false;
         }
 
-        this.currentSet = [...DataManager.qaQuestions[setName]];
+        this.currentSet = [...this.getQuestions(setName)]; // ★修正: 削除済み問題を除外
         this.currentIndex = 0;
         this.answerShown = false;
         this.stats = {
@@ -298,7 +298,7 @@ class QAModuleClass {
     }
     
     /**
-     * アコーディオントグル ★追加
+     * アコーディオントグル
      */
     toggleAddSection() {
         const section = document.getElementById('addQuestionSection');
@@ -372,17 +372,33 @@ class QAModuleClass {
     }
 
     /**
-     * 問題集リストを取得
+     * 問題集リストを取得（削除済み除外版）
      */
     getSetList() {
-        return Object.keys(DataManager.qaQuestions || {});
+        const filteredSets = [];
+        Object.keys(DataManager.qaQuestions || {}).forEach(setName => {
+            if (!DataManager.isDeleted('qaQuestions', setName)) {
+                const questions = this.getQuestions(setName);
+                if (questions.length > 0) {
+                    filteredSets.push(setName);
+                }
+            }
+        });
+        return filteredSets;
     }
 
     /**
-     * 問題集の問題を取得
+     * 問題集の問題を取得（削除済み除外版）
      */
     getQuestions(setName) {
-        return DataManager.qaQuestions[setName] || [];
+        if (!DataManager.qaQuestions[setName] || DataManager.isDeleted('qaQuestions', setName)) {
+            return [];
+        }
+        
+        // ★追加: 削除済み問題をフィルタリング
+        return DataManager.qaQuestions[setName].filter(q => 
+            !DataManager.isDeletedQAQuestion(setName, q.id)
+        );
     }
 
     /**
@@ -465,32 +481,37 @@ class QAModuleClass {
     }
 
     /**
-     * 問題リストを生成
+     * 問題リストを生成（削除済み除外版）
      */
     renderQAList() {
         let html = '';
         
-        Object.entries(DataManager.qaQuestions || {}).forEach(([setName, questions]) => {
-            html += `<h5>${setName} (${questions.length}問)</h5>`;
+        // ★修正: getSetListを使用して削除済み問題集を除外
+        this.getSetList().forEach(setName => {
+            const questions = this.getQuestions(setName); // ★修正: 削除済み問題も除外
             
-            questions.forEach(q => {
-                html += `
-                    <div class="delete-list-item">
-                        <div>
-                            <div style="font-weight: 600; font-size: 14px;">
-                                ${q.question}
+            if (questions.length > 0) {
+                html += `<h5>${setName} (${questions.length}問)</h5>`;
+                
+                questions.forEach(q => {
+                    html += `
+                        <div class="delete-list-item">
+                            <div>
+                                <div style="font-weight: 600; font-size: 14px;">
+                                    ${q.question}
+                                </div>
+                                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                                    ${q.answer}
+                                </div>
                             </div>
-                            <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                                ${q.answer}
-                            </div>
+                            <button class="delete-btn" 
+                                    onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
+                                削除
+                            </button>
                         </div>
-                        <button class="delete-btn" 
-                                onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                            削除
-                        </button>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
         });
         
         if (!html) {
@@ -516,7 +537,8 @@ class QAModuleClass {
             return;
         }
         
-        if (!DataManager.qaQuestions[select.value]) {
+        const questions = this.getQuestions(select.value);
+        if (questions.length === 0) {
             alert('選択した問題集に問題がありません。');
             return;
         }
