@@ -604,7 +604,6 @@ body {
     align-items: center;
     gap: 10px;
     margin-bottom: 15px;
-    position: relative; 
     padding-bottom: 10px;
     border-bottom: 1px solid var(--light);
 }
@@ -641,34 +640,6 @@ body {
 /* 分析タブ - 同じデザインの並び替えボタン */
 .analysis-wrapper {
     position: relative;
-}
-
-.analysis-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    cursor: move;
-    transition: all 0.3s;
-    width: 100%; /* ★追加 */
-    box-sizing: border-box; /* ★追加 */
-}
-
-/* ★追加: 固定ボタンのスタイル変更 */
-.card-pin-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: transparent;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 5px;
-    transition: transform 0.2s;
-}
-
-.card-pin-btn:hover {
-    transform: scale(1.2);
 }
 
 .analysis-order-btn {
@@ -1257,31 +1228,6 @@ body {
 }
 
 /* 問題グリッド */
-/* ★追加: ナビゲーションボタンのスタイル */
-.question-nav-buttons {
-    display: flex;
-    gap: 10px;
-    margin-left: auto;
-}
-
-.nav-btn {
-    width: 35px;
-    height: 35px;
-    border: 1px solid var(--light);
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-}
-
-.nav-btn:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
 .question-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
