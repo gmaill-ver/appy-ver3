@@ -139,6 +139,45 @@ class Application {
     }
 
     /**
+     * 問題ナビゲーション（前後移動） ★追加: このメソッド全体を追加
+     */
+    navigateQuestion(direction) {
+        if (!this.currentPath || this.currentPath.length === 0) return;
+        
+        const currentBook = this.currentBook;
+        if (!currentBook) return;
+        
+        // 現在の階層パスから親階層を取得
+        const parentPath = this.currentPath.slice(0, -1);
+        const currentName = this.currentPath[this.currentPath.length - 1];
+        
+        // 親階層の構造を取得
+        let parentStructure = currentBook.structure;
+        for (let i = 0; i < parentPath.length; i++) {
+            if (parentStructure[parentPath[i]]) {
+                parentStructure = parentStructure[parentPath[i]].children || {};
+            }
+        }
+        
+        // 兄弟要素のリストを作成（ソート済み）
+        const siblings = Object.entries(parentStructure)
+            .filter(([name, item]) => item.questions && item.questions.length > 0)
+            .sort((a, b) => a[0].localeCompare(b[0]));
+        
+        // 現在のインデックスを見つける
+        const currentIndex = siblings.findIndex(([name]) => name === currentName);
+        if (currentIndex === -1) return;
+        
+        // 次/前の要素を取得
+        const newIndex = currentIndex + direction;
+        if (newIndex >= 0 && newIndex < siblings.length) {
+            const [newName] = siblings[newIndex];
+            const newPath = [...parentPath, newName].join('/');
+            this.showQuestions(newPath);
+        }
+    }
+
+    /**
      * フッタータブ切り替え（カレンダー予定保存強化版）
      */
     switchFooterTab(tabName, event) {
@@ -514,7 +553,10 @@ class Application {
     renderRecordLevel(structure, basePath) {
         let html = '';
         
-        Object.entries(structure).forEach(([name, item]) => {
+        // ★追加: キーをソートして順序を固定（この行を Object.entries の前に追加）
+        const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
+        
+        sortedEntries.forEach(([name, item]) => {  // ★変更: Object.entries(structure) を sortedEntries に変更
             const currentPath = [...basePath, name];
             const pathStr = currentPath.join('/');
             const hasChildren = item.children && Object.keys(item.children).length > 0;
@@ -1317,17 +1359,17 @@ class Application {
             </div>
         `;
         
-        if (type === 'chapter' || type === 'section' || type === 'subsection') {
-            dialogBody += `
-                <div class="form-group">
-                    <label class="form-label">問題番号範囲（任意）</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" class="form-control" id="questionStart" min="1" placeholder="開始番号" style="width: 100px;">
-                        <span>〜</span>
-                        <input type="number" class="form-control" id="questionEnd" min="1" placeholder="終了番号" style="width: 100px;">
-                    </div>
-                </div>
-            `;
+        if (type === 'subject' || type === 'chapter' || type === 'section' || type === 'subsection') {
+    dialogBody += `
+        <div class="form-group">
+            <label class="form-label">問題番号範囲（任意）</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" class="form-control" id="questionStart" min="1" placeholder="開始番号" style="width: 100px;">
+                <span>〜</span>
+                <input type="number" class="form-control" id="questionEnd" min="1" placeholder="終了番号" style="width: 100px;">
+            </div>
+        </div>
+    `;
             
             if (book.numberingType === 'continuous') {
                 dialogBody += `
