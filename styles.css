@@ -606,10 +606,37 @@ body {
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--light);
+    position: relative; /* ★追加 */
 }
 
 .card-icon {
     font-size: 20px;
+}
+
+/* ★追加: ナビゲーションボタンのスタイル */
+.question-nav-buttons {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.nav-btn {
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--light);
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.nav-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
 }
 
 .card-title {
