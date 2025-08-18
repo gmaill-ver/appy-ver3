@@ -586,12 +586,23 @@ class QAModuleClass {
      * 問題を削除
      */
     deleteQuestion(setName, questionId) {
-        if (!DataManager.qaQuestions[setName]) return false;
+        if (!confirm('この問題を削除しますか？')) return;
         
-        DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName].filter(q => q.id !== questionId);
+        if (!DataManager.qaQuestions[setName]) return;
         
-        if (DataManager.qaQuestions[setName].length === 0) {
-            delete DataManager.qaQuestions[setName];
+        // ★追加: 削除済みアイテムリストに追加
+        if (!DataManager.deletedItems) {
+            DataManager.deletedItems = [];
+        }
+        DataManager.deletedItems.push({
+            type: 'qa',
+            setName: setName,
+            questionId: questionId,
+            deletedAt: new Date().toISOString()
+        });
+        
+        DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName]
+            .filter(q => q.id !== questionId);
         }
         
         DataManager.saveQAQuestions();
