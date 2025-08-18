@@ -982,22 +982,13 @@
                 restoredCount++;
             }
             
+            if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
+                DataManager.bookOrder = userData.bookOrder;
+                localStorage.setItem('bookOrder', JSON.stringify(userData.bookOrder));
+                restoredCount++;
             }
-        
-        // ★修正: bookOrderの復元を強化
-        if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
-            // 削除済みでない問題集のみをフィルタリング
-            DataManager.bookOrder = userData.bookOrder.filter(id => 
-                DataManager.books[id] && !DataManager.isDeleted('books', id)
-            );
-            localStorage.setItem('bookOrder', JSON.stringify(DataManager.bookOrder));
-            restoredCount++;
-        } else {
-            // ★追加: bookOrderが存在しない場合は初期化
-            DataManager.loadBookOrder();
-        }
 
-        if (userData.heatmapPinnedBook) {
+            if (userData.heatmapPinnedBook) {
                 DataManager.heatmapPinnedBook = userData.heatmapPinnedBook;
                 localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
                 restoredCount++;
