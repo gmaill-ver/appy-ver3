@@ -275,6 +275,24 @@ class QAModuleClass {
     }
 
     /**
+     * アコーディオントグル ★追加
+     */
+    toggleAddSection() {
+        const section = document.getElementById('addQuestionSection');
+        const icon = document.getElementById('accordionIcon');
+        
+        if (section && icon) {
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                icon.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                icon.textContent = '▶';
+            }
+        }
+    }
+
+    /**
      * CSVからインポート
      */
     importFromCSV(setName, csvData) {
