@@ -124,12 +124,16 @@ class DataManagerClass {
                 }
                 
                 // ★修正: 削除済みアイテムを除外してからデータ復元
-                if (data.books && typeof data.books === 'object') {
-                    const filteredBooks = {};
-                    Object.keys(data.books).forEach(bookId => {
-                        if (!this.isDeleted('books', bookId)) {
-                            filteredBooks[bookId] = data.books[bookId];
-                        }
+                if (data.books && typeof data.books === 'object' && data.books !== null) {
+    // ★修正: null チェックを追加
+    const filteredBooks = {};
+    Object.keys(data.books).forEach(bookId => {
+        if (!this.isDeleted('books', bookId)) {
+            filteredBooks[bookId] = data.books[bookId];
+        }
+    });
+    this.books = filteredBooks;
+}
                     });
                     this.books = filteredBooks;
                     console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
