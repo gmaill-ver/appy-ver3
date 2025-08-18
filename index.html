@@ -1135,9 +1135,16 @@
         originalSaveRecord.call(this);
         
         if (!ULTRA_STABLE_USER_ID) {
-            console.error("❌ 固定IDが未設定のため保存スキップ");
-            return;
-        }
+    console.error("❌ 固定IDが未設定のため保存スキップ");
+    // ★追加: ローカルストレージのみで動作継続
+    try {
+        localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords || []));
+        console.log("📝 ローカルストレージに保存");
+    } catch (localError) {
+        console.error("ローカル保存も失敗:", localError);
+    }
+    return;
+}
         
         const record = {
             type: "studyRecord",
