@@ -1359,17 +1359,17 @@ class Application {
             </div>
         `;
         
-        if (type === 'chapter' || type === 'section' || type === 'subsection') {
-            dialogBody += `
-                <div class="form-group">
-                    <label class="form-label">問題番号範囲（任意）</label>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" class="form-control" id="questionStart" min="1" placeholder="開始番号" style="width: 100px;">
-                        <span>〜</span>
-                        <input type="number" class="form-control" id="questionEnd" min="1" placeholder="終了番号" style="width: 100px;">
-                    </div>
-                </div>
-            `;
+        if (type === 'subject' || type === 'chapter' || type === 'section' || type === 'subsection') {
+    dialogBody += `
+        <div class="form-group">
+            <label class="form-label">問題番号範囲（任意）</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" class="form-control" id="questionStart" min="1" placeholder="開始番号" style="width: 100px;">
+                <span>〜</span>
+                <input type="number" class="form-control" id="questionEnd" min="1" placeholder="終了番号" style="width: 100px;">
+            </div>
+        </div>
+    `;
             
             if (book.numberingType === 'continuous') {
                 dialogBody += `
