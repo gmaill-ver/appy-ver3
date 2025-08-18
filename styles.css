@@ -324,8 +324,10 @@ body {
 }
 
 .calendar-day.today {
-    background: var(--primary);
-    color: white;
+    border: 3px solid var(--primary);
+    background: rgba(52, 152, 219, 0.1);
+    color: var(--primary);
+    font-weight: bold;
 }
 
 .calendar-day.selected {
