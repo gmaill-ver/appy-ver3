@@ -477,12 +477,17 @@ class QAModuleClass {
                                 ${q.answer}
                             </div>
                         </div>
-                        <button class="delete-btn" 
-                                onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
-                            削除
-                        </button>
-                    </div>
-                `;
+                        html += `
+    <button class="qa-action-btn edit" 
+            onclick="QAModule.editQuestion('${setName}', ${q.id})">
+        ✏️
+    </button>
+    <button class="qa-action-btn delete" 
+            onclick="QAModule.deleteQuestion('${setName}', ${q.id})">
+        🗑️
+    </button>
+</div>
+`;
             });
         });
         
