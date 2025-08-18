@@ -385,15 +385,15 @@ class QAModuleClass {
             }
             
             for (let i = startIndex; i < lines.length; i++) {
-                // カンマを含む可能性があるため、正規表現で分割
-                const match = lines[i].match(/^"([^"]+)","([^"]+)"$|^([^,]+),(.+)$/);
-                if (match) {
-                    const question = (match[1] || match[3] || '').trim();
-                    const answer = (match[2] || match[4] || '').trim();
-                    
-                    if (question && answer) {
-                        questions.push({
-                            id: Date.now() + i,
+    // ★追加: より堅牢なCSVパース処理
+    const parts = this.parseCSVLine(lines[i]);
+    if (parts.length >= 2) {
+        const question = parts[0]?.trim();
+        const answer = parts[1]?.trim();
+        
+        if (question && answer) {
+            questions.push({
+                id: Date.now() + i,
                             question: question,
                             answer: answer
                         });
