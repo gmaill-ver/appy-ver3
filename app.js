@@ -551,14 +551,16 @@ class Application {
     }
 
     renderRecordLevel(structure, basePath) {
-    let html = '';
-    
-    // ★修正: データ保存時の順序を保持するため、Object.entriesの結果をソートせずそのまま使用
-    Object.entries(structure).forEach(([name, item]) => {
-        const currentPath = [...basePath, name];
-        const pathStr = currentPath.join('/');
-        const hasChildren = item.children && Object.keys(item.children).length > 0;
-        const isExpanded = this.expandedNodes.has(pathStr);
+        let html = '';
+        
+        // ★追加: キーをソートして順序を固定（この行を Object.entries の前に追加）
+        const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
+        
+        sortedEntries.forEach(([name, item]) => {  // ★変更: Object.entries(structure) を sortedEntries に変更
+            const currentPath = [...basePath, name];
+            const pathStr = currentPath.join('/');
+            const hasChildren = item.children && Object.keys(item.children).length > 0;
+            const isExpanded = this.expandedNodes.has(pathStr);
             
             html += `<div class="hierarchy-item">`;
             
@@ -670,9 +672,6 @@ class Application {
         if (states && Object.keys(states).length > 0) {
             this.questionStates = states;
             this.applyQuestionStates();
-
-            // ★追加: 自動保存機能
-            this.saveCurrentQuestions();
         }
     }
 
@@ -1147,14 +1146,13 @@ class Application {
     }
 
     renderRegisterLevel(structure, bookId, path) {
-    let html = '';
-    
-    // ★修正: データ保存時の順序を保持するため、Object.entriesの結果をそのまま使用
-    Object.entries(structure).forEach(([name, item]) => {
-        const currentPath = [...path, name];
-        const nodeId = `${bookId}_${currentPath.join('_')}`;
-        const hasChildren = item.children && Object.keys(item.children).length > 0;
-        const isExpanded = this.expandedNodes.has(nodeId);
+        let html = '';
+        
+        Object.entries(structure).forEach(([name, item]) => {
+            const currentPath = [...path, name];
+            const nodeId = `${bookId}_${currentPath.join('_')}`;
+            const hasChildren = item.children && Object.keys(item.children).length > 0;
+            const isExpanded = this.expandedNodes.has(nodeId);
             
             html += `
                 <div class="hierarchy-item">
