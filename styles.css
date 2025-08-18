@@ -1428,6 +1428,38 @@ body {
     border-radius: 15px;
     box-shadow: var(--shadow);
     overflow: hidden;
+    width: 100%; /* ★追加: 横幅いっぱいに */
+    box-sizing: border-box; /* ★追加 */
+}
+
+/* ★追加: 分析タブ専用のアコーディオンスタイル */
+#analysis-tab .accordion {
+    margin: 10px 0; /* 左右マージンを0に */
+}
+
+/* ★追加: 固定ボタンのスタイル（画像2のピンアイコン用） */
+.accordion-pin-btn {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+    opacity: 0.6;
+}
+
+.accordion-pin-btn:hover {
+    transform: translateY(-50%) scale(1.2);
+    opacity: 1;
+}
+
+.accordion-pin-btn.pinned {
+    opacity: 1;
+    color: var(--primary);
 }
 
 .accordion-header {
