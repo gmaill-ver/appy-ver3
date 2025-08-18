@@ -252,7 +252,7 @@ class QAModuleClass {
     }
 
     /**
-     * 問題を削除
+     * 問題を削除（DataManager連携版）
      */
     deleteQuestion(setName, questionId) {
         if (!confirm('この問題を削除しますか？')) {
@@ -262,29 +262,36 @@ class QAModuleClass {
             return false;
         }
         
-        // ★追加: 削除済みアイテムリストに追加
-        if (!DataManager.deletedItems) {
-            DataManager.deletedItems = [];
-        }
-        DataManager.deletedItems.push({
-            type: 'qa',
+        // ★修正: DataManagerのmarkAsDeletedを使用
+        DataManager.markAsDeleted('qa', `${setName}_${questionId}`, {
             setName: setName,
-            questionId: questionId,
-            deletedAt: new Date().toISOString()
+            questionId: questionId
         });
-        localStorage.setItem('deletedItems', JSON.stringify(DataManager.deletedItems));
         
-        DataManager.qaQuestions[setName] = DataManager.qaQuestions[setName]
-            .filter(q => q.id !== questionId);
-        if (DataManager.qaQuestions[setName].length === 0) {
-            delete DataManager.qaQuestions[setName];
-        }
-        DataManager.saveQAQuestions();
-        
-        // ★修正: this.renderQAList() にする
+        // リストを更新
         const listContent = document.getElementById('qaListContent');
         if (listContent) {
-            listContent.innerHTML = this.renderQAList();  // ★this. を追加
+            listContent.innerHTML = this.renderQAList();
+        }
+        
+        // セレクトボックスも更新
+        const select = document.getElementById('qaSetSelect');
+        if (select) {
+            const sets = this.getSetList();
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="">問題集を選択</option>';
+            sets.forEach(name => {
+                const count = this.getQuestions(name).length;
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = `${name} (${count}問)`;
+                select.appendChild(option);
+            });
+            
+            if (currentValue && sets.includes(currentValue)) {
+                select.value = currentValue;
+            }
         }
         
         return true;
