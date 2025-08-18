@@ -512,7 +512,7 @@ class AnalyticsClass {
             const x = centerX + Math.cos(angle) * (radius + 20);
             const y = centerY + Math.sin(angle) * (radius + 20);
             
-            const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
+            const shortName = subject && subject.length > 7 ? subject.substring(0, 6) + '...' : (subject || '');
             ctx.fillText(shortName, x, y);
             
             const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
