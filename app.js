@@ -519,10 +519,6 @@ class Application {
             const pathStr = currentPath.join('/');
             const hasChildren = item.children && Object.keys(item.children).length > 0;
             const isExpanded = this.expandedNodes.has(pathStr);
-            const sortedEntries = Object.entries(structure).sort((a, b) => a[0].localeCompare(b[0]));
-        
-        sortedEntries.forEach(([name, item]) => {
-            const currentPath = [...basePath, name];
             
             html += `<div class="hierarchy-item">`;
             
