@@ -46,6 +46,11 @@
                 <div class="card-header">
                     <span class="card-icon">✍️</span>
                     <span class="card-title">問題別正誤入力</span>
+                    <!-- ★追加: ページネーション -->
+                    <div class="question-nav-buttons">
+                        <button class="nav-btn" onclick="App.navigateQuestion(-1)" title="前へ">◀</button>
+                        <button class="nav-btn" onclick="App.navigateQuestion(1)" title="次へ">▶</button>
+                    </div>
                 </div>
                 
                 <div class="action-buttons">
