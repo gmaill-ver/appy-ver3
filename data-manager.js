@@ -418,46 +418,68 @@ class DataManagerClass {
      * 問題集データの保存（階層順序を保持・削除済み除外強化版）
      */
     saveBooksToStorage() {
-        try {
-            // ★追加: 削除済みアイテムを除外してから保存
-            const filteredBooks = {};
-            Object.keys(this.books).forEach(bookId => {
-                if (!this.isDeleted('books', bookId)) {
-                    const book = this.books[bookId];
-                    const orderedStructure = {};
-                    
-                    // ★追加: 階層の順序を固定化
-                    if (book.structure) {
-                        Object.keys(book.structure).sort().forEach(subjectKey => {
-                            orderedStructure[subjectKey] = book.structure[subjectKey];
-                        });
-                    }
-                    
-                    filteredBooks[bookId] = {
-                        ...book,
-                        structure: orderedStructure
-                    };
+    try {
+        // ★保持: 削除済みアイテムを除外してから保存
+        const filteredBooks = {};
+        Object.keys(this.books).forEach(bookId => {
+            if (!this.isDeleted('books', bookId)) {
+                const book = this.books[bookId];
+                const orderedStructure = {};
+                
+                // ★保持: 階層の順序を固定化（重要な機能）
+                if (book.structure) {
+                    Object.keys(book.structure).sort().forEach(subjectKey => {
+                        orderedStructure[subjectKey] = book.structure[subjectKey];
+                    });
                 }
+                
+                filteredBooks[bookId] = {
+                    ...book,
+                    structure: orderedStructure
+                };
+            }
+        });
+        
+        localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
+        this.books = filteredBooks;
+        
+        // ★修正: Firebase保存をCSVインポート時は遅延実行
+        if (this.firebaseEnabled && !this._isImporting) {
+            // 通常時は即座に保存
+            this.saveToFirebase().catch(error => {
+                console.warn('Firebase save failed:', error);
             });
-            
-            localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
-            this.books = filteredBooks; // ★追加: 内部データも更新
-            
-            console.log(`💾 問題集保存: ${Object.keys(filteredBooks).length}件（削除済み除外済み）`);
-            
-            // Firebaseにも保存（エラーが発生しても継続）
-            if (this.firebaseEnabled) {
-                this.saveToFirebase().catch(error => {
-                    console.warn('Firebase save failed:', error);
-                });
-            }
-        } catch (error) {
-            console.error('Error saving books:', error);
-            if (error.name === 'QuotaExceededError') {
-                alert('ストレージ容量が不足しています。古いデータを削除してください。');
-            }
+        } else if (this.firebaseEnabled && this._isImporting) {
+            // CSVインポート時は遅延保存をスケジュール
+            this._scheduleFirebaseSave();
+        }
+        
+    } catch (error) {
+        console.error('Error saving books:', error);
+        if (error.name === 'QuotaExceededError') {
+            alert('ストレージ容量が不足しています。古いデータを削除してください。');
         }
     }
+}
+
+/**
+ * ★追加: Firebase保存を遅延実行（CSVインポート用）
+ */
+_scheduleFirebaseSave() {
+    // 既存のタイマーをクリア
+    if (this._firebaseSaveTimer) {
+        clearTimeout(this._firebaseSaveTimer);
+    }
+    
+    // 3秒後にFirebase保存実行
+    this._firebaseSaveTimer = setTimeout(() => {
+        if (this.firebaseEnabled) {
+            this.saveToFirebase().catch(error => {
+                console.warn('Delayed Firebase save failed:', error);
+            });
+        }
+    }, 3000);
+}
 
     /**
      * 問題集順序の読み込み（削除済み除外）
