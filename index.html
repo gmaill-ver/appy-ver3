@@ -920,11 +920,12 @@
     }
 
     // 🔄 全データ復元処理（修正版）
+    // 🔄 全データ復元処理（修正版）
     function restoreAllDataFromFirebase(userData) {
         let restoredCount = 0;
         
         try {
-            // ★追加: 削除済みアイテムリストを最初に復元（重要！）
+            // ★追加: 削除済みアイテムリストを最初に復元（順序重要！）
             if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
                 DataManager.deletedItems = userData.deletedItems;
                 localStorage.setItem('deletedItems', JSON.stringify(userData.deletedItems));
