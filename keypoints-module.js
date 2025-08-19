@@ -673,19 +673,22 @@ class KeyPointsModuleClass {
                         `;
                         
                         topics.forEach((topic, index) => {
-                            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                            const hasCustomContent = topic.type === 'html' && topic.htmlContent;
+                            const difficultyText = topic.difficulty || 'C';
+                            const difficultyClass = `difficulty-${difficultyText.toLowerCase()}`;
+                            const linkText = topic.type === 'html' && topic.htmlContent ? '詳細を見る →' : 'リンクを開く →';
                             
                             html += `
-                                <div class="topic-card" style="background: ${hasCustomContent ? '#f0f8ff' : '#f7fafc'}; border: 1px solid ${hasCustomContent ? '#2196f3' : '#e2e8f0'}; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; position: relative;"
+                                <div class="topic-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; cursor: pointer; transition: all 0.3s;"
                                      onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <span style="font-size: 11px; color: #718096; min-width: 20px; font-weight: 500; background: #edf2f7; padding: 2px 6px; border-radius: 3px;">${index + 1}</span>
-                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; min-width: 20px; text-align: center;">${topic.difficulty}</span>
-                                        ${hasCustomContent ? '<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold;">HTML</span>' : ''}
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 16px; font-weight: bold; color: #4a5568; min-width: 25px;">${index + 1}.</span>
+                                        <span style="font-size: 14px; font-weight: 500; flex: 1;">${topic.title}</span>
+                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; min-width: 20px; text-align: center;">${difficultyText}</span>
+                                        <a href="#" style="font-size: 12px; color: var(--primary); text-decoration: none; white-space: nowrap;" 
+                                           onclick="event.stopPropagation(); KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
+                                           ${linkText}
+                                        </a>
                                     </div>
-                                    <div style="font-size: 13px; font-weight: 500; color: #2d3748; line-height: 1.4;">${topic.title}</div>
-                                    ${hasCustomContent ? '<div style="position: absolute; top: 8px; right: 8px; color: #2196f3; font-size: 12px;">📄</div>' : '<div style="position: absolute; top: 8px; right: 8px; color: #9ca3af; font-size: 12px;">🔗</div>'}
                                 </div>
                             `;
                         });
