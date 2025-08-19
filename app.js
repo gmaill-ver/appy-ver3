@@ -1218,53 +1218,87 @@ class Application {
     }
 
     renderRegisterLevel(structure, bookId, path) {
-        let html = '';
+    let html = '';
+    
+    // ★追加: 記録入力タブと同じ自然ソートを適用
+    const naturalSort = (a, b) => {
+        // 数字を含む文字列を分解して比較
+        const extractNumbers = (str) => {
+            const parts = str.split(/(\d+)/);
+            return parts.map(part => {
+                const num = parseInt(part, 10);
+                return isNaN(num) ? part : num;
+            });
+        };
         
-        Object.entries(structure).forEach(([name, item]) => {
-            const currentPath = [...path, name];
-            const nodeId = `${bookId}_${currentPath.join('_')}`;
-            const hasChildren = item.children && Object.keys(item.children).length > 0;
-            const isExpanded = this.expandedNodes.has(nodeId);
+        const aParts = extractNumbers(a);
+        const bParts = extractNumbers(b);
+        
+        for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+            const aPart = aParts[i];
+            const bPart = bParts[i];
             
+            if (typeof aPart === 'number' && typeof bPart === 'number') {
+                if (aPart !== bPart) return aPart - bPart;
+            } else if (typeof aPart === 'string' && typeof bPart === 'string') {
+                const comp = aPart.localeCompare(bPart);
+                if (comp !== 0) return comp;
+            } else {
+                return typeof aPart === 'number' ? -1 : 1;
+            }
+        }
+        
+        return aParts.length - bParts.length;
+    };
+    
+    // ★修正: 自然ソートでエントリーを並べ替え
+    const sortedEntries = Object.entries(structure).sort(([a], [b]) => naturalSort(a, b));
+    
+    sortedEntries.forEach(([name, item]) => {
+        const currentPath = [...path, name];
+        const nodeId = `${bookId}_${currentPath.join('_')}`;
+        const hasChildren = item.children && Object.keys(item.children).length > 0;
+        const isExpanded = this.expandedNodes.has(nodeId);
+        
+        html += `
+            <div class="hierarchy-item">
+                <div class="hierarchy-row" ${hasChildren ? `onclick="App.toggleRegisterNode('${nodeId}', event)"` : ''}>
+                    ${hasChildren ? `<span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>` : '<span style="width: 28px; display: inline-block;"></span>'}
+                    <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
+                    <span class="hierarchy-label">${name}</span>
+        `;
+        
+        if (item.questions) {
+            html += `<span class="hierarchy-meta">${item.questions.length}問</span>`;
+        }
+        
+        html += '<div class="hierarchy-actions">';
+        html += `<button class="hierarchy-action edit" onclick="App.editHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="編集">✏️</button>`;
+        
+        if (item.type === 'subject') {
+            html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)" title="章追加">+</button>`;
+        } else if (item.type === 'chapter') {
+            html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)" title="節追加">+</button>`;
+        } else if (item.type === 'section') {
+            html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)" title="項追加">+</button>`;
+        }
+        
+        html += `<button class="hierarchy-action delete" onclick="App.deleteHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="削除">🗑️</button>`;
+        html += '</div></div>';
+        
+        if (hasChildren) {
             html += `
-                <div class="hierarchy-item">
-                    <div class="hierarchy-row" ${hasChildren ? `onclick="App.toggleRegisterNode('${nodeId}', event)"` : ''}>
-                        ${hasChildren ? `<span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>` : '<span style="width: 28px; display: inline-block;"></span>'}
-                        <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
-                        <span class="hierarchy-label">${name}</span>
+                <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                    ${this.renderRegisterLevel(item.children, bookId, currentPath)}
+                </div>
             `;
-            
-            if (item.questions) {
-                html += `<span class="hierarchy-meta">${item.questions.length}問</span>`;
-            }
-            
-            html += '<div class="hierarchy-actions">';
-            html += `<button class="hierarchy-action edit" onclick="App.editHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="編集">✏️</button>`;
-            
-            if (item.type === 'subject') {
-                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'chapter', event)" title="章追加">+</button>`;
-            } else if (item.type === 'chapter') {
-                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'section', event)" title="節追加">+</button>`;
-            } else if (item.type === 'section') {
-                html += `<button class="hierarchy-action" onclick="App.addHierarchy('${bookId}', '${currentPath.join('/')}', 'subsection', event)" title="項追加">+</button>`;
-            }
-            
-            html += `<button class="hierarchy-action delete" onclick="App.deleteHierarchy('${bookId}', '${currentPath.join('/')}', event)" title="削除">🗑️</button>`;
-            html += '</div></div>';
-            
-            if (hasChildren) {
-                html += `
-                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
-                        ${this.renderRegisterLevel(item.children, bookId, currentPath)}
-                    </div>
-                `;
-            }
-            
-            html += '</div>';
-        });
+        }
         
-        return html;
-    }
+        html += '</div>';
+    });
+    
+    return html;
+}
 
     toggleRegisterNode(nodeId, event) {
         event.stopPropagation();
