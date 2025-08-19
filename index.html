@@ -924,6 +924,13 @@
         let restoredCount = 0;
         
         try {
+            // ★追加: 削除済みアイテムリストを最初に復元（重要！）
+            if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
+                DataManager.deletedItems = userData.deletedItems;
+                localStorage.setItem('deletedItems', JSON.stringify(userData.deletedItems));
+                console.log(`✅ 削除済みアイテム復元: ${userData.deletedItems.length}件`);
+            }
+            
             // 学習履歴
             if (userData.allRecords && Array.isArray(userData.allRecords)) {
                 DataManager.allRecords = userData.allRecords;
@@ -931,10 +938,17 @@
                 restoredCount++;
             }
             
-            // 問題集
+            // 問題集（削除済みを除外）
             if (userData.books && typeof userData.books === 'object') {
-                DataManager.books = userData.books;
-                localStorage.setItem('studyTrackerBooks', JSON.stringify(userData.books));
+                // ★追加: 削除済みを除外してから復元
+                const filteredBooks = {};
+                Object.keys(userData.books).forEach(bookId => {
+                    if (!DataManager.isDeleted('books', bookId)) {
+                        filteredBooks[bookId] = userData.books[bookId];
+                    }
+                });
+                DataManager.books = filteredBooks;
+                localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
                 restoredCount++;
             }
             
