@@ -123,17 +123,22 @@ class DataManagerClass {
                     console.log(`🗑️ 削除済みアイテム読み込み: ${data.deletedItems.length}件`);
                 }
                 
-                // ★修正: 削除済みアイテムを除外してからデータ復元
-                if (data.books && typeof data.books === 'object') {
-                    const filteredBooks = {};
-                    Object.keys(data.books).forEach(bookId => {
-                        if (!this.isDeleted('books', bookId)) {
-                            filteredBooks[bookId] = data.books[bookId];
-                        }
-                    });
-                    this.books = filteredBooks;
-                    console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
-                }
+                // ★修正: 削除済みアイテムを除外してからデータ復元（階層削除対応）
+if (data.books && typeof data.books === 'object') {
+    const filteredBooks = {};
+    Object.keys(data.books).forEach(bookId => {
+        if (!this.isDeleted('books', bookId)) {
+            const book = data.books[bookId];
+            // ★追加: 削除済み階層アイテムを除外
+            if (book.structure) {
+                book.structure = this.filterDeletedHierarchy(book.structure, bookId, []);
+            }
+            filteredBooks[bookId] = book;
+        }
+    });
+    this.books = filteredBooks;
+    console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
+}
                 if (data.bookOrder && Array.isArray(data.bookOrder)) {
                     this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
                 }
