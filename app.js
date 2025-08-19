@@ -1591,34 +1591,62 @@ class Application {
     }
 
     deleteHierarchy(bookId, path, event) {
-        event.stopPropagation();
-        
-        if (!confirm('この項目を削除しますか？')) return;
+    event.stopPropagation();
+    
+    if (!confirm('この項目を削除しますか？')) return;
 
-        const book = DataManager.books[bookId];
-        if (!book) return;
+    const book = DataManager.books[bookId];
+    if (!book) return;
 
-        const pathArray = path.split('/');
-        
-        if (pathArray.length === 1) {
-            delete book.structure[pathArray[0]];
-        } else {
-            let target = book.structure;
-            for (let i = 0; i < pathArray.length - 1; i++) {
-                if (target[pathArray[i]]) {
-                    if (i === pathArray.length - 2) {
-                        delete target[pathArray[i]].children[pathArray[pathArray.length - 1]];
-                    } else {
-                        target = target[pathArray[i]].children || {};
-                    }
+    const pathArray = path.split('/');
+    
+    // ★追加: 削除前にアイテム情報を取得
+    let deletedItem = null;
+    if (pathArray.length === 1) {
+        deletedItem = book.structure[pathArray[0]];
+    } else {
+        let target = book.structure;
+        for (let i = 0; i < pathArray.length - 1; i++) {
+            if (target[pathArray[i]]) {
+                if (i === pathArray.length - 2) {
+                    deletedItem = target[pathArray[i]].children[pathArray[pathArray.length - 1]];
+                } else {
+                    target = target[pathArray[i]].children || {};
                 }
             }
         }
-        
-        DataManager.saveBooksToStorage();
-        this.renderBookCards();
-        this.renderRegisterHierarchy();
     }
+    
+    // ★追加: Firebase削除済みアイテムとして記録
+    if (deletedItem) {
+        DataManager.markAsDeleted('hierarchy', `${bookId}_${path}`, {
+            bookId: bookId,
+            bookName: book.name,
+            hierarchyPath: path,
+            hierarchyName: pathArray[pathArray.length - 1],
+            hierarchyType: deletedItem.type
+        });
+    }
+    
+    if (pathArray.length === 1) {
+        delete book.structure[pathArray[0]];
+    } else {
+        let target = book.structure;
+        for (let i = 0; i < pathArray.length - 1; i++) {
+            if (target[pathArray[i]]) {
+                if (i === pathArray.length - 2) {
+                    delete target[pathArray[i]].children[pathArray[pathArray.length - 1]];
+                } else {
+                    target = target[pathArray[i]].children || {};
+                }
+            }
+        }
+    }
+    
+    DataManager.saveBooksToStorage();
+    this.renderBookCards();
+    this.renderRegisterHierarchy();
+}
 
     /**
      * 問題集削除（Firebase統合強化版）
