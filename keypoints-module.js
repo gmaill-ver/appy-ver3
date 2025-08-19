@@ -1423,66 +1423,63 @@ class KeyPointsModuleClass {
      * カード選択式の項目追加（Firebase統合版）
      */
     handleAddHierarchyItemCard() {
-        const titleInput = document.getElementById('keyPointTitle');
-        const htmlInput = document.getElementById('keyPointHtml');
+    const htmlInput = document.getElementById('keyPointHtml');
 
-        if (!titleInput || !htmlInput) {
-            alert('必要な項目を入力してください');
-            return;
-        }
-
-        const title = titleInput.value.trim();
-        const htmlContent = htmlInput.value.trim();
-
-        if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
-            alert('すべての階層を選択してください');
-            return;
-        }
-
-        if (!title || !htmlContent) {
-            alert('タイトルとHTML内容を入力してください');
-            return;
-        }
-
-        // 該当する項目を取得して更新
-        if (this.subjects[this.selectedSubject] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
-            
-            // 項目をHTMLコンテンツ付きで更新
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
-                ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
-                title: title,
-                htmlContent: htmlContent,
-                type: 'html'
-            };
-
-            // Firebase統合保存
-            this.saveKeyPointsData();
-
-            // フォームをクリア
-            titleInput.value = '';
-            htmlInput.value = '';
-            
-            // 選択をリセット
-            const subjectSelect = document.getElementById('keyPointSubjectSelect');
-            if (subjectSelect) {
-                subjectSelect.value = '';
-                this.onSubjectChangeCard();
-            }
-
-            // 登録済みリストを更新
-            const listContainer = document.getElementById('keyPointsList');
-            if (listContainer) {
-                listContainer.innerHTML = this.renderKeyPointsList();
-            }
-
-            alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
-        } else {
-            alert('選択した項目が見つかりません');
-        }
+    if (!htmlInput) {
+        alert('HTML内容を入力してください');
+        return;
     }
+
+    const htmlContent = htmlInput.value.trim();
+
+    if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
+        alert('すべての階層を選択してください');
+        return;
+    }
+
+    if (!htmlContent) {
+        alert('HTML内容を入力してください');
+        return;
+    }
+
+    // 該当する項目を取得して更新
+    if (this.subjects[this.selectedSubject] && 
+        this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
+        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
+        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
+        
+        // 項目をHTMLコンテンツ付きで更新（元のタイトルは保持）
+        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
+            ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
+            // title行を削除 - 元のタイトルを保持
+            htmlContent: htmlContent,
+            type: 'html'
+        };
+
+        // Firebase統合保存
+        this.saveKeyPointsData();
+
+        // フォームをクリア
+        htmlInput.value = '';
+        
+        // 選択をリセット
+        const subjectSelect = document.getElementById('keyPointSubjectSelect');
+        if (subjectSelect) {
+            subjectSelect.value = '';
+            this.onSubjectChangeCard();
+        }
+
+        // 登録済みリストを更新
+        const listContainer = document.getElementById('keyPointsList');
+        if (listContainer) {
+            listContainer.innerHTML = this.renderKeyPointsList();
+        }
+
+        alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
+    } else {
+        alert('選択した項目が見つかりません');
+    }
+}
 
     /**
      * 登録済み要点リストを描画
