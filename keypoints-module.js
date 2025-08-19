@@ -510,109 +510,109 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 直接科目一覧を表示（カードなし・3列固定）
-     */
-    renderSubjectListDirect() {
-        this.currentView = 'subjects';
-        this.isContentView = false;
-        const subjects = this.getSubjectList();
-        
-        let html = `
-            <div style="padding: 15px;">
-                <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
-                <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
-        `;
+ * 直接科目一覧を表示（カードなし・3列固定）
+ */
+renderSubjectListDirect() {
+    this.currentView = 'subjects';
+    this.isContentView = false;
+    const subjects = this.getSubjectList();
+    
+    let html = `
+        <div style="padding: 15px;">
+            <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
+            <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
+    `;
 
-        subjects.forEach((subject, index) => {
+    subjects.forEach((subject, index) => {
+        html += `
+            <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px;" 
+                 onclick="KeyPointsModule.selectSubject('${subject.key}')">
+                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                    <span style="width: 20px; height: 20px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">${index + 1}</span>
+                    <span style="font-size: 14px; font-weight: 600;">${subject.name}</span>
+                </div>
+                <div style="text-align: center; margin-top: 8px;">
+                    <span style="font-size: 11px; color: var(--gray);">
+                        ${subject.chapterCount}編 / ${subject.itemCount}項目
+                    </span>
+                </div>
+                <div style="text-align: center; margin-top: 5px;">
+                    <span style="font-size: 16px; color: var(--primary); cursor: pointer;" 
+                          onclick="event.stopPropagation(); KeyPointsModule.selectSubject('${subject.key}')">
+                          🔗
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
     html += `
-        <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px;" 
-             onclick="KeyPointsModule.selectSubject('${subject.key}')">
-            <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                <span style="width: 20px; height: 20px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">${index + 1}</span>
-                <span style="font-size: 14px; font-weight: 600;">${subject.name}</span>
-            </div>
-            <div style="text-align: center; margin-top: 8px;">
-                <span style="font-size: 11px; color: var(--gray);">
-                    ${subject.chapterCount}編 / ${subject.itemCount}項目
-                </span>
-            </div>
-            <div style="text-align: center; margin-top: 5px;">
-                <span style="font-size: 16px; color: var(--primary); cursor: pointer;" 
-                      onclick="event.stopPropagation(); KeyPointsModule.selectSubject('${subject.key}')">
-                      🔗
-                </span>
             </div>
         </div>
-    `;
-});
-
-        html += `
-                </div>
-            </div>
-            
-            <div style="margin: 20px 15px;">
-                <h4 style="margin-bottom: 15px;">📝 要点管理（カード選択式）</h4>
-                <div id="hierarchySelectionArea">
-                    <div class="form-group">
-                        <label class="form-label">科目を選択</label>
-                        <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
-                            <option value="">科目を選択</option>
-                            ${this.getSubjectList().map(subject => 
-                                `<option value="${subject.key}">${subject.name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    
-                    <!-- パンくずリスト -->
-                    <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
-                        <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
-                    </div>
-                    
-                    <div id="chapterCardsArea" style="display: none;">
-                        <label class="form-label">編を選択</label>
-                        <div id="chapterCards" class="small-card-grid"></div>
-                    </div>
-                    
-                    <div id="sectionCardsArea" style="display: none;">
-                        <label class="form-label">節を選択</label>
-                        <div id="sectionCards" class="small-card-grid"></div>
-                    </div>
-                    
-                    <div id="topicCardsArea" style="display: none;">
-                        <label class="form-label">項目を選択</label>
-                        <div id="topicCards" class="small-card-grid"></div>
-                    </div>
-                </div>
-                
-                <div class="form-group" style="margin-top: 20px;">
-                    <label class="form-label">要点まとめタイトル</label>
-                    <input type="text" class="form-control" id="keyPointTitle" 
-                           placeholder="例：権利能力の要点まとめ">
-                </div>
-                
+        
+        <div style="margin: 20px 15px;">
+            <h4 style="margin-bottom: 15px;">📝 要点管理（カード選択式）</h4>
+            <div id="hierarchySelectionArea">
                 <div class="form-group">
-                    <label class="form-label">HTML内容</label>
-                    <textarea class="form-control" id="keyPointHtml" rows="8" 
-                              placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
-                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                        💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
-                    </div>
+                    <label class="form-label">科目を選択</label>
+                    <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
+                        <option value="">科目を選択</option>
+                        ${this.getSubjectList().map(subject => 
+                            `<option value="${subject.key}">${subject.name}</option>`
+                        ).join('')}
+                    </select>
                 </div>
                 
-                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
-                    📋 階層に要点を登録
-                </button>
+                <!-- パンくずリスト -->
+                <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                    <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
+                    <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
+                </div>
+                
+                <div id="chapterCardsArea" style="display: none;">
+                    <label class="form-label">編を選択</label>
+                    <div id="chapterCards" class="small-card-grid"></div>
+                </div>
+                
+                <div id="sectionCardsArea" style="display: none;">
+                    <label class="form-label">節を選択</label>
+                    <div id="sectionCards" class="small-card-grid"></div>
+                </div>
+                
+                <div id="topicCardsArea" style="display: none;">
+                    <label class="form-label">項目を選択</label>
+                    <div id="topicCards" class="small-card-grid"></div>
+                </div>
             </div>
             
-            <div style="margin: 20px 15px;">
-                <h4>📚 登録済み要点</h4>
-                <div id="keyPointsList">${this.renderKeyPointsList()}</div>
+            <div class="form-group" style="margin-top: 20px;">
+                <label class="form-label">要点まとめタイトル</label>
+                <input type="text" class="form-control" id="keyPointTitle" 
+                       placeholder="例：権利能力の要点まとめ">
             </div>
-        `;
+            
+            <div class="form-group">
+                <label class="form-label">HTML内容</label>
+                <textarea class="form-control" id="keyPointHtml" rows="8" 
+                          placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
+                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                    💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
+                </div>
+            </div>
+            
+            <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
+                📋 階層に要点を登録
+            </button>
+        </div>
+        
+        <div style="margin: 20px 15px;">
+            <h4>📚 登録済み要点</h4>
+            <div id="keyPointsList">${this.renderKeyPointsList()}</div>
+        </div>
+    `;
 
-        return html;
-    }
+    return html;
+}
 
     /**
      * 科目選択（章一覧表示・折りたたみ機能付き）
