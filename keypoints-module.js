@@ -1299,7 +1299,7 @@ renderSubjectListDirect() {
                             <button class="delete-btn" 
                                     onclick="KeyPointsModule.deleteHierarchyItem('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
                                     style="background: #ef4444; font-size: 12px;">
-                                削除
+                                🗑️
                             </button>
                         </div>
                     `;
