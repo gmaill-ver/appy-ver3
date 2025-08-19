@@ -466,7 +466,29 @@ class KeyPointsModuleClass {
      * 科目一覧の取得
      */
     getSubjectList() {
-        return Object.entries(this.subjects).map(([key, data]) => ({
+        // ★追加: 固定順序の定義
+        const fixedOrder = [
+            'kenpo', 'minpo', 'gyosei', 'chiho', 'kaisha', 
+            'kiso', 'ippan', 'bunsh', 'kiji', 'kisoku'
+        ];
+        
+        // ★追加: 固定順序でソート
+        const sortedEntries = Object.entries(this.subjects).sort((a, b) => {
+            const indexA = fixedOrder.indexOf(a[0]);
+            const indexB = fixedOrder.indexOf(b[0]);
+            
+            // 定義された順序にあるものを優先
+            if (indexA !== -1 && indexB !== -1) {
+                return indexA - indexB;
+            }
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            
+            // 定義外のものはアルファベット順
+            return a[0].localeCompare(b[0]);
+        });
+        
+        return sortedEntries.map(([key, data]) => ({
             key,
             name: data.name,
             itemCount: data.items ? data.items.length : 0,
