@@ -587,7 +587,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 科目選択（章一覧表示・折りたたみ機能付き）
+     * 科目選択（章一覧表示・折りたたみ機能付き）- ★修正: 順序ソート＋1列レイアウト
      */
     selectSubject(subjectKey) {
         this.currentSubject = subjectKey;
@@ -618,8 +618,18 @@ class KeyPointsModuleClass {
                 </div>
             `;
         } else {
+            // ★修正: 章（編）の順序をソート
+            const sortedChapters = Object.entries(chapters).sort((a, b) => {
+                const aMatch = a[0].match(/第(\d+)編/);
+                const bMatch = b[0].match(/第(\d+)編/);
+                if (aMatch && bMatch) {
+                    return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+                }
+                return a[0].localeCompare(b[0]);
+            });
+
             // 折りたたみ可能な編構造
-            Object.entries(chapters).forEach(([chapterName, chapterData]) => {
+            sortedChapters.forEach(([chapterName, chapterData]) => {
                 const chapterId = `chapter-${subjectKey}-${chapterName.replace(/\s+/g, '-')}`;
                 
                 html += `
@@ -634,30 +644,38 @@ class KeyPointsModuleClass {
                 `;
                 
                 if (chapterData.sections) {
-                    Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
+                    // ★修正: 節の順序をソート
+                    const sortedSections = Object.entries(chapterData.sections).sort((a, b) => {
+                        const aMatch = a[0].match(/第(\d+)節/);
+                        const bMatch = b[0].match(/第(\d+)節/);
+                        if (aMatch && bMatch) {
+                            return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+                        }
+                        return a[0].localeCompare(b[0]);
+                    });
+
+                    sortedSections.forEach(([sectionName, topics]) => {
                         html += `
                             <div class="section" style="margin-bottom: 25px;">
                                 <div class="section-title" style="font-size: 15px; font-weight: bold; color: #2d3748; margin-bottom: 15px; padding: 8px 0; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px;">
-                                    <span style="background: #4a5568; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${Object.keys(chapterData.sections).indexOf(sectionName) + 1}</span>
+                                    <span style="background: #4a5568; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${sortedSections.findIndex(([name]) => name === sectionName) + 1}</span>
                                     ${sectionName}
                                 </div>
-                                <div class="topic-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">
+                                <div class="topic-list-single" style="display: flex; flex-direction: column; gap: 8px;">
                         `;
                         
                         topics.forEach((topic, index) => {
                             const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
                             const hasCustomContent = topic.type === 'html' && topic.htmlContent;
                             
+                            // ★修正: 1列レイアウト＋要素順序変更
                             html += `
-                                <div class="topic-card" style="background: ${hasCustomContent ? '#f0f8ff' : '#f7fafc'}; border: 1px solid ${hasCustomContent ? '#2196f3' : '#e2e8f0'}; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; position: relative;"
+                                <div class="topic-card-single" style="background: ${hasCustomContent ? '#f0f8ff' : '#f7fafc'}; border: 1px solid ${hasCustomContent ? '#2196f3' : '#e2e8f0'}; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
                                      onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                                        <span style="font-size: 11px; color: #718096; min-width: 20px; font-weight: 500; background: #edf2f7; padding: 2px 6px; border-radius: 3px;">${index + 1}</span>
-                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; min-width: 20px; text-align: center;">${topic.difficulty}</span>
-                                        ${hasCustomContent ? '<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold;">HTML</span>' : ''}
-                                    </div>
-                                    <div style="font-size: 13px; font-weight: 500; color: #2d3748; line-height: 1.4;">${topic.title}</div>
-                                    ${hasCustomContent ? '<div style="position: absolute; top: 8px; right: 8px; color: #2196f3; font-size: 12px;">📄</div>' : '<div style="position: absolute; top: 8px; right: 8px; color: #9ca3af; font-size: 12px;">🔗</div>'}
+                                    <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
+                                    <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
+                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
+                                    <div style="color: ${hasCustomContent ? '#2196f3' : '#9ca3af'}; font-size: 16px;">${hasCustomContent ? '📄' : '🔗'}</div>
                                 </div>
                             `;
                         });
@@ -936,7 +954,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 編カードを描画
+     * 編カードを描画 - ★修正: 順序ソート
      */
     renderChapterCards(subjectKey) {
         const container = document.getElementById('chapterCards');
@@ -945,8 +963,18 @@ class KeyPointsModuleClass {
         const chapters = this.subjects[subjectKey].chapters || {};
         this.selectedSubject = subjectKey;
         
+        // ★修正: 章（編）の順序をソート
+        const sortedChapters = Object.entries(chapters).sort((a, b) => {
+            const aMatch = a[0].match(/第(\d+)編/);
+            const bMatch = b[0].match(/第(\d+)編/);
+            if (aMatch && bMatch) {
+                return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+            }
+            return a[0].localeCompare(b[0]);
+        });
+        
         let html = '';
-        Object.entries(chapters).forEach(([chapterName, chapterData]) => {
+        sortedChapters.forEach(([chapterName, chapterData]) => {
             const sectionCount = Object.keys(chapterData.sections || {}).length;
             html += `
                 <div class="small-selection-card" onclick="KeyPointsModule.selectChapterCard('${chapterName}')">
@@ -979,7 +1007,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 節カードを描画
+     * 節カードを描画 - ★修正: 順序ソート
      */
     renderSectionCards() {
         const container = document.getElementById('sectionCards');
@@ -987,8 +1015,18 @@ class KeyPointsModuleClass {
 
         const sections = this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections || {};
         
+        // ★修正: 節の順序をソート
+        const sortedSections = Object.entries(sections).sort((a, b) => {
+            const aMatch = a[0].match(/第(\d+)節/);
+            const bMatch = b[0].match(/第(\d+)節/);
+            if (aMatch && bMatch) {
+                return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+            }
+            return a[0].localeCompare(b[0]);
+        });
+        
         let html = '';
-        Object.entries(sections).forEach(([sectionName, topics]) => {
+        sortedSections.forEach(([sectionName, topics]) => {
             html += `
                 <div class="small-selection-card" onclick="KeyPointsModule.selectSectionCard('${sectionName}')">
                     <div class="small-card-title">${sectionName}</div>
@@ -1340,6 +1378,12 @@ class KeyPointsModuleClass {
             .topic-card:hover {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            }
+
+            /* ★修正: 1列レイアウト用のスタイル */
+            .topic-card-single:hover {
+                transform: translateX(4px) !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
             }
 
             /* 重要語句のスタイル */
