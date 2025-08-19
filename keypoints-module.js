@@ -781,12 +781,6 @@ class KeyPointsModuleClass {
                     </div>
                 </div>
                 
-                <div class="form-group" style="margin-top: 20px;">
-                    <label class="form-label">要点まとめタイトル</label>
-                    <input type="text" class="form-control" id="keyPointTitle" 
-                           placeholder="例：権利能力の要点まとめ">
-                </div>
-                
                 <div class="form-group">
                     <label class="form-label">HTML内容</label>
                     <textarea class="form-control" id="keyPointHtml" rows="8" 
