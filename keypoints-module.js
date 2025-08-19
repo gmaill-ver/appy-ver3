@@ -1,295 +1,300 @@
 /**
  * KeyPointsModule - 要点確認専用モジュール（Firebase統合完全版）
+ * ★修正: プロジェクトナレッジの階層構造に置き換え、科目順序固定
  */
 class KeyPointsModuleClass {
     constructor() {
+        // ★修正: 科目順序を憲法、行政法、民法、商法、基礎法学、基礎知識に固定
         this.subjects = {
             'constitution': { 
-                name: '憲法', 
-            chapters: {
-                '第1章 総論': {
-                    sections: {
-                        '第1節 憲法の意味': [
-                            { title: '憲法の特色', url: '/kenpou/kenpou-tokushitsu/', difficulty: 'C', type: 'link' },
-                            { title: '憲法の基本原理', url: '/kenpou/kenpou-kihon-genri/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第2節 天皇': [
-                            { title: '天皇の地位', url: '/kenpou/tennou-chii/', difficulty: 'B', type: 'link' },
-                            { title: '皇位継承', url: '/kenpou/koi-keisho/', difficulty: 'C', type: 'link' },
-                            { title: '天皇の権能', url: '/kenpou/tennou-kennou/', difficulty: 'A', type: 'link' },
-                            { title: '皇室の財産授受の議決', url: '/kenpou/koshitsu-zaisan/', difficulty: 'B', type: 'link' }
-                        ]
+                name: '憲法',
+                order: 1, // ★追加: 順序固定
+                chapters: {
+                    '第1章 総論': {
+                        sections: {
+                            '第1節 憲法の意味': [
+                                { title: '憲法の特色', url: '/kenpou/kenpou-tokushitsu/', difficulty: 'C', type: 'link' },
+                                { title: '憲法の基本原理', url: '/kenpou/kenpou-kihon-genri/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第2節 天皇': [
+                                { title: '天皇の地位', url: '/kenpou/tennou-chii/', difficulty: 'B', type: 'link' },
+                                { title: '皇位継承', url: '/kenpou/koi-keisho/', difficulty: 'C', type: 'link' },
+                                { title: '天皇の権能', url: '/kenpou/tennou-kennou/', difficulty: 'A', type: 'link' },
+                                { title: '皇室の財産授受の議決', url: '/kenpou/koshitsu-zaisan/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第2章 人権': {
+                        sections: {
+                            '第1節 人権総論': [
+                                { title: '人権の分類', url: '/kenpou/jinken-bunrui/', difficulty: 'B', type: 'link' },
+                                { title: '人権の享有主体', url: '/kenpou/jinken-kyouyu-shutai/', difficulty: 'A', type: 'link' },
+                                { title: '人権の限界', url: '/kenpou/jinken-genkai/', difficulty: 'A', type: 'link' },
+                                { title: '人権の私人間効力', url: '/kenpou/shijin-kan-kouri/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 幸福追求権・法の下の平等': [
+                                { title: '幸福追求権', url: '/kenpou/koufuku-tsuikyuu/', difficulty: 'A', type: 'link' },
+                                { title: '法の下の平等', url: '/kenpou/hou-shita-byoudou/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第3節 精神的自由権': [
+                                { title: '思想・良心の自由', url: '/kenpou/shisou-ryoushin/', difficulty: 'B', type: 'link' },
+                                { title: '信教の自由', url: '/kenpou/shinkyou-jiyuu/', difficulty: 'A', type: 'link' },
+                                { title: '表現の自由', url: '/kenpou/hyougen-jiyuu/', difficulty: 'A', type: 'link' },
+                                { title: '学問の自由', url: '/kenpou/gakumon-jiyuu/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第4節 経済的自由権': [
+                                { title: '職業選択の自由', url: '/kenpou/shokugyou-sentaku/', difficulty: 'A', type: 'link' },
+                                { title: '居住・移転の自由', url: '/kenpou/kyojuu-iten/', difficulty: 'B', type: 'link' },
+                                { title: '外国移住・国籍離脱の自由', url: '/kenpou/gaikoku-iten/', difficulty: 'B', type: 'link' },
+                                { title: '財産権', url: '/kenpou/zaisan-ken/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第5節 人身の自由': [
+                                { title: '奴隷的拘束・苦役からの自由', url: '/kenpou/doreitekikousoku/', difficulty: 'B', type: 'link' },
+                                { title: '法定手続の保障', url: '/kenpou/houtei-tetuzuki/', difficulty: 'A', type: 'link' },
+                                { title: '被疑者・被告人の権利', url: '/kenpou/higisha-kokokuninz/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第6節 社会権': [
+                                { title: '生存権', url: '/kenpou/seizon-ken/', difficulty: 'A', type: 'link' },
+                                { title: '教育を受ける権利', url: '/kenpou/kyouiku-ukeru/', difficulty: 'B', type: 'link' },
+                                { title: '勤労の権利', url: '/kenpou/roudou-kenri/', difficulty: 'C', type: 'link' },
+                                { title: '労働基本権', url: '/kenpou/roudou-kihon/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第7節 参政権・国務請求権': [
+                                { title: '参政権', url: '/kenpou/sansei-ken/', difficulty: 'B', type: 'link' },
+                                { title: '国務請求権', url: '/kenpou/kokumu-seikyu/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第3章 統治': {
+                        sections: {
+                            '第1節 国会': [
+                                { title: '権力分立', url: '/kenpou/kenryoku-bunritsu/', difficulty: 'A', type: 'link' },
+                                { title: '国会の地位', url: '/kenpou/kokkai-chii/', difficulty: 'A', type: 'link' },
+                                { title: '二院制', url: '/kenpou/niinsei/', difficulty: 'A', type: 'link' },
+                                { title: '国会の活動', url: '/kenpou/kokkai-katsudou/', difficulty: 'A', type: 'link' },
+                                { title: '国会議員の特権', url: '/kenpou/kokkai-giin-tokken/', difficulty: 'A', type: 'link' },
+                                { title: '国会と議院の権能', url: '/kenpou/kokkai-giin-kennou/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 内閣': [
+                                { title: '行政権と内閣', url: '/kenpou/gyouseikenz-naikaku/', difficulty: 'B', type: 'link' },
+                                { title: '内閣の組織', url: '/kenpou/naikaku-soshiki/', difficulty: 'A', type: 'link' },
+                                { title: '議院内閣制', url: '/kenpou/giin-naikaku-sei/', difficulty: 'A', type: 'link' },
+                                { title: '内閣と内閣総理大臣の権能', url: '/kenpou/naikaku-naikaku-souri/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第3節 裁判所': [
+                                { title: '司法権', url: '/kenpou/shihou-ken/', difficulty: 'A', type: 'link' },
+                                { title: '裁判所の組織と権能', url: '/kenpou/saibansho-soshiki/', difficulty: 'A', type: 'link' },
+                                { title: '司法権の独立', url: '/kenpou/shihou-dokuritsu/', difficulty: 'A', type: 'link' },
+                                { title: '違憲審査権', url: '/kenpou/kenpou-shinsa/', difficulty: 'A', type: 'link' },
+                                { title: '裁判の公開', url: '/kenpou/saiban-koukai/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第4節 財政': [
+                                { title: '国家財政', url: '/kenpou/kokka-zaisei/', difficulty: 'B', type: 'link' },
+                                { title: '予算・会計検査', url: '/kenpou/yosan-kaikei/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第5節 地方自治・憲法改正': [
+                                { title: '地方自治の本旨', url: '/kenpou/chihou-jichi-honshi/', difficulty: 'B', type: 'link' },
+                                { title: '憲法改正', url: '/kenpou/kenpou-kaisei/', difficulty: 'A', type: 'link' }
+                            ]
+                        }
                     }
                 },
-                '第2章 人権': {
-                    sections: {
-                        '第1節 人権総論': [
-                            { title: '人権の分類', url: '/kenpou/jinken-bunrui/', difficulty: 'B', type: 'link' },
-                            { title: '人権の享有主体', url: '/kenpou/jinken-kyouyu-shutai/', difficulty: 'A', type: 'link' },
-                            { title: '人権の限界', url: '/kenpou/jinken-genkai/', difficulty: 'A', type: 'link' },
-                            { title: '人権の私人間効力', url: '/kenpou/shijin-kan-kouri/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 幸福追求権・法の下の平等': [
-                            { title: '幸福追求権', url: '/kenpou/koufuku-tsuikyuu/', difficulty: 'A', type: 'link' },
-                            { title: '法の下の平等', url: '/kenpou/hou-shita-byoudou/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第3節 精神的自由権': [
-                            { title: '思想・良心の自由', url: '/kenpou/shisou-ryoushin/', difficulty: 'B', type: 'link' },
-                            { title: '信教の自由', url: '/kenpou/shinkyou-jiyuu/', difficulty: 'A', type: 'link' },
-                            { title: '表現の自由', url: '/kenpou/hyougen-jiyuu/', difficulty: 'A', type: 'link' },
-                            { title: '学問の自由', url: '/kenpou/gakumon-jiyuu/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第4節 経済的自由権': [
-                            { title: '職業選択の自由', url: '/kenpou/shokugyou-sentaku/', difficulty: 'A', type: 'link' },
-                            { title: '居住・移転の自由', url: '/kenpou/kyojuu-iten/', difficulty: 'B', type: 'link' },
-                            { title: '外国移住・国籍離脱の自由', url: '/kenpou/gaikoku-iten/', difficulty: 'B', type: 'link' },
-                            { title: '財産権', url: '/kenpou/zaisan-ken/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第5節 人身の自由': [
-                            { title: '奴隷的拘束・苦役からの自由', url: '/kenpou/doreitekikousoku/', difficulty: 'B', type: 'link' },
-                            { title: '法定手続の保障', url: '/kenpou/houtei-tetuzuki/', difficulty: 'A', type: 'link' },
-                            { title: '被疑者・被告人の権利', url: '/kenpou/higisha-kokokuninz/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第6節 社会権': [
-                            { title: '生存権', url: '/kenpou/seizon-ken/', difficulty: 'A', type: 'link' },
-                            { title: '教育を受ける権利', url: '/kenpou/kyouiku-ukeru/', difficulty: 'B', type: 'link' },
-                            { title: '勤労の権利', url: '/kenpou/roudou-kenri/', difficulty: 'C', type: 'link' },
-                            { title: '労働基本権', url: '/kenpou/roudou-kihon/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第7節 参政権・国務請求権': [
-                            { title: '参政権', url: '/kenpou/sansei-ken/', difficulty: 'B', type: 'link' },
-                            { title: '国務請求権', url: '/kenpou/kokumu-seikyu/', difficulty: 'B', type: 'link' }
-                        ]
-                    }
-                },
-                '第3章 統治': {
-                    sections: {
-                        '第1節 国会': [
-                            { title: '権力分立', url: '/kenpou/kenryoku-bunritsu/', difficulty: 'A', type: 'link' },
-                            { title: '国会の地位', url: '/kenpou/kokkai-chii/', difficulty: 'A', type: 'link' },
-                            { title: '二院制', url: '/kenpou/niinsei/', difficulty: 'A', type: 'link' },
-                            { title: '国会の活動', url: '/kenpou/kokkai-katsudou/', difficulty: 'A', type: 'link' },
-                            { title: '国会議員の特権', url: '/kenpou/kokkai-giin-tokken/', difficulty: 'A', type: 'link' },
-                            { title: '国会と議院の権能', url: '/kenpou/kokkai-giin-kennou/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 内閣': [
-                            { title: '行政権と内閣', url: '/kenpou/gyouseikenz-naikaku/', difficulty: 'B', type: 'link' },
-                            { title: '内閣の組織', url: '/kenpou/naikaku-soshiki/', difficulty: 'A', type: 'link' },
-                            { title: '議院内閣制', url: '/kenpou/giin-naikaku-sei/', difficulty: 'A', type: 'link' },
-                            { title: '内閣と内閣総理大臣の権能', url: '/kenpou/naikaku-naikaku-souri/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第3節 裁判所': [
-                            { title: '司法権', url: '/kenpou/shihou-ken/', difficulty: 'A', type: 'link' },
-                            { title: '裁判所の組織と権能', url: '/kenpou/saibansho-soshiki/', difficulty: 'A', type: 'link' },
-                            { title: '司法権の独立', url: '/kenpou/shihou-dokuritsu/', difficulty: 'A', type: 'link' },
-                            { title: '違憲審査権', url: '/kenpou/kenpou-shinsa/', difficulty: 'A', type: 'link' },
-                            { title: '裁判の公開', url: '/kenpou/saiban-koukai/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第4節 財政': [
-                            { title: '国家財政', url: '/kenpou/kokka-zaisei/', difficulty: 'B', type: 'link' },
-                            { title: '予算・会計検査', url: '/kenpou/yosan-kaikei/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第5節 地方自治・憲法改正': [
-                            { title: '地方自治の本旨', url: '/kenpou/chihou-jichi-honshi/', difficulty: 'B', type: 'link' },
-                            { title: '憲法改正', url: '/kenpou/kenpou-kaisei/', difficulty: 'A', type: 'link' }
-                        ]
-                    }
-                }
+                items: []
             },
-            items: []
-        },
-        'administrative': { 
-            name: '行政法', 
-            chapters: {
-                '第1章 行政法の一般的な法理論': {
-                    sections: {
-                        '第1節 行政法総論': [
-                            { title: '行政法の一般原理', url: '/gyouseihou/gyouseihou-ippan-genri/', difficulty: 'A', type: 'link' },
-                            { title: '行政上の法律関係', url: '/gyouseihou/gyouseihou-houtei-kankei/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 行政組織法': [
-                            { title: '行政主体と行政機関', url: '/gyouseihou/gyousei-shutai-kikan/', difficulty: 'A', type: 'link' },
-                            { title: '行政機関の権限', url: '/gyouseihou/gyousei-kikan-kengen/', difficulty: 'A', type: 'link' },
-                            { title: '国の行政組織', url: '/gyouseihou/kuni-gyousei-soshiki/', difficulty: 'B', type: 'link' },
-                            { title: '公務員', url: '/gyouseihou/koumuin/', difficulty: 'B', type: 'link' },
-                            { title: '公物', url: '/gyouseihou/kouchoubutsu/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第3節 行政作用の類型': [
-                            { title: '行政作用とは何か', url: '/gyouseihou/gyousei-sayou-towa/', difficulty: 'B', type: 'link' },
-                            { title: '行政処分', url: '/gyouseihou/gyousei-shobun/', difficulty: 'A', type: 'link' },
-                            { title: '行政立法', url: '/gyouseihou/gyousei-rippou/', difficulty: 'A', type: 'link' },
-                            { title: '行政計画', url: '/gyouseihou/gyousei-keikaku/', difficulty: 'B', type: 'link' },
-                            { title: '行政契約', url: '/gyouseihou/gyousei-keiyaku/', difficulty: 'B', type: 'link' },
-                            { title: '行政指導', url: '/gyouseihou/gyousei-shidou/', difficulty: 'B', type: 'link' },
-                            { title: '行政調査', url: '/gyouseihou/gyousei-chousa/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第4節 行政上の強制措置': [
-                            { title: '行政上の強制措置の全体像', url: '/gyouseihou/gyousei-kyousei-zentaizou/', difficulty: 'B', type: 'link' },
-                            { title: '行政上の強制執行', url: '/gyouseihou/gyousei-kyousei-shikkou/', difficulty: 'A', type: 'link' },
-                            { title: '即時強制', url: '/gyouseihou/sokuji-kyousei/', difficulty: 'B', type: 'link' },
-                            { title: '行政罰', url: '/gyouseihou/gyousei-batsu/', difficulty: 'A', type: 'link' }
-                        ]
+            'administrative': { 
+                name: '行政法',
+                order: 2, // ★追加: 順序固定
+                chapters: {
+                    '第1章 行政法の一般的な法理論': {
+                        sections: {
+                            '第1節 行政法総論': [
+                                { title: '行政法の一般原理', url: '/gyouseihou/gyouseihou-ippan-genri/', difficulty: 'A', type: 'link' },
+                                { title: '行政上の法律関係', url: '/gyouseihou/gyouseihou-houtei-kankei/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 行政組織法': [
+                                { title: '行政主体と行政機関', url: '/gyouseihou/gyousei-shutai-kikan/', difficulty: 'A', type: 'link' },
+                                { title: '行政機関の権限', url: '/gyouseihou/gyousei-kikan-kengen/', difficulty: 'A', type: 'link' },
+                                { title: '国の行政組織', url: '/gyouseihou/kuni-gyousei-soshiki/', difficulty: 'B', type: 'link' },
+                                { title: '公務員', url: '/gyouseihou/koumuin/', difficulty: 'B', type: 'link' },
+                                { title: '公物', url: '/gyouseihou/kouchoubutsu/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第3節 行政作用の類型': [
+                                { title: '行政作用とは何か', url: '/gyouseihou/gyousei-sayou-towa/', difficulty: 'B', type: 'link' },
+                                { title: '行政処分', url: '/gyouseihou/gyousei-shobun/', difficulty: 'A', type: 'link' },
+                                { title: '行政立法', url: '/gyouseihou/gyousei-rippou/', difficulty: 'A', type: 'link' },
+                                { title: '行政計画', url: '/gyouseihou/gyousei-keikaku/', difficulty: 'B', type: 'link' },
+                                { title: '行政契約', url: '/gyouseihou/gyousei-keiyaku/', difficulty: 'B', type: 'link' },
+                                { title: '行政指導', url: '/gyouseihou/gyousei-shidou/', difficulty: 'B', type: 'link' },
+                                { title: '行政調査', url: '/gyouseihou/gyousei-chousa/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第4節 行政上の強制措置': [
+                                { title: '行政上の強制措置の全体像', url: '/gyouseihou/gyousei-kyousei-zentaizou/', difficulty: 'B', type: 'link' },
+                                { title: '行政上の強制執行', url: '/gyouseihou/gyousei-kyousei-shikkou/', difficulty: 'A', type: 'link' },
+                                { title: '即時強制', url: '/gyouseihou/sokuji-kyousei/', difficulty: 'B', type: 'link' },
+                                { title: '行政罰', url: '/gyouseihou/gyousei-batsu/', difficulty: 'A', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第2章 行政手続法': {
+                        sections: {
+                            '第1節 行政手続法総則': [
+                                { title: '行政手続法とは何か', url: '/gyouseihou/gyousei-tetuzuki-towa/', difficulty: 'B', type: 'link' },
+                                { title: '行政手続法の目的', url: '/gyouseihou/gyousei-tetuzuki-mokuteki/', difficulty: 'A', type: 'link' },
+                                { title: '行政手続法の対象', url: '/gyouseihou/gyousei-tetuzuki-taishou/', difficulty: 'A', type: 'link' },
+                                { title: '適用除外', url: '/gyouseihou/tekiyou-jogai/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 申請に対する処分': [
+                                { title: '申請に対する処分とは何か', url: '/gyouseihou/shinsei-shobun-towa/', difficulty: 'B', type: 'link' },
+                                { title: '審査基準', url: '/gyouseihou/shinsa-kijun/', difficulty: 'A', type: 'link' },
+                                { title: '標準処理期間', url: '/gyouseihou/hyoujun-shori-kikan/', difficulty: 'A', type: 'link' },
+                                { title: '申請に対する審査・応答', url: '/gyouseihou/shinsei-shinsa-toutou/', difficulty: 'A', type: 'link' },
+                                { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ/', difficulty: 'A', type: 'link' },
+                                { title: 'その他の規定', url: '/gyouseihou/sonota-kitei/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第3節 不利益処分': [
+                                { title: '不利益処分とは何か', url: '/gyouseihou/furieki-shobun-towa/', difficulty: 'A', type: 'link' },
+                                { title: '処分基準', url: '/gyouseihou/shobun-kijun/', difficulty: 'A', type: 'link' },
+                                { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ-furieki/', difficulty: 'A', type: 'link' },
+                                { title: '聴聞選択手続', url: '/gyouseihou/choushin-tetuzuki/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第4節 行政指導': [
+                                { title: '行政指導とは何か', url: '/gyouseihou/gyousei-shidou-towa/', difficulty: 'A', type: 'link' },
+                                { title: '行政指導の手続', url: '/gyouseihou/gyousei-shidou-tetsuzuki/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第5節 届出': [
+                                { title: '届出とは何か', url: '/gyouseihou/todokede-towa/', difficulty: 'C', type: 'link' },
+                                { title: '届出の効力発生時期', url: '/gyouseihou/todokede-kouryoku-hassei/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第6節 命令等制定手続': [
+                                { title: '命令等を定める場合の一般原則', url: '/gyouseihou/meirei-toutei-ippan-genri/', difficulty: 'B', type: 'link' },
+                                { title: '意見公募手続', url: '/gyouseihou/iken-koubo/', difficulty: 'A', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第3章 行政不服審査法': {
+                        sections: {
+                            '第1節 行政不服審査法総則': [
+                                { title: '行政済法の全体像', url: '/gyouseihou/gyousei-fufuku-zentaizou/', difficulty: 'B', type: 'link' },
+                                { title: '行政不服審査法の目的', url: '/gyouseihou/gyousei-fufuku-mokuteki/', difficulty: 'A', type: 'link' },
+                                { title: '審査請求の対象', url: '/gyouseihou/shinsei-kyusai-taishou/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 審査請求': [
+                                { title: '審査請求の流れ', url: '/gyouseihou/shinsa-seikyu-nagare/', difficulty: 'B', type: 'link' },
+                                { title: '審査請求の要件', url: '/gyouseihou/shinsa-seikyu-youken/', difficulty: 'A', type: 'link' },
+                                { title: '審査請求の審理手続', url: '/gyouseihou/shinsa-seikyu-shinri-tetuzuki/', difficulty: 'A', type: 'link' },
+                                { title: '審査請求の裁決', url: '/gyouseihou/shinsa-seikyu-saiketsu/', difficulty: 'A', type: 'link' },
+                                { title: '執行停止', url: '/gyouseihou/shikkou-teishi/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第3節 審査請求以外の不服申立て': [
+                                { title: '再調査の請求', url: '/gyouseihou/saichousa-seikyu/', difficulty: 'B', type: 'link' },
+                                { title: '再審査請求', url: '/gyouseihou/saishingsa-seikyu/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第4節 教示': [
+                                { title: '教示とは何か', url: '/gyouseihou/kyouji-towa/', difficulty: 'B', type: 'link' },
+                                { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第4章 行政事件訴訟法': {
+                        sections: {
+                            '第1節 行政事件訴訟の類型': [
+                                { title: '行政事件訴訟', url: '/gyouseihou/gyousei-jiken-soshou/', difficulty: 'A', type: 'link' },
+                                { title: '抗告訴訟', url: '/gyouseihou/koutoku-soshou/', difficulty: 'A', type: 'link' },
+                                { title: '当事者訴訟', url: '/gyouseihou/touji-soshou/', difficulty: 'B', type: 'link' },
+                                { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou/', difficulty: 'B', type: 'link' },
+                                { title: '機関訴訟', url: '/gyouseihou/kikan-soshou/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第2節 取消訴訟': [
+                                { title: '取消訴訟の類型', url: '/gyouseihou/torikeshi-soshou-ruikei/', difficulty: 'A', type: 'link' },
+                                { title: '取消訴訟の要件', url: '/gyouseihou/torikeshi-soshou-youken/', difficulty: 'A', type: 'link' },
+                                { title: '取消訴訟の審理', url: '/gyouseihou/torikeshi-soshou-shinri/', difficulty: 'B', type: 'link' },
+                                { title: '取消訴訟の判決', url: '/gyouseihou/torikeshi-soshou-hanketsu/', difficulty: 'A', type: 'link' },
+                                { title: '執行停止', url: '/gyouseihou/shikkou-teishi-soshou/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第3節 取消訴訟以外の抗告訴訟': [
+                                { title: '無効等確認訴訟', url: '/gyouseihou/mukou-toutou-kakunin/', difficulty: 'B', type: 'link' },
+                                { title: '不作為の違法確認訴訟', url: '/gyouseihou/fusaku-ihou-kakunin/', difficulty: 'B', type: 'link' },
+                                { title: '義務付け訴訟', url: '/gyouseihou/gimu-dzuke-soshou/', difficulty: 'A', type: 'link' },
+                                { title: '差止め訴訟', url: '/gyouseihou/sashi-tome-soshou/', difficulty: 'B', type: 'link' },
+                                { title: '仮の義務付け・仮の差止め', url: '/gyouseihou/kari-gimu-dzuke-sashitome/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第4節 当事者訴訟': [
+                                { title: '当事者訴訟とは何か', url: '/gyouseihou/toujisha-soshou-towa/', difficulty: 'B', type: 'link' },
+                                { title: '形態的当事者訴訟', url: '/gyouseihou/keitai-betsu-toujisha/', difficulty: 'B', type: 'link' },
+                                { title: '実質的当事者訴訟', url: '/gyouseihou/jisshitsu-toujisha/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第5節 民衆訴訟・機関訴訟': [
+                                { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou-towa/', difficulty: 'C', type: 'link' },
+                                { title: '機関訴訟', url: '/gyouseihou/kikan-soshou-towa/', difficulty: 'C', type: 'link' }
+                            ],
+                            '第6節 教示': [
+                                { title: '教示とは何か', url: '/gyouseihou/kyouji-soshou/', difficulty: 'B', type: 'link' },
+                                { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou-soshou/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第5章 国家賠償法・損失補償': {
+                        sections: {
+                            '第1節 国家賠償法': [
+                                { title: '国家賠償法の全体像', url: '/gyouseihou/kokka-baishou-zentaizou/', difficulty: 'B', type: 'link' },
+                                { title: '国家賠償法1条', url: '/gyouseihou/kokka-baishou-1jou/', difficulty: 'A', type: 'link' },
+                                { title: '国家賠償法2条', url: '/gyouseihou/kokka-baishou-2jou/', difficulty: 'A', type: 'link' },
+                                { title: '国家賠償法3条～6条', url: '/gyouseihou/kokka-baishou-3-6jou/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第2節 損失補償': [
+                                { title: '損失補償とは何か', url: '/gyouseihou/sonshitsu-hoshou-towa/', difficulty: 'B', type: 'link' },
+                                { title: '補償の根拠', url: '/gyouseihou/hoshou-konkyou/', difficulty: 'B', type: 'link' },
+                                { title: '補償の内容・程度', url: '/gyouseihou/hoshou-naiyou-teido/', difficulty: 'B', type: 'link' },
+                                { title: '補償の方法', url: '/gyouseihou/hoshou-houhou/', difficulty: 'C', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第6章 地方自治法': {
+                        sections: {
+                            '第1節 地方公共団体の種類': [
+                                { title: '地方自治とは何か', url: '/gyouseihou/chihou-jichi-towa/', difficulty: 'B', type: 'link' },
+                                { title: '地方公共団体の種類', url: '/gyouseihou/chihou-dantai-shurui/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 地方公共団体の事務': [
+                                { title: '地方公共団体の事務の種類', url: '/gyouseihou/chihou-dantai-jimu-shurui/', difficulty: 'B', type: 'link' },
+                                { title: '事務処理の基本原則', url: '/gyouseihou/jimu-shori-kihon-genri/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第3節 地方公共団体の機関': [
+                                { title: '議会', url: '/gyouseihou/gikai/', difficulty: 'A', type: 'link' },
+                                { title: '執行機関', url: '/gyouseihou/shikkou-kikan/', difficulty: 'A', type: 'link' },
+                                { title: '議会と長の関係', url: '/gyouseihou/gikai-chou-kankei/', difficulty: 'A', type: 'link' },
+                                { title: '地域自治区', url: '/gyouseihou/chiiki-jichi-ku/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第4節 地方公共団体の立法': [
+                                { title: '地方公共団体の自主立法', url: '/gyouseihou/chihou-dantai-jiritsu-rippou/', difficulty: 'B', type: 'link' },
+                                { title: '条例', url: '/gyouseihou/jourei/', difficulty: 'A', type: 'link' },
+                                { title: '規則', url: '/gyouseihou/kisoku/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第5節 地方公共団体の財務': [
+                                { title: '地方公共団体の財務の流れ', url: '/gyouseihou/chihou-dantai-zaimu-nagare/', difficulty: 'B', type: 'link' },
+                                { title: '地方公共団体の財務に関する規定', url: '/gyouseihou/chihou-dantai-zaimu-kitei/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第6節 住民の権利': [
+                                { title: '住民', url: '/gyouseihou/juumin/', difficulty: 'B', type: 'link' },
+                                { title: '選挙', url: '/gyouseihou/senkyo/', difficulty: 'B', type: 'link' },
+                                { title: '直接請求', url: '/gyouseihou/chokusetsu-seikyu/', difficulty: 'A', type: 'link' },
+                                { title: '住民監査請求・住民訴訟', url: '/gyouseihou/juumin-kansa-seikyu-soshou/', difficulty: 'A', type: 'link' },
+                                { title: '公の施設', url: '/gyouseihou/koukai-seikyu/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第7節 関与': [
+                                { title: '関与とは何か', url: '/gyouseihou/kanyo-towa/', difficulty: 'B', type: 'link' },
+                                { title: '関与の基本原則', url: '/gyouseihou/kanyo-kihon-genri/', difficulty: 'B', type: 'link' },
+                                { title: '関与の基本類型', url: '/gyouseihou/kanyo-kihon-ruikei/', difficulty: 'B', type: 'link' },
+                                { title: '紛争処理', url: '/gyouseihou/funsou-shori/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
                     }
                 },
-                '第2章 行政手続法': {
-                    sections: {
-                        '第1節 行政手続法総則': [
-                            { title: '行政手続法とは何か', url: '/gyouseihou/gyousei-tetuzuki-towa/', difficulty: 'B', type: 'link' },
-                            { title: '行政手続法の目的', url: '/gyouseihou/gyousei-tetuzuki-mokuteki/', difficulty: 'A', type: 'link' },
-                            { title: '行政手続法の対象', url: '/gyouseihou/gyousei-tetuzuki-taishou/', difficulty: 'A', type: 'link' },
-                            { title: '適用除外', url: '/gyouseihou/tekiyou-jogai/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 申請に対する処分': [
-                            { title: '申請に対する処分とは何か', url: '/gyouseihou/shinsei-shobun-towa/', difficulty: 'B', type: 'link' },
-                            { title: '審査基準', url: '/gyouseihou/shinsa-kijun/', difficulty: 'A', type: 'link' },
-                            { title: '標準処理期間', url: '/gyouseihou/hyoujun-shori-kikan/', difficulty: 'A', type: 'link' },
-                            { title: '申請に対する審査・応答', url: '/gyouseihou/shinsei-shinsa-toutou/', difficulty: 'A', type: 'link' },
-                            { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ/', difficulty: 'A', type: 'link' },
-                            { title: 'その他の規定', url: '/gyouseihou/sonota-kitei/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第3節 不利益処分': [
-                            { title: '不利益処分とは何か', url: '/gyouseihou/furieki-shobun-towa/', difficulty: 'A', type: 'link' },
-                            { title: '処分基準', url: '/gyouseihou/shobun-kijun/', difficulty: 'A', type: 'link' },
-                            { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ-furieki/', difficulty: 'A', type: 'link' },
-                            { title: '聴聞選択手続', url: '/gyouseihou/choushin-tetuzuki/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第4節 行政指導': [
-                            { title: '行政指導とは何か', url: '/gyouseihou/gyousei-shidou-towa/', difficulty: 'A', type: 'link' },
-                            { title: '行政指導の手続', url: '/gyouseihou/gyousei-shidou-tetsuzuki/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第5節 届出': [
-                            { title: '届出とは何か', url: '/gyouseihou/todokede-towa/', difficulty: 'C', type: 'link' },
-                            { title: '届出の効力発生時期', url: '/gyouseihou/todokede-kouryoku-hassei/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第6節 命令等制定手続': [
-                            { title: '命令等を定める場合の一般原則', url: '/gyouseihou/meirei-toutei-ippan-genri/', difficulty: 'B', type: 'link' },
-                            { title: '意見公募手続', url: '/gyouseihou/iken-koubo/', difficulty: 'A', type: 'link' }
-                        ]
-                    }
-                },
-                '第3章 行政不服審査法': {
-                    sections: {
-                        '第1節 行政不服審査法総則': [
-                            { title: '行政済法の全体像', url: '/gyouseihou/gyousei-fufuku-zentaizou/', difficulty: 'B', type: 'link' },
-                            { title: '行政不服審査法の目的', url: '/gyouseihou/gyousei-fufuku-mokuteki/', difficulty: 'A', type: 'link' },
-                            { title: '審査請求の対象', url: '/gyouseihou/shinsei-kyusai-taishou/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 審査請求': [
-                            { title: '審査請求の流れ', url: '/gyouseihou/shinsa-seikyu-nagare/', difficulty: 'B', type: 'link' },
-                            { title: '審査請求の要件', url: '/gyouseihou/shinsa-seikyu-youken/', difficulty: 'A', type: 'link' },
-                            { title: '審査請求の審理手続', url: '/gyouseihou/shinsa-seikyu-shinri-tetuzuki/', difficulty: 'A', type: 'link' },
-                            { title: '審査請求の裁決', url: '/gyouseihou/shinsa-seikyu-saiketsu/', difficulty: 'A', type: 'link' },
-                            { title: '執行停止', url: '/gyouseihou/shikkou-teishi/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第3節 審査請求以外の不服申立て': [
-                            { title: '再調査の請求', url: '/gyouseihou/saichousa-seikyu/', difficulty: 'B', type: 'link' },
-                            { title: '再審査請求', url: '/gyouseihou/saishingsa-seikyu/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第4節 教示': [
-                            { title: '教示とは何か', url: '/gyouseihou/kyouji-towa/', difficulty: 'B', type: 'link' },
-                            { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou/', difficulty: 'B', type: 'link' }
-                        ]
-                    }
-                },
-                '第4章 行政事件訴訟法': {
-                    sections: {
-                        '第1節 行政事件訴訟の類型': [
-                            { title: '行政事件訴訟', url: '/gyouseihou/gyousei-jiken-soshou/', difficulty: 'A', type: 'link' },
-                            { title: '抗告訴訟', url: '/gyouseihou/koutoku-soshou/', difficulty: 'A', type: 'link' },
-                            { title: '当事者訴訟', url: '/gyouseihou/touji-soshou/', difficulty: 'B', type: 'link' },
-                            { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou/', difficulty: 'B', type: 'link' },
-                            { title: '機関訴訟', url: '/gyouseihou/kikan-soshou/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第2節 取消訴訟': [
-                            { title: '取消訴訟の類型', url: '/gyouseihou/torikeshi-soshou-ruikei/', difficulty: 'A', type: 'link' },
-                            { title: '取消訴訟の要件', url: '/gyouseihou/torikeshi-soshou-youken/', difficulty: 'A', type: 'link' },
-                            { title: '取消訴訟の審理', url: '/gyouseihou/torikeshi-soshou-shinri/', difficulty: 'B', type: 'link' },
-                            { title: '取消訴訟の判決', url: '/gyouseihou/torikeshi-soshou-hanketsu/', difficulty: 'A', type: 'link' },
-                            { title: '執行停止', url: '/gyouseihou/shikkou-teishi-soshou/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第3節 取消訴訟以外の抗告訴訟': [
-                            { title: '無効等確認訴訟', url: '/gyouseihou/mukou-toutou-kakunin/', difficulty: 'B', type: 'link' },
-                            { title: '不作為の違法確認訴訟', url: '/gyouseihou/fusaku-ihou-kakunin/', difficulty: 'B', type: 'link' },
-                            { title: '義務付け訴訟', url: '/gyouseihou/gimu-dzuke-soshou/', difficulty: 'A', type: 'link' },
-                            { title: '差止め訴訟', url: '/gyouseihou/sashi-tome-soshou/', difficulty: 'B', type: 'link' },
-                            { title: '仮の義務付け・仮の差止め', url: '/gyouseihou/kari-gimu-dzuke-sashitome/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第4節 当事者訴訟': [
-                            { title: '当事者訴訟とは何か', url: '/gyouseihou/toujisha-soshou-towa/', difficulty: 'B', type: 'link' },
-                            { title: '形態的当事者訴訟', url: '/gyouseihou/keitai-betsu-toujisha/', difficulty: 'B', type: 'link' },
-                            { title: '実質的当事者訴訟', url: '/gyouseihou/jisshitsu-toujisha/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第5節 民衆訴訟・機関訴訟': [
-                            { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou-towa/', difficulty: 'C', type: 'link' },
-                            { title: '機関訴訟', url: '/gyouseihou/kikan-soshou-towa/', difficulty: 'C', type: 'link' }
-                        ],
-                        '第6節 教示': [
-                            { title: '教示とは何か', url: '/gyouseihou/kyouji-soshou/', difficulty: 'B', type: 'link' },
-                            { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou-soshou/', difficulty: 'B', type: 'link' }
-                        ]
-                    }
-                },
-                '第5章 国家賠償法・損失補償': {
-                    sections: {
-                        '第1節 国家賠償法': [
-                            { title: '国家賠償法の全体像', url: '/gyouseihou/kokka-baishou-zentaizou/', difficulty: 'B', type: 'link' },
-                            { title: '国家賠償法1条', url: '/gyouseihou/kokka-baishou-1jou/', difficulty: 'A', type: 'link' },
-                            { title: '国家賠償法2条', url: '/gyouseihou/kokka-baishou-2jou/', difficulty: 'A', type: 'link' },
-                            { title: '国家賠償法3条～6条', url: '/gyouseihou/kokka-baishou-3-6jou/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第2節 損失補償': [
-                            { title: '損失補償とは何か', url: '/gyouseihou/sonshitsu-hoshou-towa/', difficulty: 'B', type: 'link' },
-                            { title: '補償の根拠', url: '/gyouseihou/hoshou-konkyou/', difficulty: 'B', type: 'link' },
-                            { title: '補償の内容・程度', url: '/gyouseihou/hoshou-naiyou-teido/', difficulty: 'B', type: 'link' },
-                            { title: '補償の方法', url: '/gyouseihou/hoshou-houhou/', difficulty: 'C', type: 'link' }
-                        ]
-                    }
-                },
-                '第6章 地方自治法': {
-                    sections: {
-                        '第1節 地方公共団体の種類': [
-                            { title: '地方自治とは何か', url: '/gyouseihou/chihou-jichi-towa/', difficulty: 'B', type: 'link' },
-                            { title: '地方公共団体の種類', url: '/gyouseihou/chihou-dantai-shurui/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第2節 地方公共団体の事務': [
-                            { title: '地方公共団体の事務の種類', url: '/gyouseihou/chihou-dantai-jimu-shurui/', difficulty: 'B', type: 'link' },
-                            { title: '事務処理の基本原則', url: '/gyouseihou/jimu-shori-kihon-genri/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第3節 地方公共団体の機関': [
-                            { title: '議会', url: '/gyouseihou/gikai/', difficulty: 'A', type: 'link' },
-                            { title: '執行機関', url: '/gyouseihou/shikkou-kikan/', difficulty: 'A', type: 'link' },
-                            { title: '議会と長の関係', url: '/gyouseihou/gikai-chou-kankei/', difficulty: 'A', type: 'link' },
-                            { title: '地域自治区', url: '/gyouseihou/chiiki-jichi-ku/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第4節 地方公共団体の立法': [
-                            { title: '地方公共団体の自主立法', url: '/gyouseihou/chihou-dantai-jiritsu-rippou/', difficulty: 'B', type: 'link' },
-                            { title: '条例', url: '/gyouseihou/jourei/', difficulty: 'A', type: 'link' },
-                            { title: '規則', url: '/gyouseihou/kisoku/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第5節 地方公共団体の財務': [
-                            { title: '地方公共団体の財務の流れ', url: '/gyouseihou/chihou-dantai-zaimu-nagare/', difficulty: 'B', type: 'link' },
-                            { title: '地方公共団体の財務に関する規定', url: '/gyouseihou/chihou-dantai-zaimu-kitei/', difficulty: 'B', type: 'link' }
-                        ],
-                        '第6節 住民の権利': [
-                            { title: '住民', url: '/gyouseihou/juumin/', difficulty: 'B', type: 'link' },
-                            { title: '選挙', url: '/gyouseihou/senkyo/', difficulty: 'B', type: 'link' },
-                            { title: '直接請求', url: '/gyouseihou/chokusetsu-seikyu/', difficulty: 'A', type: 'link' },
-                            { title: '住民監査請求・住民訴訟', url: '/gyouseihou/juumin-kansa-seikyu-soshou/', difficulty: 'A', type: 'link' },
-                            { title: '公の施設', url: '/gyouseihou/koukai-seikyu/', difficulty: 'A', type: 'link' }
-                        ],
-                        '第7節 関与': [
-                            { title: '関与とは何か', url: '/gyouseihou/kanyo-towa/', difficulty: 'B', type: 'link' },
-                            { title: '関与の基本原則', url: '/gyouseihou/kanyo-kihon-genri/', difficulty: 'B', type: 'link' },
-                            { title: '関与の基本類型', url: '/gyouseihou/kanyo-kihon-ruikei/', difficulty: 'B', type: 'link' },
-                            { title: '紛争処理', url: '/gyouseihou/funsou-shori/', difficulty: 'B', type: 'link' }
-                        ]
-                    }
-                }
+                items: []
             },
-            items: []
-        },
-        'civil': {  
-                name: '民法', 
+            'civil': {  
+                name: '民法',
+                order: 3, // ★追加: 順序固定
                 chapters: {
                     '第1編 総則': {
                         sections: {
@@ -416,7 +421,8 @@ class KeyPointsModuleClass {
                 items: [] 
             },
             'commercial': { 
-                name: '商法', 
+                name: '商法',
+                order: 4, // ★追加: 順序固定
                 chapters: {
                     '第1編 商法総則': {
                         sections: {
@@ -446,10 +452,47 @@ class KeyPointsModuleClass {
                 },
                 items: [] 
             },
-            'basic_knowledge': { 
-                name: '基礎知識', 
+            'basic_law': { 
+                name: '基礎法学',
+                order: 5, // ★追加: 順序固定
                 chapters: {
-                    '第1編 政治・経済・社会': {
+                    '第1章 法学概論': {
+                        sections: {
+                            '第1節 法とは何か': [
+                                { title: '法とは何か', url: '/kiso-hougaku/hou-gainen/', difficulty: 'B', type: 'link' },
+                                { title: '成文法（制定法）・不文法', url: '/kiso-hougaku/seibun-hou-fubun-hou/', difficulty: 'B', type: 'link' },
+                                { title: '意味の紛らわしい法律用語', url: '/kiso-hougaku/imi-magirawa-yougo/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第2節 法の効力': [
+                                { title: '時間的適用範囲', url: '/kiso-hougaku/jikan-tekiyou-hanui/', difficulty: 'A', type: 'link' },
+                                { title: '場所的適用範囲', url: '/kiso-hougaku/basho-tekiyou-hanui/', difficulty: 'A', type: 'link' }
+                            ],
+                            '第3節 法の解釈': [
+                                { title: '法の解釈とは何か', url: '/kiso-hougaku/hou-kaishaku-towa/', difficulty: 'C', type: 'link' },
+                                { title: '法の解釈の種類', url: '/kiso-hougaku/hou-kaishaku-shurui/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第4節 法律用語': [
+                                { title: '段階的な使い方がなされる法律用語', url: '/kiso-hougaku/dankaiteki-tsukaikata/', difficulty: 'A', type: 'link' }
+                            ]
+                        }
+                    },
+                    '第2章 紛争解決制度': {
+                        sections: {
+                            '第1節 裁判制度': [
+                                { title: '裁判とは何か', url: '/kiso-hougaku/saiban-towa/', difficulty: 'B', type: 'link' },
+                                { title: '裁判の基本原則', url: '/kiso-hougaku/saiban-kihon-genri/', difficulty: 'B', type: 'link' },
+                                { title: '裁判所・裁判官', url: '/kiso-hougaku/saibansho-saibankan/', difficulty: 'B', type: 'link' }
+                            ]
+                        }
+                    }
+                },
+                items: [] 
+            },
+            'basic_knowledge': { 
+                name: '基礎知識',
+                order: 6, // ★追加: 順序固定
+                chapters: {
+                    '第1章 政治・経済・社会': {
                         sections: {
                             '第1節 政治制度': [
                                 { title: '国会制度', url: '/kiso/kokkai-seido/', difficulty: 'B', type: 'link' },
@@ -461,11 +504,14 @@ class KeyPointsModuleClass {
                             ],
                             '第3節 社会制度': [
                                 { title: '社会保障制度', url: '/kiso/shakai-hoshou/', difficulty: 'B', type: 'link' },
-                                { title: '労働法制', url: '/kiso/roudou-housei/', difficulty: 'B', type: 'link' }
+                                { title: '労働法制', url: '/kiso/roudou-housei/', difficulty: 'B', type: 'link' },
+                                { title: '環境問題', url: '/kiso-chishiki/kankyou-mondai/', difficulty: 'B', type: 'link' },
+                                { title: '消費者問題', url: '/kiso-chishiki/shohi-sha-mondai/', difficulty: 'B', type: 'link' },
+                                { title: '外国人問題', url: '/kiso-chishiki/gaikokujin-mondai/', difficulty: 'B', type: 'link' }
                             ]
                         }
                     },
-                    '第2編 情報通信・個人情報保護': {
+                    '第2章 情報通信・個人情報保護': {
                         sections: {
                             '第1節 情報通信技術': [
                                 { title: 'IT基礎知識', url: '/kiso/it-kiso/', difficulty: 'B', type: 'link' },
@@ -476,34 +522,29 @@ class KeyPointsModuleClass {
                                 { title: 'プライバシー保護', url: '/kiso/privacy/', difficulty: 'A', type: 'link' }
                             ]
                         }
-                    }
-                },
-                items: [] 
-            },
-            'basic_law': { 
-                name: '基礎法学', 
-                chapters: {
-                    '第1編 法の基礎': {
+                    },
+                    '第3章 文章理解': {
                         sections: {
-                            '第1節 法の概念': [
-                                { title: '法とは何か', url: '/kiso-hou/hou-gainen/', difficulty: 'B', type: 'link' },
-                                { title: '法の機能', url: '/kiso-hou/hou-kinou/', difficulty: 'B', type: 'link' }
+                            '第1節 現代文': [
+                                { title: '現代文の読解', url: '/bunsho-rikai/gendaibun-dokkai/', difficulty: 'A', type: 'link' },
+                                { title: '漢字・語彙', url: '/bunsho-rikai/kanji-goi/', difficulty: 'A', type: 'link' }
                             ],
-                            '第2節 法の分類': [
-                                { title: '成文法と不文法', url: '/kiso-hou/seibunn-hou/', difficulty: 'B', type: 'link' },
-                                { title: '公法と私法', url: '/kiso-hou/kouhou-shihou/', difficulty: 'B', type: 'link' }
+                            '第2節 古文': [
+                                { title: '古文の基礎', url: '/bunsho-rikai/kobun-kiso/', difficulty: 'B', type: 'link' },
+                                { title: '古文読解', url: '/bunsho-rikai/kobun-dokkai/', difficulty: 'B', type: 'link' }
+                            ],
+                            '第3節 並べ替え問題': [
+                                { title: '並べ替え問題の手順', url: '/bunsho-rikai/narabikae-tehou/', difficulty: 'A', type: 'link' },
+                                { title: '手順の使い方', url: '/bunsho-rikai/narabikae-tehou-tsukaikata/', difficulty: 'A', type: 'link' }
                             ]
                         }
                     },
-                    '第2編 法の適用': {
+                    '第4章 業務関連法令': {
                         sections: {
-                            '第1節 法の解釈': [
-                                { title: '法解釈の方法', url: '/kiso-hou/hou-kaishaku/', difficulty: 'A', type: 'link' },
-                                { title: '類推適用', url: '/kiso-hou/ruisui-tekiyou/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 法の効力': [
-                                { title: '法の時間的効力', url: '/kiso-hou/jikan-kouryoku/', difficulty: 'B', type: 'link' },
-                                { title: '法の場所的効力', url: '/kiso-hou/basho-kouryoku/', difficulty: 'C', type: 'link' }
+                            '第1節 行政書士法': [
+                                { title: '行政書士法総則', url: '/gyoumu-kanren/gyouseishoshi-hou-sousoku/', difficulty: 'A', type: 'link' },
+                                { title: '行政書士会と日本行政書士会連合会', url: '/gyoumu-kanren/gyouseishoshi-kai/', difficulty: 'B', type: 'link' },
+                                { title: '行政書士の登録', url: '/gyoumu-kanren/gyouseishoshi-touroku/', difficulty: 'A', type: 'link' }
                             ]
                         }
                     }
@@ -643,15 +684,18 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 科目一覧の取得
+     * 科目一覧の取得（★修正: 順序固定）
      */
     getSubjectList() {
-        return Object.entries(this.subjects).map(([key, data]) => ({
-            key,
-            name: data.name,
-            itemCount: data.items ? data.items.length : 0,
-            chapterCount: Object.keys(data.chapters || {}).length
-        }));
+        return Object.entries(this.subjects)
+            .map(([key, data]) => ({
+                key,
+                name: data.name,
+                order: data.order || 999, // ★追加: 順序情報
+                itemCount: data.items ? data.items.length : 0,
+                chapterCount: Object.keys(data.chapters || {}).length
+            }))
+            .sort((a, b) => a.order - b.order); // ★追加: 順序でソート
     }
 
     /**
@@ -673,7 +717,7 @@ class KeyPointsModuleClass {
     renderSubjectListDirect() {
         this.currentView = 'subjects';
         this.isContentView = false;
-        const subjects = this.getSubjectList();
+        const subjects = this.getSubjectList(); // ★修正: 順序固定済み
         
         let html = `
             <div style="padding: 15px;">
@@ -800,10 +844,12 @@ class KeyPointsModuleClass {
         } else {
             // ★修正: 章（編）の順序をソート
             const sortedChapters = Object.entries(chapters).sort((a, b) => {
-                const aMatch = a[0].match(/第(\d+)編/);
-                const bMatch = b[0].match(/第(\d+)編/);
+                const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
+                const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
                 if (aMatch && bMatch) {
-                    return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+                    const aNum = parseInt(aMatch[1] || aMatch[2]);
+                    const bNum = parseInt(bMatch[1] || bMatch[2]);
+                    return aNum - bNum;
                 }
                 return a[0].localeCompare(b[0]);
             });
@@ -1145,10 +1191,12 @@ class KeyPointsModuleClass {
         
         // ★修正: 章（編）の順序をソート
         const sortedChapters = Object.entries(chapters).sort((a, b) => {
-            const aMatch = a[0].match(/第(\d+)編/);
-            const bMatch = b[0].match(/第(\d+)編/);
+            const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
+            const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
             if (aMatch && bMatch) {
-                return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+                const aNum = parseInt(aMatch[1] || aMatch[2]);
+                const bNum = parseInt(bMatch[1] || bMatch[2]);
+                return aNum - bNum;
             }
             return a[0].localeCompare(b[0]);
         });
@@ -1442,7 +1490,11 @@ class KeyPointsModuleClass {
     renderKeyPointsList() {
         let html = '';
         
-        Object.entries(this.subjects).forEach(([subjectKey, subject]) => {
+        // ★修正: 科目を順序でソートして表示
+        const sortedSubjects = Object.entries(this.subjects)
+            .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
+        
+        sortedSubjects.forEach(([subjectKey, subject]) => {
             let hasCustomContent = false;
             let customItems = [];
 
