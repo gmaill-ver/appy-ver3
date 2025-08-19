@@ -466,29 +466,7 @@ class KeyPointsModuleClass {
      * 科目一覧の取得
      */
     getSubjectList() {
-        // ★追加: 固定順序の定義
-        const fixedOrder = [
-            'kenpo', 'minpo', 'gyosei', 'chiho', 'kaisha', 
-            'kiso', 'ippan', 'bunsh', 'kiji', 'kisoku'
-        ];
-        
-        // ★追加: 固定順序でソート
-        const sortedEntries = Object.entries(this.subjects).sort((a, b) => {
-            const indexA = fixedOrder.indexOf(a[0]);
-            const indexB = fixedOrder.indexOf(b[0]);
-            
-            // 定義された順序にあるものを優先
-            if (indexA !== -1 && indexB !== -1) {
-                return indexA - indexB;
-            }
-            if (indexA !== -1) return -1;
-            if (indexB !== -1) return 1;
-            
-            // 定義外のものはアルファベット順
-            return a[0].localeCompare(b[0]);
-        });
-        
-        return sortedEntries.map(([key, data]) => ({
+        return Object.entries(this.subjects).map(([key, data]) => ({
             key,
             name: data.name,
             itemCount: data.items ? data.items.length : 0,
@@ -510,109 +488,103 @@ class KeyPointsModuleClass {
     }
 
     /**
- * 直接科目一覧を表示（カードなし・3列固定）
- */
-renderSubjectListDirect() {
-    this.currentView = 'subjects';
-    this.isContentView = false;
-    const subjects = this.getSubjectList();
-    
-    let html = `
-        <div style="padding: 15px;">
-            <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
-            <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
-    `;
+     * 直接科目一覧を表示（カードなし・3列固定）
+     */
+    renderSubjectListDirect() {
+        this.currentView = 'subjects';
+        this.isContentView = false;
+        const subjects = this.getSubjectList();
+        
+        let html = `
+            <div style="padding: 15px;">
+                <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
+                <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
+        `;
 
-    subjects.forEach((subject, index) => {
+        subjects.forEach(subject => {
+            html += `
+                <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
+                     onclick="KeyPointsModule.selectSubject('${subject.key}')">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
+                        ${subject.name}
+                    </div>
+                    <div style="font-size: 11px; color: var(--gray);">
+                        ${subject.chapterCount} 編
+                    </div>
+                    <div style="font-size: 11px; color: var(--gray);">
+                        ${subject.itemCount} 項目
+                    </div>
+                </div>
+            `;
+        });
+
         html += `
-            <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px;" 
-                 onclick="KeyPointsModule.selectSubject('${subject.key}')">
-                <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                    <span style="width: 20px; height: 20px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">${index + 1}</span>
-                    <span style="font-size: 14px; font-weight: 600;">${subject.name}</span>
                 </div>
-                <div style="text-align: center; margin-top: 8px;">
-                    <span style="font-size: 11px; color: var(--gray);">
-                        ${subject.chapterCount}編 / ${subject.itemCount}項目
-                    </span>
+            </div>
+            
+            <div style="margin: 20px 15px;">
+                <h4 style="margin-bottom: 15px;">📝 要点管理（カード選択式）</h4>
+                <div id="hierarchySelectionArea">
+                    <div class="form-group">
+                        <label class="form-label">科目を選択</label>
+                        <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
+                            <option value="">科目を選択</option>
+                            ${this.getSubjectList().map(subject => 
+                                `<option value="${subject.key}">${subject.name}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <!-- パンくずリスト -->
+                    <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
+                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
+                        <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
+                    </div>
+                    
+                    <div id="chapterCardsArea" style="display: none;">
+                        <label class="form-label">編を選択</label>
+                        <div id="chapterCards" class="small-card-grid"></div>
+                    </div>
+                    
+                    <div id="sectionCardsArea" style="display: none;">
+                        <label class="form-label">節を選択</label>
+                        <div id="sectionCards" class="small-card-grid"></div>
+                    </div>
+                    
+                    <div id="topicCardsArea" style="display: none;">
+                        <label class="form-label">項目を選択</label>
+                        <div id="topicCards" class="small-card-grid"></div>
+                    </div>
                 </div>
-                <div style="text-align: center; margin-top: 5px;">
-                    <span style="font-size: 16px; color: var(--primary); cursor: pointer;" 
-                          onclick="event.stopPropagation(); KeyPointsModule.selectSubject('${subject.key}')">
-                          🔗
-                    </span>
+                
+                <div class="form-group" style="margin-top: 20px;">
+                    <label class="form-label">要点まとめタイトル</label>
+                    <input type="text" class="form-control" id="keyPointTitle" 
+                           placeholder="例：権利能力の要点まとめ">
                 </div>
+                
+                <div class="form-group">
+                    <label class="form-label">HTML内容</label>
+                    <textarea class="form-control" id="keyPointHtml" rows="8" 
+                              placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
+                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                        💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
+                    </div>
+                </div>
+                
+                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
+                    📋 階層に要点を登録
+                </button>
+            </div>
+            
+            <div style="margin: 20px 15px;">
+                <h4>📚 登録済み要点</h4>
+                <div id="keyPointsList">${this.renderKeyPointsList()}</div>
             </div>
         `;
-    });
 
-    html += `
-            </div>
-        </div>
-        
-        <div style="margin: 20px 15px;">
-            <h4 style="margin-bottom: 15px;">📝 要点管理（カード選択式）</h4>
-            <div id="hierarchySelectionArea">
-                <div class="form-group">
-                    <label class="form-label">科目を選択</label>
-                    <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
-                        <option value="">科目を選択</option>
-                        ${this.getSubjectList().map(subject => 
-                            `<option value="${subject.key}">${subject.name}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                
-                <!-- パンくずリスト -->
-                <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-                    <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
-                    <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
-                </div>
-                
-                <div id="chapterCardsArea" style="display: none;">
-                    <label class="form-label">編を選択</label>
-                    <div id="chapterCards" class="small-card-grid"></div>
-                </div>
-                
-                <div id="sectionCardsArea" style="display: none;">
-                    <label class="form-label">節を選択</label>
-                    <div id="sectionCards" class="small-card-grid"></div>
-                </div>
-                
-                <div id="topicCardsArea" style="display: none;">
-                    <label class="form-label">項目を選択</label>
-                    <div id="topicCards" class="small-card-grid"></div>
-                </div>
-            </div>
-            
-            <div class="form-group" style="margin-top: 20px;">
-                <label class="form-label">要点まとめタイトル</label>
-                <input type="text" class="form-control" id="keyPointTitle" 
-                       placeholder="例：権利能力の要点まとめ">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">HTML内容</label>
-                <textarea class="form-control" id="keyPointHtml" rows="8" 
-                          placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
-                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                    💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
-                </div>
-            </div>
-            
-            <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
-                📋 階層に要点を登録
-            </button>
-        </div>
-        
-        <div style="margin: 20px 15px;">
-            <h4>📚 登録済み要点</h4>
-            <div id="keyPointsList">${this.renderKeyPointsList()}</div>
-        </div>
-    `;
-
-    return html;
-}
+        return html;
+    }
 
     /**
      * 科目選択（章一覧表示・折りたたみ機能付き）
@@ -673,22 +645,19 @@ renderSubjectListDirect() {
                         `;
                         
                         topics.forEach((topic, index) => {
-                            const difficultyText = topic.difficulty || 'C';
-                            const difficultyClass = `difficulty-${difficultyText.toLowerCase()}`;
-                            const linkText = topic.type === 'html' && topic.htmlContent ? '詳細を見る →' : 'リンクを開く →';
+                            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
+                            const hasCustomContent = topic.type === 'html' && topic.htmlContent;
                             
                             html += `
-                                <div class="topic-card" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 15px; cursor: pointer; transition: all 0.3s;"
+                                <div class="topic-card" style="background: ${hasCustomContent ? '#f0f8ff' : '#f7fafc'}; border: 1px solid ${hasCustomContent ? '#2196f3' : '#e2e8f0'}; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; position: relative;"
                                      onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <span style="font-size: 16px; font-weight: bold; color: #4a5568; min-width: 25px;">${index + 1}.</span>
-                                        <span style="font-size: 14px; font-weight: 500; flex: 1;">${topic.title}</span>
-                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; min-width: 20px; text-align: center;">${difficultyText}</span>
-                                        <a href="#" style="font-size: 12px; color: var(--primary); text-decoration: none; white-space: nowrap;" 
-                                           onclick="event.stopPropagation(); KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                           ${linkText}
-                                        </a>
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <span style="font-size: 11px; color: #718096; min-width: 20px; font-weight: 500; background: #edf2f7; padding: 2px 6px; border-radius: 3px;">${index + 1}</span>
+                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; min-width: 20px; text-align: center;">${topic.difficulty}</span>
+                                        ${hasCustomContent ? '<span style="background: #4caf50; color: white; padding: 2px 6px; border-radius: 3px; font-size: 9px; font-weight: bold;">HTML</span>' : ''}
                                     </div>
+                                    <div style="font-size: 13px; font-weight: 500; color: #2d3748; line-height: 1.4;">${topic.title}</div>
+                                    ${hasCustomContent ? '<div style="position: absolute; top: 8px; right: 8px; color: #2196f3; font-size: 12px;">📄</div>' : '<div style="position: absolute; top: 8px; right: 8px; color: #9ca3af; font-size: 12px;">🔗</div>'}
                                 </div>
                             `;
                         });
@@ -1299,7 +1268,7 @@ renderSubjectListDirect() {
                             <button class="delete-btn" 
                                     onclick="KeyPointsModule.deleteHierarchyItem('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
                                     style="background: #ef4444; font-size: 12px;">
-                                🗑️
+                                削除
                             </button>
                         </div>
                     `;
