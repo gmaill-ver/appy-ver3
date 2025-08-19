@@ -523,18 +523,24 @@ class KeyPointsModuleClass {
                 <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
         `;
 
-        subjects.forEach(subject => {
+        subjects.forEach((subject, index) => {
             html += `
-                <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
+                <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px;" 
                      onclick="KeyPointsModule.selectSubject('${subject.key}')">
-                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
-                        ${subject.name}
+                    <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                        <span style="font-size: 14px; font-weight: bold; color: var(--primary);">${index + 1}.</span>
+                        <span style="font-size: 14px; font-weight: 600;">${subject.name}</span>
                     </div>
-                    <div style="font-size: 11px; color: var(--gray);">
-                        ${subject.chapterCount} 編
+                    <div style="text-align: center; margin-top: 8px;">
+                        <span style="font-size: 11px; color: var(--gray);">
+                            ${subject.chapterCount}編 / ${subject.itemCount}項目
+                        </span>
                     </div>
-                    <div style="font-size: 11px; color: var(--gray);">
-                        ${subject.itemCount} 項目
+                    <div style="text-align: center; margin-top: 5px;">
+                        <a href="#" style="font-size: 11px; color: var(--primary); text-decoration: none;" 
+                           onclick="event.stopPropagation(); KeyPointsModule.selectSubject('${subject.key}')">
+                           詳細を見る →
+                        </a>
                     </div>
                 </div>
             `;
