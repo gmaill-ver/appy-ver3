@@ -1251,26 +1251,6 @@ if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
         }
     };
 
-    // 5. 要点確認データ保存の拡張（KeyPointsModuleが読み込まれた後に適用）
-    function extendKeyPointsModule() {
-        if (window.KeyPointsModule && typeof KeyPointsModule.saveKeyPointsData === 'function') {
-            const originalSaveKeyPointsData = KeyPointsModule.saveKeyPointsData;
-            KeyPointsModule.saveKeyPointsData = function() {
-                console.log("📚 要点確認保存（Firebase統合版）");
-                originalSaveKeyPointsData.call(this);
-                
-                if (ULTRA_STABLE_USER_ID) {
-                    DataManager.saveToFirestore({
-                        type: "keyPoints",
-                        action: "save",
-                        message: "要点確認データを保存しました"
-                    });
-                }
-            };
-            console.log("✅ KeyPointsModule Firebase統合完了");
-        }
-    }
-
     // 6. 試験日設定保存の拡張
     const originalSaveExamDate = DataManager.saveExamDate;
     DataManager.saveExamDate = function(date) {
@@ -1329,7 +1309,6 @@ if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
         
         // モジュール拡張を少し遅延して実行（全モジュール読み込み後）
         setTimeout(() => {
-            extendKeyPointsModule();
             extendQAModule();
             extendAppModule();
             console.log("✅ 全モジュールFirebase統合拡張完了");
