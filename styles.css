@@ -1468,13 +1468,15 @@ body {
     background: white;
     border: 1px solid var(--light);
     border-radius: 10px;
-    padding: 15px;
+    padding: 8px 15px; /* ★修正: 上下パディングを15px→8pxに縮小 */
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
     transition: all 0.3s;
     position: relative;
+    min-height: auto; /* ★追加: 最小高さを自動に */
+    font-size: 14px; /* ★追加: フォントサイズを少し小さく */
 }
 
 .accordion-header:hover {
