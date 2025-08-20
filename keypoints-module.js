@@ -1796,10 +1796,10 @@ class KeyPointsModuleClass {
                         
                         // ★修正: モードによって表示を切り替え
                         if (mode === 'edit') {
-                            // ★修正: 編集モード - 科目一覧と同じデザイン（要点表示削除、アイコンのみ）
+                            // ★修正: 編集モード - 科目一覧と完全に同じ横縦幅
                             if (hasCustomContent) {
                                 html += `
-                                    <div class="topic-card-edit" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;">
+                                    <div class="topic-card-edit" style="background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; align-items: center; gap: 12px;">
                                         <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
                                         <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
                                         <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
