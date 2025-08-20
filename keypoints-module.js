@@ -1617,80 +1617,69 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 登録済み要点リストを描画（★修正: カード式レイアウト + 編集機能）
+     * 登録済み要点リストを描画（★修正: 科目一覧と同じカード配置）
      */
     renderKeyPointsList() {
-        let html = '';
-        let allItems = [];
+        // 科目別要点数を集計
+        const subjectSummary = [];
         
         try {
-            // ★修正: 科目を順序でソートして表示
             const sortedSubjects = Object.entries(this.subjects)
                 .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
             
-            // 全ての要点項目を収集
             sortedSubjects.forEach(([subjectKey, subject]) => {
+                let itemCount = 0;
+                
+                // この科目の要点数をカウント
                 if (subject.chapters) {
-                    Object.entries(subject.chapters).forEach(([chapterName, chapterData]) => {
-                        if (chapterData.sections) {
-                            Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
-                                topics.forEach((topic, index) => {
-                                    if (topic.type === 'html' && topic.htmlContent) {
-                                        allItems.push({
-                                            title: topic.title,
-                                            subjectName: subject.name,
-                                            path: `${chapterName} → ${sectionName}`,
-                                            subjectKey,
-                                            chapterName,
-                                            sectionName,
-                                            topicIndex: index,
-                                            htmlContent: topic.htmlContent
-                                        });
-                                    }
-                                });
+                    Object.values(subject.chapters).forEach(chapter => {
+                        if (chapter.sections) {
+                            Object.values(chapter.sections).forEach(topics => {
+                                if (Array.isArray(topics)) {
+                                    topics.forEach(topic => {
+                                        if (topic.type === 'html' && topic.htmlContent) {
+                                            itemCount++;
+                                        }
+                                    });
+                                }
                             });
                         }
                     });
                 }
+                
+                subjectSummary.push({
+                    key: subjectKey,
+                    name: subject.name,
+                    chapterCount: Object.keys(subject.chapters || {}).length,
+                    itemCount: itemCount
+                });
             });
         } catch (error) {
-            console.warn('⚠️ 要点リスト生成エラー:', error);
+            console.warn('⚠️ 科目要点集計エラー:', error);
         }
         
-        if (allItems.length === 0) {
+        // 要点がある科目のみ表示
+        const subjectsWithKeyPoints = subjectSummary.filter(subject => subject.itemCount > 0);
+        
+        if (subjectsWithKeyPoints.length === 0) {
             return '<div style="text-align: center; padding: 30px; color: var(--gray); background: #f8f9fa; border-radius: 8px;"><p>📝 登録済み要点がありません</p><p style="font-size: 14px;">上のフォームから要点を追加してください</p></div>';
         }
         
-        // ★追加: カード式レイアウトで表示
-        html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px;">';
+        // ★修正: 科目一覧と同じ3列グリッドレイアウト
+        let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px;">';
         
-        allItems.forEach(item => {
+        subjectsWithKeyPoints.forEach(subject => {
             html += `
-                <div class="keypoints-card" style="background: white; border: 2px solid #e2e8f0; border-radius: 12px; padding: 16px; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 12px;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 14px; color: #2d3748; margin-bottom: 4px;">
-                                📄 ${item.title}
-                            </div>
-                            <div style="font-size: 12px; color: #718096; margin-bottom: 4px;">
-                                📚 ${item.subjectName}
-                            </div>
-                            <div style="font-size: 11px; color: #a0aec0;">
-                                📍 ${item.path}
-                            </div>
-                        </div>
+                <div class="keypoints-subject-card" style="background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
+                     onclick="KeyPointsModule.showSubjectKeyPoints('${subject.key}')">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
+                        ${subject.name}
                     </div>
-                    <div style="display: flex; gap: 8px; justify-content: end;">
-                        <button class="edit-btn" 
-                                onclick="KeyPointsModule.editKeyPoint('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
-                                style="background: #3182ce; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            ✏️ 編集
-                        </button>
-                        <button class="delete-btn" 
-                                onclick="KeyPointsModule.deleteHierarchyItem('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
-                                style="background: #e53e3e; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s;">
-                            🗑️ 削除
-                        </button>
+                    <div style="font-size: 11px; color: var(--gray);">
+                        ${subject.chapterCount} 編
+                    </div>
+                    <div style="font-size: 11px; color: #3182ce; font-weight: 600;">
+                        ${subject.itemCount} 要点
                     </div>
                 </div>
             `;
@@ -1699,6 +1688,115 @@ class KeyPointsModuleClass {
         html += '</div>';
         
         return html;
+    }
+
+    /**
+     * 科目の要点詳細表示（★追加: 科目別要点管理画面）
+     */
+    showSubjectKeyPoints(subjectKey) {
+        const subject = this.subjects[subjectKey];
+        if (!subject) return;
+        
+        // 現在のビューを保存
+        this.previousView = 'keyPointsList';
+        
+        // この科目の要点項目を収集
+        const keyPointItems = [];
+        
+        try {
+            if (subject.chapters) {
+                Object.entries(subject.chapters).forEach(([chapterName, chapterData]) => {
+                    if (chapterData.sections) {
+                        Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
+                            topics.forEach((topic, index) => {
+                                if (topic.type === 'html' && topic.htmlContent) {
+                                    keyPointItems.push({
+                                        title: topic.title,
+                                        path: `${chapterName} → ${sectionName}`,
+                                        subjectKey,
+                                        chapterName,
+                                        sectionName,
+                                        topicIndex: index,
+                                        htmlContent: topic.htmlContent
+                                    });
+                                }
+                            });
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn('⚠️ 科目要点収集エラー:', error);
+        }
+        
+        // 詳細画面のHTML生成
+        let html = `
+            <div style="padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h4 style="margin: 0; color: #2d3748;">📚 ${subject.name} 登録済み要点 (${keyPointItems.length}項目)</h4>
+                    <button class="save-button" onclick="KeyPointsModule.backToKeyPointsList()" 
+                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️ 戻る</button>
+                </div>
+        `;
+        
+        if (keyPointItems.length === 0) {
+            html += `
+                <div style="text-align: center; padding: 30px; color: var(--gray); background: #f8f9fa; border-radius: 8px;">
+                    <p>📝 この科目に登録済み要点がありません</p>
+                </div>
+            `;
+        } else {
+            // 要点項目を一覧表示（編集・削除ボタン付き）
+            keyPointItems.forEach(item => {
+                html += `
+                    <div class="keypoint-detail-item" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 12px; transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1; margin-right: 15px;">
+                                <div style="font-weight: 600; font-size: 15px; color: #2d3748; margin-bottom: 6px;">
+                                    📄 ${item.title}
+                                </div>
+                                <div style="font-size: 13px; color: #718096; margin-bottom: 8px;">
+                                    📍 ${item.path}
+                                </div>
+                                <div style="font-size: 12px; color: #a0aec0; background: #f7fafc; padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                                    内容: ${item.htmlContent.length > 50 ? item.htmlContent.substring(0, 50) + '...' : item.htmlContent.replace(/<[^>]*>/g, '')}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                                <button class="edit-btn" 
+                                        onclick="KeyPointsModule.editKeyPoint('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
+                                        style="background: #3182ce; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                                    ✏️ 編集
+                                </button>
+                                <button class="delete-btn" 
+                                        onclick="KeyPointsModule.deleteHierarchyItem('${item.subjectKey}', '${item.chapterName}', '${item.sectionName}', ${item.topicIndex})"
+                                        style="background: #e53e3e; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+                                    🗑️ 削除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        html += '</div>';
+        
+        // 登録済み要点エリアを更新
+        const listContainer = document.getElementById('keyPointsList');
+        if (listContainer) {
+            listContainer.innerHTML = html;
+        }
+    }
+
+    /**
+     * 登録済み要点一覧に戻る（★追加）
+     */
+    backToKeyPointsList() {
+        const listContainer = document.getElementById('keyPointsList');
+        if (listContainer) {
+            listContainer.innerHTML = this.renderKeyPointsList();
+        }
     }
 
     /**
@@ -1763,7 +1861,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 編集内容を保存（★修正: キャッシュクリア完全対応）
+     * 編集内容を保存（★修正: リスト更新改善）
      */
     async saveEditedKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
         try {
@@ -1797,11 +1895,8 @@ class KeyPointsModuleClass {
                 // モーダルを閉じる
                 document.querySelector('.custom-modal').remove();
                 
-                // 登録済みリストを更新
-                const listContainer = document.getElementById('keyPointsList');
-                if (listContainer) {
-                    listContainer.innerHTML = this.renderKeyPointsList();
-                }
+                // ★修正: 現在の表示を更新
+                this.updateCurrentKeyPointsView(subjectKey);
                 
                 alert('要点まとめを更新しました！');
                 console.log('✅ 要点編集保存完了', {
@@ -1822,7 +1917,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 階層項目削除（★修正: キャッシュクリア完全対応）
+     * 階層項目削除（★修正: リスト更新改善）
      */
     async deleteHierarchyItem(subjectKey, chapterName, sectionName, topicIndex) {
         if (confirm('この要点まとめを削除しますか？')) {
@@ -1844,11 +1939,8 @@ class KeyPointsModuleClass {
                         return;
                     }
                     
-                    // 登録済みリストを更新
-                    const listContainer = document.getElementById('keyPointsList');
-                    if (listContainer) {
-                        listContainer.innerHTML = this.renderKeyPointsList();
-                    }
+                    // ★修正: 現在の表示を更新
+                    this.updateCurrentKeyPointsView(subjectKey);
                     
                     alert('要点まとめを削除しました');
                     console.log('✅ 要点削除保存完了', {
@@ -1863,6 +1955,25 @@ class KeyPointsModuleClass {
                 console.error('❌ 要点削除保存エラー:', error);
                 alert('削除中にエラーが発生しました。再度お試しください。');
             }
+        }
+    }
+
+    /**
+     * 現在の要点表示を更新（★追加: 編集・削除後の表示更新）
+     */
+    updateCurrentKeyPointsView(subjectKey) {
+        const listContainer = document.getElementById('keyPointsList');
+        if (!listContainer) return;
+        
+        // 現在詳細画面を表示中かチェック
+        const detailView = listContainer.querySelector('.keypoint-detail-item');
+        
+        if (detailView) {
+            // 詳細画面表示中 → 科目別詳細を再描画
+            this.showSubjectKeyPoints(subjectKey);
+        } else {
+            // 科目一覧表示中 → 科目一覧を再描画
+            listContainer.innerHTML = this.renderKeyPointsList();
         }
     }
 
@@ -1954,6 +2065,19 @@ class KeyPointsModuleClass {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
                 border-color: #3182ce !important;
+            }
+
+            /* 科目カード（登録済み要点用）のスタイル */
+            .keypoints-subject-card:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                border-color: #3182ce !important;
+            }
+
+            /* 要点詳細アイテムのスタイル */
+            .keypoint-detail-item:hover {
+                box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
+                border-color: #cbd5e0 !important;
             }
 
             .edit-btn:hover {
