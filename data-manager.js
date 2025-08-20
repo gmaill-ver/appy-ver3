@@ -140,40 +140,57 @@ if (data.books && typeof data.books === 'object') {
     this.saveBooksToStorage(); // ★追加: ローカルにも即座に保存
     console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
 }
-                if (data.bookOrder && Array.isArray(data.bookOrder)) {
-                    this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
-                }
-                if (data.records && Array.isArray(data.records)) {
-                    this.allRecords = data.records;
-                }
-                if (data.studyPlans && Array.isArray(data.studyPlans)) {
-                    this.studyPlans = this.filterDeletedItems(data.studyPlans, 'studyPlans');
-                }
-                if (data.qaQuestions && typeof data.qaQuestions === 'object') {
-                    this.qaQuestions = this.filterDeletedItems(data.qaQuestions, 'qaQuestions');
-                }
-                if (data.csvTemplates && typeof data.csvTemplates === 'object') {
-                    this.csvTemplates = this.filterDeletedItems(data.csvTemplates, 'csvTemplates');
-                }
-                if (data.examDate) {
-                    try {
-                        this.examDate = new Date(data.examDate);
-                    } catch (e) {
-                        console.warn('Invalid exam date from Firebase');
-                    }
-                }
-                
-                // ローカルにも保存
-                this.saveAllData();
-            } else {
-                // 新規ユーザーの場合、現在のデータをFirebaseに保存
-                await this.saveToFirebase();
-            }
-        } catch (error) {
-            console.error('Firebase sync error:', error);
-            // エラーが発生してもローカルデータは維持
-        }
+
+// ★追加: 問題集順序の個別保存
+if (data.bookOrder && Array.isArray(data.bookOrder)) {
+    this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
+    this.saveBookOrder(); // ★追加: ローカルにも保存
+    console.log(`📋 問題集順序復元: ${this.bookOrder.length}件`);
+}
+
+// ★追加: 学習記録の個別保存
+if (data.records && Array.isArray(data.records)) {
+    this.allRecords = data.records;
+    localStorage.setItem('studyHistory', JSON.stringify(this.allRecords)); // ★追加: ローカル保存
+}
+
+// ★追加: 学習計画の個別保存
+if (data.studyPlans && Array.isArray(data.studyPlans)) {
+    this.studyPlans = this.filterDeletedItems(data.studyPlans, 'studyPlans');
+    this.saveStudyPlans(); // ★追加: ローカル保存
+}
+
+// ★追加: 一問一答の個別保存
+if (data.qaQuestions && typeof data.qaQuestions === 'object') {
+    this.qaQuestions = this.filterDeletedItems(data.qaQuestions, 'qaQuestions');
+    this.saveQAQuestions(); // ★追加: ローカル保存
+}
+
+// ★追加: CSVテンプレートの個別保存
+if (data.csvTemplates && typeof data.csvTemplates === 'object') {
+    this.csvTemplates = this.filterDeletedItems(data.csvTemplates, 'csvTemplates');
+    this.saveCSVTemplates(); // ★追加: ローカル保存
+}
+
+// ★追加: 試験日の個別保存
+if (data.examDate) {
+    try {
+        this.examDate = new Date(data.examDate);
+        localStorage.setItem('examDate', data.examDate); // ★追加: ローカル保存
+    } catch (e) {
+        console.warn('Invalid exam date from Firebase');
     }
+}
+
+// ★削除: 重複するsaveAllData()を削除（個別保存で十分）
+} else {
+    // 新規ユーザーの場合、現在のデータをFirebaseに保存
+    await this.saveToFirebase();
+}
+} catch (error) {
+    console.error('Firebase sync error:', error);
+    // エラーが発生してもローカルデータは維持
+}
 
     /**
  * 削除済みアイテムかチェック
