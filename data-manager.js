@@ -176,351 +176,372 @@ if (data.books && typeof data.books === 'object') {
     }
 
     /**
-     * 削除済みアイテムかチェック
-     */
-    isDeleted(type, id) {
-        return this.deletedItems.some(item => 
-            item.type === type && item.id === id
-        );
-    }
+ * 削除済みアイテムかチェック
+ */
+isDeleted(type, id) {
+    return this.deletedItems.some(item => 
+        item.type === type && item.id === id
+    );
+}
 
-    /**
-     * 削除済みアイテムを除外してフィルタリング（一問一答対応版）
-     */
-    filterDeletedItems(data, type) {
-        if (Array.isArray(data)) {
-            return data.filter(item => !this.isDeleted(type, item.id));
-        } else if (typeof data === 'object') {
-            if (type === 'qaQuestions') {
-                // ★追加: 一問一答の場合は個別問題も除外
-                const filtered = {};
-                Object.keys(data).forEach(setName => {
-                    if (!this.isDeleted('qaQuestions', setName)) {
-                        // 問題集レベルで削除されていない場合、個別問題をチェック
-                        if (Array.isArray(data[setName])) {
-                            const filteredQuestions = data[setName].filter(q => 
-                                !this.isDeletedQAQuestion(setName, q.id)
-                            );
-                            if (filteredQuestions.length > 0) {
-                                filtered[setName] = filteredQuestions;
-                            }
+/**
+ * 削除済み階層アイテムを除外するフィルタ（★強化版）
+ */
+filterDeletedHierarchy(structure, bookId, basePath) {
+    if (!structure || typeof structure !== 'object') {
+        return {};
+    }
+    
+    const filtered = {};
+    
+    Object.keys(structure).forEach(name => {
+        const currentPath = [...basePath, name];
+        const hierarchyId = `${bookId}_${currentPath.join('/')}`;
+        
+        // 削除済みかチェック
+        if (!this.isDeleted('hierarchy', hierarchyId)) {
+            const item = { ...structure[name] };
+            
+            // 子要素がある場合は再帰的にフィルタリング
+            if (item.children && Object.keys(item.children).length > 0) {
+                item.children = this.filterDeletedHierarchy(item.children, bookId, currentPath);
+            }
+            
+            filtered[name] = item;
+        }
+    });
+    
+    return filtered;
+}
+
+/**
+ * 削除済みアイテムを除外してフィルタリング（一問一答対応版）
+ */
+filterDeletedItems(data, type) {
+    if (Array.isArray(data)) {
+        return data.filter(item => !this.isDeleted(type, item.id));
+    } else if (typeof data === 'object') {
+        if (type === 'qaQuestions') {
+            // ★追加: 一問一答の場合は個別問題も除外
+            const filtered = {};
+            Object.keys(data).forEach(setName => {
+                if (!this.isDeleted('qaQuestions', setName)) {
+                    // 問題集レベルで削除されていない場合、個別問題をチェック
+                    if (Array.isArray(data[setName])) {
+                        const filteredQuestions = data[setName].filter(q => 
+                            !this.isDeletedQAQuestion(setName, q.id)
+                        );
+                        if (filteredQuestions.length > 0) {
+                            filtered[setName] = filteredQuestions;
                         }
                     }
-                });
-                return filtered;
-            } else {
-                const filtered = {};
-                Object.keys(data).forEach(key => {
-                    if (!this.isDeleted(type, key)) {
-                        filtered[key] = data[key];
-                    }
-                });
-                return filtered;
-            }
-        }
-        return data;
-    }
-
-    /**
-     * 一問一答の個別問題が削除済みかチェック（★追加）
-     */
-    isDeletedQAQuestion(setName, questionId) {
-        return this.deletedItems.some(item => 
-            item.type === 'qa' && 
-            item.setName === setName && 
-            item.questionId === questionId
-        );
-    }
-
-    /**
-     * アイテム削除処理（Firebase統合・強化版）
-     */
-    markAsDeleted(type, id, additionalData = {}) {
-        const deletedItem = {
-            type: type,
-            id: id,
-            deletedAt: new Date().toISOString(),
-            ...additionalData
-        };
-        
-        this.deletedItems.push(deletedItem);
-        this.saveDeletedItems();
-        
-        // ★追加: ローカルからも即座に削除
-        if (type === 'books') {
-            delete this.books[id];
-            this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
-            this.saveBooksToStorage();
-            this.saveBookOrder();
-        } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
-            // ★追加: 一問一答の個別問題削除対応
-            if (this.qaQuestions[additionalData.setName]) {
-                this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
-                    .filter(q => q.id !== additionalData.questionId);
-                if (this.qaQuestions[additionalData.setName].length === 0) {
-                    delete this.qaQuestions[additionalData.setName];
                 }
-                this.saveQAQuestions();
-            }
+            });
+            return filtered;
+        } else {
+            const filtered = {};
+            Object.keys(data).forEach(key => {
+                if (!this.isDeleted(type, key)) {
+                    filtered[key] = data[key];
+                }
+            });
+            return filtered;
         }
+    }
+    return data;
+}
+
+/**
+ * 一問一答の個別問題が削除済みかチェック（★追加）
+ */
+isDeletedQAQuestion(setName, questionId) {
+    return this.deletedItems.some(item => 
+        item.type === 'qa' && 
+        item.setName === setName && 
+        item.questionId === questionId
+    );
+}
+
+/**
+ * アイテム削除処理（Firebase統合・階層対応強化版）
+ */
+markAsDeleted(type, id, additionalData = {}) {
+    const deletedItem = {
+        type: type,
+        id: id,
+        deletedAt: new Date().toISOString(),
+        ...additionalData
+    };
+    
+    this.deletedItems.push(deletedItem);
+    this.saveDeletedItems();
+    
+    // ★追加: ローカルからも即座に削除
+    if (type === 'books') {
+        delete this.books[id];
+        this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
+        this.saveBooksToStorage();
+        this.saveBookOrder();
+    } else if (type === 'hierarchy') {
+        // ★追加: 階層削除の場合は、該当問題集の構造を再フィルタリング
+        const bookId = additionalData.bookId;
+        if (bookId && this.books[bookId] && this.books[bookId].structure) {
+            this.books[bookId].structure = this.filterDeletedHierarchy(
+                this.books[bookId].structure, 
+                bookId, 
+                []
+            );
+            this.saveBooksToStorage();
+        }
+    } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
+        // ★追加: 一問一答の個別問題削除対応
+        if (this.qaQuestions[additionalData.setName]) {
+            this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
+                .filter(q => q.id !== additionalData.questionId);
+            if (this.qaQuestions[additionalData.setName].length === 0) {
+                delete this.qaQuestions[additionalData.setName];
+            }
+            this.saveQAQuestions();
+        }
+    } else if (type === 'studyPlan') {
+        this.studyPlans = this.studyPlans.filter(plan => plan.id !== id);
+        this.saveStudyPlans();
+    } else if (type === 'csvTemplates') {
+        delete this.csvTemplates[id];
+        this.saveCSVTemplates();
+    }
+    
+    // Firebaseにも保存
+    if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
+        this.saveToFirestore({
+            type: 'itemDeleted',
+            deletedType: type,
+            deletedId: id,
+            message: `${type}:${id}を削除しました`,
+            ...additionalData
+        });
+    }
+    
+    console.log(`✅ ${type}:${id} を削除済みとしてマーク＆即座削除`);
+}
+
+/**
+ * 削除済みアイテム一覧の保存
+ */
+saveDeletedItems() {
+    try {
+        localStorage.setItem('deletedItems', JSON.stringify(this.deletedItems));
+    } catch (error) {
+        console.error('Error saving deleted items:', error);
+    }
+}
+
+/**
+ * 削除済みアイテム一覧の読み込み
+ */
+loadDeletedItems() {
+    try {
+        const saved = localStorage.getItem('deletedItems');
+        if (saved) {
+            this.deletedItems = JSON.parse(saved);
+        }
+    } catch (error) {
+        console.error('Error loading deleted items:', error);
+        this.deletedItems = [];
+    }
+}
+
+/**
+ * Firebaseにデータを保存（削除済みアイテム含む）
+ */
+async saveToFirebase() {
+    if (!this.firebaseEnabled || !this.currentUser) return;
+
+    try {
+        const db = firebase.firestore();
+        const userId = this.currentUser.uid;
+
+        await db.collection('users').doc(userId).set({
+            books: this.books || {},
+            bookOrder: this.bookOrder || [],
+            records: (this.allRecords || []).slice(-1000), // 最新1000件のみ
+            studyPlans: this.studyPlans || [],
+            qaQuestions: this.qaQuestions || {},
+            csvTemplates: this.csvTemplates || {},
+            examDate: this.examDate ? this.examDate.toISOString() : null,
+            deletedItems: this.deletedItems || [], // 削除済みアイテムも保存
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        console.log('Data saved to Firebase');
+    } catch (error) {
+        console.warn('Firebase save error (data saved locally):', error);
+        // Firebaseへの保存が失敗してもローカルには保存されている
+    }
+}
+
+/**
+ * 全データの読み込み（削除済みアイテム含む）
+ */
+loadAllData() {
+    try {
+        this.loadDeletedItems(); // ★重要: 削除済みアイテムを最初に読み込み
+        this.loadBooksFromStorage();
+        this.loadBookOrder();
+        this.loadAllRecords();
+        this.loadSavedQuestionStates();
+        this.loadStudyPlans();
+        this.loadCSVTemplates();
+        this.loadQAQuestions();
+        this.loadExamDate();
+        this.loadAnalysisCardOrder();
+        this.loadPinnedSettings();
+    } catch (error) {
+        console.error('Error loading data:', error);
+        // 個別のエラーがあっても他のデータは読み込む
+    }
+}
+
+/**
+ * 全データの保存（削除済みアイテム含む）
+ */
+saveAllData() {
+    try {
+        this.saveBooksToStorage();
+        this.saveBookOrder();
+        this.saveStudyPlans();
+        this.saveCSVTemplates();
+        this.saveQAQuestions();
+        this.saveDeletedItems(); // 削除済みアイテムも保存
         
-        // Firebaseにも保存
-        if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
-            this.saveToFirestore({
-                type: 'itemDeleted',
-                deletedType: type,
-                deletedId: id,
-                message: `${type}:${id}を削除しました`,
-                ...additionalData
+        // Firebaseにも保存（エラーが発生しても継続）
+        if (this.firebaseEnabled) {
+            this.saveToFirebase().catch(error => {
+                console.warn('Firebase save failed:', error);
             });
         }
-        
-        console.log(`✅ ${type}:${id} を削除済みとしてマーク＆即座削除`);
+    } catch (error) {
+        console.error('Error saving data:', error);
     }
+}
 
-    /**
-     * 削除済みアイテム一覧の保存
-     */
-    saveDeletedItems() {
-        try {
-            localStorage.setItem('deletedItems', JSON.stringify(this.deletedItems));
-        } catch (error) {
-            console.error('Error saving deleted items:', error);
-        }
-    }
-
-    /**
-     * 削除済みアイテム一覧の読み込み
-     */
-    loadDeletedItems() {
-        try {
-            const saved = localStorage.getItem('deletedItems');
-            if (saved) {
-                this.deletedItems = JSON.parse(saved);
+/**
+ * 問題集データの読み込み（エラーハンドリング強化）
+ */
+loadBooksFromStorage() {
+    try {
+        const stored = localStorage.getItem('studyTrackerBooks');
+        if (stored) {
+            const parsedData = JSON.parse(stored);
+            // データ形式の妥当性チェック
+            if (parsedData && typeof parsedData === 'object') {
+                // 削除済みアイテムを除外
+                this.books = this.filterDeletedItems(parsedData, 'books');
+                // 古いデータ形式の変換（必要に応じて）
+                this.migrateOldDataFormat();
+            } else {
+                this.books = {};
             }
-        } catch (error) {
-            console.error('Error loading deleted items:', error);
-            this.deletedItems = [];
         }
+    } catch (error) {
+        console.error('Error loading books:', error);
+        this.books = {};
     }
+}
 
-    /**
-     * Firebaseにデータを保存（削除済みアイテム含む）
-     */
-    async saveToFirebase() {
-        if (!this.firebaseEnabled || !this.currentUser) return;
-
-        try {
-            const db = firebase.firestore();
-            const userId = this.currentUser.uid;
-
-            await db.collection('users').doc(userId).set({
-                books: this.books || {},
-                bookOrder: this.bookOrder || [],
-                records: (this.allRecords || []).slice(-1000), // 最新1000件のみ
-                studyPlans: this.studyPlans || [],
-                qaQuestions: this.qaQuestions || {},
-                csvTemplates: this.csvTemplates || {},
-                examDate: this.examDate ? this.examDate.toISOString() : null,
-                deletedItems: this.deletedItems || [], // 削除済みアイテムも保存
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-
-            console.log('Data saved to Firebase');
-        } catch (error) {
-            console.warn('Firebase save error (data saved locally):', error);
-            // Firebaseへの保存が失敗してもローカルには保存されている
-        }
+/**
+ * 古いデータ形式の変換
+ */
+migrateOldDataFormat() {
+    try {
+        Object.values(this.books).forEach(book => {
+            // 必須プロパティが欠けている場合は追加
+            if (!book.id) book.id = 'book_' + Date.now() + Math.random();
+            if (!book.structure) book.structure = {};
+            if (!book.numberingType) book.numberingType = 'reset';
+            if (!book.examType) book.examType = 'gyousei';
+            if (!book.createdAt) book.createdAt = new Date().toISOString();
+        });
+    } catch (error) {
+        console.error('Error migrating data:', error);
     }
+}
 
-    /**
-     * 削除済み階層アイテムを除外するフィルタ（★新規追加）
-     */
-    filterDeletedHierarchy(structure, bookId, basePath) {
-        const filtered = {};
-        
-        Object.keys(structure).forEach(name => {
-            const currentPath = [...basePath, name];
-            const hierarchyId = `${bookId}_${currentPath.join('/')}`;
-            
-            // 削除済みかチェック
-            if (!this.isDeleted('hierarchy', hierarchyId)) {
-                const item = { ...structure[name] };
+/**
+ * 問題集データの保存（階層順序を保持・削除済み除外強化版）
+ */
+saveBooksToStorage() {
+    try {
+        // ★追加: 削除済みアイテムを除外してから保存
+        const filteredBooks = {};
+        Object.keys(this.books).forEach(bookId => {
+            if (!this.isDeleted('books', bookId)) {
+                const book = this.books[bookId];
+                const orderedStructure = {};
                 
-                // 子要素がある場合は再帰的にフィルタリング
-                if (item.children && Object.keys(item.children).length > 0) {
-                    item.children = this.filterDeletedHierarchy(item.children, bookId, currentPath);
+                // ★追加: 階層の順序を固定化
+                if (book.structure) {
+                    Object.keys(book.structure).sort().forEach(subjectKey => {
+                        orderedStructure[subjectKey] = book.structure[subjectKey];
+                    });
                 }
                 
-                filtered[name] = item;
+                filteredBooks[bookId] = {
+                    ...book,
+                    structure: orderedStructure
+                };
             }
         });
         
-        return filtered;
-    }
-
-    /**
-     * 全データの読み込み（削除済みアイテム含む）
-     */
-    loadAllData() {
-        try {
-            this.loadDeletedItems(); // ★重要: 削除済みアイテムを最初に読み込み
-            this.loadBooksFromStorage();
-            this.loadBookOrder();
-            this.loadAllRecords();
-            this.loadSavedQuestionStates();
-            this.loadStudyPlans();
-            this.loadCSVTemplates();
-            this.loadQAQuestions();
-            this.loadExamDate();
-            this.loadAnalysisCardOrder();
-            this.loadPinnedSettings();
-        } catch (error) {
-            console.error('Error loading data:', error);
-            // 個別のエラーがあっても他のデータは読み込む
-        }
-    }
-
-    /**
-     * 全データの保存（削除済みアイテム含む）
-     */
-    saveAllData() {
-        try {
-            this.saveBooksToStorage();
-            this.saveBookOrder();
-            this.saveStudyPlans();
-            this.saveCSVTemplates();
-            this.saveQAQuestions();
-            this.saveDeletedItems(); // 削除済みアイテムも保存
-            
-            // Firebaseにも保存（エラーが発生しても継続）
-            if (this.firebaseEnabled) {
-                this.saveToFirebase().catch(error => {
-                    console.warn('Firebase save failed:', error);
-                });
-            }
-        } catch (error) {
-            console.error('Error saving data:', error);
-        }
-    }
-
-    /**
-     * 問題集データの読み込み（エラーハンドリング強化）
-     */
-    loadBooksFromStorage() {
-        try {
-            const stored = localStorage.getItem('studyTrackerBooks');
-            if (stored) {
-                const parsedData = JSON.parse(stored);
-                // データ形式の妥当性チェック
-                if (parsedData && typeof parsedData === 'object') {
-                    // 削除済みアイテムを除外
-                    this.books = this.filterDeletedItems(parsedData, 'books');
-                    // 古いデータ形式の変換（必要に応じて）
-                    this.migrateOldDataFormat();
-                } else {
-                    this.books = {};
-                }
-            }
-        } catch (error) {
-            console.error('Error loading books:', error);
-            this.books = {};
-        }
-    }
-
-    /**
-     * 古いデータ形式の変換
-     */
-    migrateOldDataFormat() {
-        try {
-            Object.values(this.books).forEach(book => {
-                // 必須プロパティが欠けている場合は追加
-                if (!book.id) book.id = 'book_' + Date.now() + Math.random();
-                if (!book.structure) book.structure = {};
-                if (!book.numberingType) book.numberingType = 'reset';
-                if (!book.examType) book.examType = 'gyousei';
-                if (!book.createdAt) book.createdAt = new Date().toISOString();
+        localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
+        this.books = filteredBooks; // ★追加: 内部データも更新
+        
+        console.log(`💾 問題集保存: ${Object.keys(filteredBooks).length}件（削除済み除外済み）`);
+        
+        // Firebaseにも保存（エラーが発生しても継続）
+        if (this.firebaseEnabled) {
+            this.saveToFirebase().catch(error => {
+                console.warn('Firebase save failed:', error);
             });
-        } catch (error) {
-            console.error('Error migrating data:', error);
+        }
+    } catch (error) {
+        console.error('Error saving books:', error);
+        if (error.name === 'QuotaExceededError') {
+            alert('ストレージ容量が不足しています。古いデータを削除してください。');
         }
     }
+}
 
-    /**
-     * 問題集データの保存（階層順序を保持・削除済み除外強化版）
-     */
-    saveBooksToStorage() {
-        try {
-            // ★追加: 削除済みアイテムを除外してから保存
-            const filteredBooks = {};
-            Object.keys(this.books).forEach(bookId => {
-                if (!this.isDeleted('books', bookId)) {
-                    const book = this.books[bookId];
-                    const orderedStructure = {};
-                    
-                    // ★追加: 階層の順序を固定化
-                    if (book.structure) {
-                        Object.keys(book.structure).sort().forEach(subjectKey => {
-                            orderedStructure[subjectKey] = book.structure[subjectKey];
-                        });
-                    }
-                    
-                    filteredBooks[bookId] = {
-                        ...book,
-                        structure: orderedStructure
-                    };
-                }
-            });
-            
-            localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
-            this.books = filteredBooks; // ★追加: 内部データも更新
-            
-            console.log(`💾 問題集保存: ${Object.keys(filteredBooks).length}件（削除済み除外済み）`);
-            
-            // Firebaseにも保存（エラーが発生しても継続）
-            if (this.firebaseEnabled) {
-                this.saveToFirebase().catch(error => {
-                    console.warn('Firebase save failed:', error);
-                });
-            }
-        } catch (error) {
-            console.error('Error saving books:', error);
-            if (error.name === 'QuotaExceededError') {
-                alert('ストレージ容量が不足しています。古いデータを削除してください。');
-            }
-        }
-    }
-
-    /**
-     * 問題集順序の読み込み（削除済み除外）
-     */
-    loadBookOrder() {
-        try {
-            const saved = localStorage.getItem('bookOrder');
-            if (saved) {
-                this.bookOrder = JSON.parse(saved).filter(id => !this.isDeleted('books', id));
-            } else {
-                this.bookOrder = Object.keys(this.books);
-            }
-        } catch (error) {
-            console.error('Error loading book order:', error);
+/**
+ * 問題集順序の読み込み（削除済み除外）
+ */
+loadBookOrder() {
+    try {
+        const saved = localStorage.getItem('bookOrder');
+        if (saved) {
+            this.bookOrder = JSON.parse(saved).filter(id => !this.isDeleted('books', id));
+        } else {
             this.bookOrder = Object.keys(this.books);
         }
+    } catch (error) {
+        console.error('Error loading book order:', error);
+        this.bookOrder = Object.keys(this.books);
     }
+}
 
-    /**
-     * 問題集順序の保存
-     */
-    saveBookOrder() {
-        try {
-            // ★追加: 削除済み除外
-            const filteredOrder = this.bookOrder.filter(id => !this.isDeleted('books', id));
-            localStorage.setItem('bookOrder', JSON.stringify(filteredOrder));
-            this.bookOrder = filteredOrder;
-        } catch (error) {
-            console.error('Error saving book order:', error);
-        }
+/**
+ * 問題集順序の保存
+ */
+saveBookOrder() {
+    try {
+        // ★追加: 削除済み除外
+        const filteredOrder = this.bookOrder.filter(id => !this.isDeleted('books', id));
+        localStorage.setItem('bookOrder', JSON.stringify(filteredOrder));
+        this.bookOrder = filteredOrder;
+    } catch (error) {
+        console.error('Error saving book order:', error);
     }
+}
 
     /**
      * 学習記録の読み込み
