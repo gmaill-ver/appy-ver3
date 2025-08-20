@@ -128,17 +128,6 @@
                     </div>
                 </div>
                 
-                <!-- 学習履歴 -->
-                <div class="accordion" data-card-id="history">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
-                        <span>📅 学習履歴</span>
-                        <span class="accordion-arrow">▼</span>
-                    </div>
-                    <div class="accordion-content">
-                        <div id="historyContent"></div>
-                    </div>
-                </div>
-                
                 <!-- ヒートマップ -->
                 <div class="accordion" data-card-id="heatmap">
                     <div class="accordion-header" onclick="App.toggleAccordion(this)">
@@ -150,7 +139,7 @@
                             <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()">
                                 <option value="">問題集を選択</option>
                             </select>
-                            <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()">📌</button>
+                            <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()">📌 固定表示</button>
                         </div>
                         <div class="heatmap-grid" id="heatmapGrid"></div>
                     </div>
@@ -164,6 +153,17 @@
                     </div>
                     <div class="accordion-content">
                         <div id="weaknessAnalysis"></div>
+                    </div>
+                </div>
+                
+                <!-- 学習履歴 -->
+                <div class="accordion" data-card-id="history">
+                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
+                        <span>📅 学習履歴</span>
+                        <span class="accordion-arrow">▼</span>
+                    </div>
+                    <div class="accordion-content">
+                        <div id="historyContent"></div>
                     </div>
                 </div>
             </div>
