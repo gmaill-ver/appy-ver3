@@ -791,6 +791,9 @@ class Application {
         
         this.saveQuestionStatesForPath();
         this.updateStats();
+        
+        // ★追加: 自動保存機能
+        this.autoSaveRecord();
     }
 
     saveQuestionStatesForPath() {
