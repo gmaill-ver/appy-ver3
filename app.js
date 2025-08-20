@@ -116,29 +116,26 @@ class Application {
             tabContent.classList.add('active');
         }
         
-        // タブ別の初期化処理（ピン留め設定を確実に復元）
-        if (tabName === 'analysis' && window.Analytics) {
-            // 分析タブ：最新データで更新
+        // タブ別の初期化処理
+        if (window.Analytics) {
             setTimeout(() => {
-                Analytics.updateChartBars();
-                Analytics.updateHeatmap();
-                Analytics.updateWeaknessAnalysis();
-                Analytics.updateHistoryContent();
-                Analytics.updateHeatmapBookSelect();
-                Analytics.updateRadarBookSelect();
+                if (tabName === 'analysis') {
+                    // 分析タブ:最新データで更新
+                    Analytics.updateChartBars();
+                    Analytics.updateHeatmap();
+                    Analytics.updateWeaknessAnalysis();
+                    Analytics.updateHistoryContent();
+                    Analytics.updateHeatmapBookSelect();
+                    Analytics.updateRadarBookSelect();
+                } else if (tabName === 'progress') {
+                    // 進捗タブ:最新データで強制更新
+                    Analytics.updateProgressContent();
+                    Analytics.drawRadarChart();
+                    Analytics.updateRadarBookSelect();
+                    Analytics.updateHeatmapBookSelect();
+                }
                 
-                // ★追加: ピン留め設定を確実に復元
-                Analytics.restorePinnedSettings();
-            }, 100);
-        } else if (tabName === 'progress' && window.Analytics) {
-            // 進捗タブ：最新データで強制更新
-            setTimeout(() => {
-                Analytics.updateProgressContent();
-                Analytics.drawRadarChart();
-                Analytics.updateRadarBookSelect();
-                Analytics.updateHeatmapBookSelect();
-                
-                // ★追加: ピン留め設定を確実に復元
+                // ★統合: 両タブ共通のピン留め設定復元
                 Analytics.restorePinnedSettings();
             }, 100);
         }
