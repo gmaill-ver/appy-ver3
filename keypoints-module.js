@@ -1796,30 +1796,24 @@ class KeyPointsModuleClass {
                         
                         // ★修正: モードによって表示を切り替え
                         if (mode === 'edit') {
-                            // ★修正: 編集モード - 科目一覧と完全に同じレイアウト
+                            // ★修正: 編集モード - 科目一覧と同じデザイン（要点表示削除、アイコンのみ）
                             if (hasCustomContent) {
                                 html += `
-                                    <div class="topic-card-edit" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center; position: relative;">
-                                        <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px;">
+                                    <div class="topic-card-edit" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;">
+                                        <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
+                                        <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
+                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
+                                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
                                             <button class="edit-btn" 
                                                     onclick="KeyPointsModule.editKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 4px; border-radius: 4px; font-size: 14px; cursor: pointer; transition: all 0.2s; color: #3182ce;">
+                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #3182ce;">
                                                 ✏️
                                             </button>
                                             <button class="delete-btn" 
                                                     onclick="KeyPointsModule.deleteHierarchyItem('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 4px; border-radius: 4px; font-size: 14px; cursor: pointer; transition: all 0.2s; color: #e53e3e;">
+                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #e53e3e;">
                                                 🗑️
                                             </button>
-                                        </div>
-                                        <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3; margin-top: 8px;">
-                                            ${topic.title}
-                                        </div>
-                                        <div style="font-size: 11px; color: var(--gray);">
-                                            ${index + 1}番目
-                                        </div>
-                                        <div style="font-size: 11px; color: var(--gray);">
-                                            難易度: ${topic.difficulty}
                                         </div>
                                     </div>
                                 `;
