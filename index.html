@@ -135,12 +135,12 @@
                         <span class="accordion-arrow">▼</span>
                     </div>
                     <div class="accordion-content">
-                        <div class="heatmap-controls">
-                            <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()">
-                                <option value="">問題集を選択</option>
-                            </select>
-                            <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()">📌 固定表示</button>
-                        </div>
+                        <div class="heatmap-controls" style="display: flex; gap: 10px; align-items: center;">
+    <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()" style="flex: 1; min-width: 0;">
+        <option value="">問題集を選択</option>
+    </select>
+    <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
+</div>
                         <div class="heatmap-grid" id="heatmapGrid"></div>
                     </div>
                 </div>
@@ -187,11 +187,11 @@
                 <div class="radar-chart-container">
                     <div class="radar-chart-controls">
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                            <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1;">
-                                <option value="">問題集を選択</option>
-                            </select>
-                            <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()">📌 固定表示</button>
-                        </div>
+    <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1; min-width: 0;">
+        <option value="">問題集を選択</option>
+    </select>
+    <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
+</div>
                         <div style="display: flex; gap: 10px;">
                             <button class="chart-btn active" id="radarModeSubject" onclick="Analytics.setRadarMode('subject', this)">科目別</button>
                             <button class="chart-btn" id="radarModeCompare" onclick="Analytics.setRadarMode('compare', this)">問題集比較</button>
