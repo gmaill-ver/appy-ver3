@@ -684,18 +684,37 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 科目一覧の取得（★修正: 順序固定）
+     * 科目一覧の取得（★修正: 実際の項目数計算）
      */
     getSubjectList() {
         return Object.entries(this.subjects)
             .map(([key, data]) => ({
                 key,
                 name: data.name,
-                order: data.order || 999, // ★追加: 順序情報
-                itemCount: data.items ? data.items.length : 0,
+                order: data.order || 999,
+                itemCount: this.calculateActualItemCount(data), // ★修正: 実際の項目数計算
                 chapterCount: Object.keys(data.chapters || {}).length
             }))
-            .sort((a, b) => a.order - b.order); // ★追加: 順序でソート
+            .sort((a, b) => a.order - b.order);
+    }
+
+    /**
+     * 科目の実際の項目数を計算（★追加）
+     */
+    calculateActualItemCount(subjectData) {
+        let itemCount = 0;
+        if (subjectData.chapters) {
+            Object.values(subjectData.chapters).forEach(chapter => {
+                if (chapter.sections) {
+                    Object.values(chapter.sections).forEach(topics => {
+                        if (Array.isArray(topics)) {
+                            itemCount += topics.length;
+                        }
+                    });
+                }
+            });
+        }
+        return itemCount;
     }
 
     /**
