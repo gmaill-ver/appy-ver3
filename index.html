@@ -111,12 +111,13 @@
             <button class="card-sort-btn" onclick="App.toggleAnalysisSort()">並替え</button>
             <div id="analysisCardsContainer">
                 <!-- 学習グラフ -->
+                <!-- 学習グラフ -->
                 <div class="accordion" data-card-id="chart">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
+                    <div class="accordion-header active" onclick="App.toggleAccordion(this)">
                         <span>📊 学習グラフ</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
-                    <div class="accordion-content">
+                    <div class="accordion-content active">
                         <div class="chart-controls">
                             <button class="chart-btn active" onclick="Analytics.switchChartView('day', this)">日別</button>
                             <button class="chart-btn" onclick="Analytics.switchChartView('week', this)">週間</button>
@@ -130,11 +131,11 @@
                 
                 <!-- ヒートマップ -->
                 <div class="accordion" data-card-id="heatmap">
-                    <div class="accordion-header" onclick="App.toggleAccordion(this)">
+                    <div class="accordion-header active" onclick="App.toggleAccordion(this)">
                         <span>🗺️ 問題ヒートマップ</span>
                         <span class="accordion-arrow">▼</span>
                     </div>
-                    <div class="accordion-content">
+                    <div class="accordion-content active">
                         <div class="heatmap-controls" style="display: flex; gap: 10px; align-items: center;">
     <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()" style="flex: 1; min-width: 0;">
         <option value="">問題集を選択</option>
