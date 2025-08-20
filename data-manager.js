@@ -333,6 +333,32 @@ if (data.books && typeof data.books === 'object') {
     }
 
     /**
+     * 削除済み階層アイテムを除外するフィルタ（★新規追加）
+     */
+    filterDeletedHierarchy(structure, bookId, basePath) {
+        const filtered = {};
+        
+        Object.keys(structure).forEach(name => {
+            const currentPath = [...basePath, name];
+            const hierarchyId = `${bookId}_${currentPath.join('/')}`;
+            
+            // 削除済みかチェック
+            if (!this.isDeleted('hierarchy', hierarchyId)) {
+                const item = { ...structure[name] };
+                
+                // 子要素がある場合は再帰的にフィルタリング
+                if (item.children && Object.keys(item.children).length > 0) {
+                    item.children = this.filterDeletedHierarchy(item.children, bookId, currentPath);
+                }
+                
+                filtered[name] = item;
+            }
+        });
+        
+        return filtered;
+    }
+
+    /**
      * 全データの読み込み（削除済みアイテム含む）
      */
     loadAllData() {
