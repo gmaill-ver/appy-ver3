@@ -1479,6 +1479,18 @@ body {
     font-size: 14px; /* ★追加: フォントサイズを少し小さく */
 }
 
+/* ★追加: アコーディオンの間隔も狭く */
+#analysis-tab .accordion {
+    margin: 5px 0; /* ★修正: 10px→5pxに縮小 */
+}
+
+/* ★追加: アコーディオンアイコンも小さく */
+.accordion-arrow {
+    transition: transform 0.3s;
+    font-size: 8px; /* ★修正: 10px→8pxに縮小 */
+    color: var(--gray-lighter);
+}
+
 .accordion-header:hover {
     background: var(--light);
 }
