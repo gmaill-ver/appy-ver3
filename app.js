@@ -1199,36 +1199,31 @@ class Application {
     });
     
     orderedBooks.forEach(book => {
-        // 削除済みの問題集は表示しない
-        if (DataManager.isDeleted('books', book.id)) {
-            return;
-        }
-            
-            const nodeId = `book_${book.id}`;
-            const isExpanded = this.expandedNodes.has(nodeId);
-            
-            html += `
-                <div class="hierarchy-item" id="${nodeId}">
-                    <div class="hierarchy-row" onclick="App.toggleRegisterNode('${nodeId}', event)">
-                        <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
-                        <span class="hierarchy-icon">📚</span>
-                        <span class="hierarchy-label">${book.name}</span>
-                        <div class="hierarchy-actions">
-                        　　 <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}', event)" title="並び替え">並替え</button>
-                            <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
-                            <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
-                        </div>
-                    </div>
-                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
-                        ${this.renderRegisterLevel(book.structure, book.id, [])}
+        const nodeId = `book_${book.id}`;
+        const isExpanded = this.expandedNodes.has(nodeId);
+        
+        html += `
+            <div class="hierarchy-item" id="${nodeId}">
+                <div class="hierarchy-row" onclick="App.toggleRegisterNode('${nodeId}', event)">
+                    <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
+                    <span class="hierarchy-icon">📚</span>
+                    <span class="hierarchy-label">${book.name}</span>
+                    <div class="hierarchy-actions">
+                        <button class="hierarchy-action sort" onclick="App.toggleHierarchySort('${book.id}', event)" title="並び替え">並替え</button>
+                        <button class="hierarchy-action" onclick="App.addHierarchy('${book.id}', null, 'subject', event)" title="科目追加">+</button>
+                        <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
                     </div>
                 </div>
-            `;
-        });
-        
-        html += '</div>';
-        container.innerHTML = html;
-    }
+                <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                    ${this.renderRegisterLevel(book.structure, book.id, [])}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
 
     renderRegisterLevel(structure, bookId, path) {
     let html = '';
