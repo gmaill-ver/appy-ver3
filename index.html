@@ -940,18 +940,30 @@
             }
             
             // 問題集（削除済みを除外）
-            if (userData.books && typeof userData.books === 'object') {
-                // ★追加: 削除済みを除外してから復元
-                const filteredBooks = {};
-                Object.keys(userData.books).forEach(bookId => {
-                    if (!DataManager.isDeleted('books', bookId)) {
-                        filteredBooks[bookId] = userData.books[bookId];
-                    }
-                });
-                DataManager.books = filteredBooks;
-                localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
-                restoredCount++;
+if (userData.books && typeof userData.books === 'object') {
+    // ★追加: 削除済みを除外してから復元
+    const filteredBooks = {};
+    Object.keys(userData.books).forEach(bookId => {
+        if (!DataManager.isDeleted('books', bookId)) {
+            const book = userData.books[bookId];
+            // ★追加: 削除済み階層アイテムを除外
+            if (book.structure) {
+                book.structure = DataManager.filterDeletedHierarchy(book.structure, bookId, []);
             }
+            filteredBooks[bookId] = book;
+        }
+    });
+    DataManager.books = filteredBooks;
+    localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
+    restoredCount++;
+}
+
+// 問題集順序（削除済み除外）
+if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
+    DataManager.bookOrder = userData.bookOrder.filter(id => !DataManager.isDeleted('books', id));
+    localStorage.setItem('bookOrder', JSON.stringify(DataManager.bookOrder));
+    restoredCount++;
+}
             
             // 【重要】削除済みアイテムリストの復元を追加
             if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
