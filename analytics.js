@@ -30,31 +30,60 @@ class AnalyticsClass {
             this.updateRadarBookSelect();
             this.updateHistoryContent();
             
-            // ピン固定設定を適用
-            if (DataManager.heatmapPinnedBook) {
-                const select = document.getElementById('heatmapBookSelect');
-                if (select) {
-                    select.value = DataManager.heatmapPinnedBook;
-                    const btn = document.getElementById('heatmapToggleBtn');
-                    if (btn) btn.classList.add('active');
-                    this.updateHeatmap();
-                }
-            }
-            
-            if (DataManager.radarPinnedBook) {
-                const select = document.getElementById('radarBookSelect');
-                if (select) {
-                    select.value = DataManager.radarPinnedBook;
-                    const btn = document.getElementById('radarToggleBtn');
-                    if (btn) btn.classList.add('active');
-                    this.drawRadarChart();
-                }
-            }
+            // ★追加: ピン固定設定を適用（タイミングを遅らせて確実に復元）
+            setTimeout(() => {
+                this.restorePinnedSettings();
+            }, 200);
             
             this.initialized = true;
             console.log('Analytics initialized successfully');
         } catch (error) {
             console.error('Analytics initialization error:', error);
+        }
+    }
+
+    /**
+     * ★追加: ピン留め設定復元メソッド
+     */
+    restorePinnedSettings() {
+        // ヒートマップのピン留め復元
+        if (DataManager.heatmapPinnedBook) {
+            const heatmapSelect = document.getElementById('heatmapBookSelect');
+            const heatmapBtn = document.getElementById('heatmapToggleBtn');
+            
+            if (heatmapSelect && heatmapBtn) {
+                // 問題集が存在するかチェック
+                if (DataManager.books[DataManager.heatmapPinnedBook]) {
+                    heatmapSelect.value = DataManager.heatmapPinnedBook;
+                    heatmapBtn.classList.add('active');
+                    this.updateHeatmap();
+                    console.log('✅ ヒートマップのピン留めを復元しました:', DataManager.heatmapPinnedBook);
+                } else {
+                    // 問題集が削除されている場合はピン留めをクリア
+                    DataManager.saveHeatmapPinned(null);
+                    console.log('⚠️ ピン留めされた問題集が削除されているためクリアしました');
+                }
+            }
+        }
+        
+        // レーダーチャートのピン留め復元
+        if (DataManager.radarPinnedBook) {
+            const radarSelect = document.getElementById('radarBookSelect');
+            const radarBtn = document.getElementById('radarToggleBtn');
+            
+            if (radarSelect && radarBtn) {
+                // 問題集が存在するかチェック
+                if (DataManager.books[DataManager.radarPinnedBook]) {
+                    radarSelect.value = DataManager.radarPinnedBook;
+                    radarBtn.classList.add('active');
+                    this.drawRadarChart();
+                    console.log('✅ レーダーチャートのピン留めを復元しました:', DataManager.radarPinnedBook);
+                } else {
+                    // 問題集が削除されている場合はピン留めをクリア
+                    DataManager.saveRadarPinned(null);
+                    console.log('⚠️ ピン留めされた問題集が削除されているためクリアしました');
+                }
+            }
         }
     }
 
