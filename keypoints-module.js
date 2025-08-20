@@ -1797,27 +1797,27 @@ class KeyPointsModuleClass {
                         // ★修正: モードによって表示を切り替え
                         if (mode === 'edit') {
                             // ★修正: 編集モード - 科目一覧と完全に同じ横縦幅
-                            if (hasCustomContent) {
-                                html += `
-                                    <div class="topic-card-edit" style="background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; align-items: center; gap: 12px;">
-                                        <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
-                                        <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
-                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
-                                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                            <button class="edit-btn" 
-                                                    onclick="KeyPointsModule.editKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #3182ce;">
-                                                ✏️
-                                            </button>
-                                            <button class="delete-btn" 
-                                                    onclick="KeyPointsModule.deleteHierarchyItem('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #e53e3e;">
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-                            }
+if (hasCustomContent) {
+    html += `
+        <div class="topic-card-edit" style="background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
+            <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
+            <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                <button class="edit-btn" 
+                        onclick="KeyPointsModule.editKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
+                        style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #3182ce;">
+                    ✏️
+                </button>
+                <button class="delete-btn" 
+                        onclick="KeyPointsModule.deleteHierarchyItem('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
+                        style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #e53e3e;">
+                    🗑️
+                </button>
+            </div>
+        </div>
+    `;
+}
                         } else {
                             // 確認モード: 全項目表示（既存の処理）
                             html += `
