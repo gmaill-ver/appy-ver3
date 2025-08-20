@@ -1184,6 +1184,25 @@ class Application {
         }
 
         let html = '<div class="hierarchy-list">';
+
+        // ★追加: 記録入力タブと同じ順序で問題集を表示
+    const orderedBooks = DataManager.bookOrder
+        .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
+        .map(id => DataManager.books[id]);
+    
+    // 順序にない問題集も追加
+    Object.values(DataManager.books).forEach(book => {
+        if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
+            orderedBooks.push(book);
+            DataManager.bookOrder.push(book.id);
+        }
+    });
+    
+    orderedBooks.forEach(book => {
+        // 削除済みの問題集は表示しない
+        if (DataManager.isDeleted('books', book.id)) {
+            return;
+        }
         
         Object.values(DataManager.books).forEach(book => {
             // 削除済みの問題集は表示しない
