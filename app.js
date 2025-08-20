@@ -865,7 +865,7 @@ class Application {
     }
 
     saveRecord() {
-    console.log("💾 学習記録保存（ヒートマップ連動強化版）");
+    console.log("💾 学習記録保存（完全連動版）");
     
     if (!this.currentBook || this.currentPath.length === 0) {
         alert('問題を選択してください');
@@ -878,15 +878,11 @@ class Application {
         return;
     }
 
-    // ★追加: 記録保存前にヒートマップ選択状態を保持
-    const heatmapSelect = document.getElementById('heatmapBookSelect');
-    const selectedBookId = heatmapSelect ? heatmapSelect.value : null;
-
     const record = {
         bookId: this.currentBook.id,
         bookName: this.currentBook.name,
-        path: this.currentPath,
-        questions: this.questionStates,
+        path: [...this.currentPath], // ★修正: 配列をコピー
+        questions: {...this.questionStates}, // ★修正: オブジェクトをコピー
         timestamp: new Date().toISOString(),
         stats: {
             total: total,
@@ -895,36 +891,40 @@ class Application {
             rate: document.getElementById('correctRate')?.textContent || '0%'
         }
     };
+
+    console.log("💾 保存データ:", record); // ★追加: デバッグ用
     
+    // ★重要: データ保存完了を確実に待つ
     DataManager.saveToHistory(record);
     DataManager.updateDailyStreak();
     
     alert('保存しました！');
     
-    // ★追加: ヒートマップ連動強化 - より短い遅延で確実に更新
+    // ★修正: より確実な連動処理
     setTimeout(() => {
-        console.log("🔄 記録保存後のヒートマップ更新開始");
+        console.log("🔄 ヒートマップ強制連動開始");
         
-        // ヒートマップ選択状態を復元
-        if (selectedBookId && heatmapSelect) {
-            heatmapSelect.value = selectedBookId;
-        } else if (this.currentBook && heatmapSelect) {
-            // 現在の問題集を自動選択
+        // ヒートマップ問題集を現在の問題集に自動設定
+        const heatmapSelect = document.getElementById('heatmapBookSelect');
+        if (heatmapSelect && this.currentBook) {
+            console.log(`📋 ヒートマップ問題集を ${this.currentBook.name} に自動設定`);
             heatmapSelect.value = this.currentBook.id;
         }
         
-        // 分析データを更新
+        // 分析データを強制更新
         if (window.Analytics) {
-            Analytics.updateChartBars();
-            Analytics.updateHeatmap(); // ★重要: ヒートマップを確実に更新
-            Analytics.updateWeaknessAnalysis();
-            Analytics.updateHistoryContent();
-            Analytics.updateHeatmapBookSelect();
-            Analytics.updateRadarBookSelect();
+            console.log("📊 Analytics更新開始");
+            Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
+            Analytics.updateHeatmap(); // ★2. ヒートマップ更新
+            Analytics.updateChartBars(); // ★3. チャート更新
+            Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
+            Analytics.updateHistoryContent(); // ★5. 履歴更新
+            Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
+            console.log("✅ Analytics更新完了");
         }
         
-        console.log("✅ ヒートマップ更新完了");
-    }, 50); // ★短い遅延で即座に反映
+        console.log("✅ ヒートマップ連動完了");
+    }, 100); // ★修正: 100msで確実にデータ保存完了を待つ
 }
 
     toggleBookSort() {
