@@ -806,21 +806,38 @@ class Application {
     }
 
     markCorrect() {
-    Object.keys(this.questionStates).forEach(num => {
-        if (this.questionStates[num].state === null) {
-            this.questionStates[num].state = 'correct';
-            const cell = document.querySelector(`[data-number="${num}"]`);
-            if (cell) {
-                cell.classList.add('correct');
+        Object.keys(this.questionStates).forEach(num => {
+            if (this.questionStates[num].state === null) {
+                this.questionStates[num].state = 'correct';
+                const cell = document.querySelector(`[data-number="${num}"]`);
+                if (cell) {
+                    cell.classList.add('correct');
+                }
             }
-        }
-    });
-    this.saveQuestionStatesForPath();
-    this.updateStats();
-    
-    // ★追加: ヒートマップと進捗データを更新
-    this.autoSaveRecord();
-}
+        });
+        this.saveQuestionStatesForPath();
+        this.updateStats();
+        
+        // ★追加: ヒートマップと進捗データを更新
+        this.autoSaveRecord();
+    }
+
+    markWrong() {
+        Object.keys(this.questionStates).forEach(num => {
+            if (this.questionStates[num].state === null) {
+                this.questionStates[num].state = 'wrong';
+                const cell = document.querySelector(`[data-number="${num}"]`);
+                if (cell) {
+                    cell.classList.add('wrong');
+                }
+            }
+        });
+        this.saveQuestionStatesForPath();
+        this.updateStats();
+        
+        // ★追加: ヒートマップと進捗データを更新
+        this.autoSaveRecord();
+    }
 
 markWrong() {
     Object.keys(this.questionStates).forEach(num => {
