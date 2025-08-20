@@ -876,69 +876,6 @@ markWrong() {
         if (rateEl) rateEl.textContent = rate + '%';
     }
 
-    saveRecord() {
-        if (!this.currentBook || this.currentPath.length === 0) {
-            alert('問題を選択してください');
-            return;
-        }
-
-        const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
-        if (total === 0) {
-            alert('解答してください');
-            return;
-        }
-
-        const record = {
-            bookId: this.currentBook.id,
-            bookName: this.currentBook.name,
-            path: [...this.currentPath], // ★修正: 配列をコピー
-            questions: {...this.questionStates}, // ★修正: オブジェクトをコピー
-            timestamp: new Date().toISOString(),
-            stats: {
-                total: total,
-                correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
-                wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
-                rate: document.getElementById('correctRate')?.textContent || '0%'
-            }
-        };
-
-        console.log("💾 保存データ:", record); // ★追加: デバッグ用
-        
-        // ★重要: データ保存完了を確実に待つ
-        DataManager.saveToHistory(record);
-        DataManager.updateDailyStreak();
-        
-        alert('保存しました！');
-        
-        // ★修正: より確実な連動処理
-        setTimeout(() => {
-            console.log("🔄 ヒートマップ強制連動開始");
-            
-            // ヒートマップ問題集を現在の問題集に自動設定
-            const heatmapSelect = document.getElementById('heatmapBookSelect');
-            if (heatmapSelect && this.currentBook) {
-                console.log(`📋 ヒートマップ問題集を ${this.currentBook.name} に自動設定`);
-                heatmapSelect.value = this.currentBook.id;
-            }
-            
-            // 分析データを強制更新
-if (window.Analytics) {
-    console.log("📊 Analytics更新開始");
-    Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
-    Analytics.updateHeatmap(); // ★2. ヒートマップ更新
-    Analytics.updateChartBars(); // ★3. チャート更新
-    Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
-    Analytics.updateHistoryContent(); // ★5. 履歴更新
-    Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
-    // ★追加: 科目別進捗（レーダーチャート）を描画
-    Analytics.drawRadarChart(); // ★7. レーダーチャート描画
-    console.log("✅ Analytics更新完了");
-}
-            
-            console.log("✅ ヒートマップ連動完了");
-        }, 100); // ★修正: 100msで確実にデータ保存完了を待つ
-    } // ★重要: saveRecord メソッドをここで閉じる
-
     /**
      * 自動保存機能（重複保存を防ぐ）
      */
