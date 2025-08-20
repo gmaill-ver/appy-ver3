@@ -822,23 +822,6 @@ class Application {
         this.autoSaveRecord();
     }
 
-    markWrong() {
-        Object.keys(this.questionStates).forEach(num => {
-            if (this.questionStates[num].state === null) {
-                this.questionStates[num].state = 'wrong';
-                const cell = document.querySelector(`[data-number="${num}"]`);
-                if (cell) {
-                    cell.classList.add('wrong');
-                }
-            }
-        });
-        this.saveQuestionStatesForPath();
-        this.updateStats();
-        
-        // ★追加: ヒートマップと進捗データを更新
-        this.autoSaveRecord();
-    }
-
 markWrong() {
     Object.keys(this.questionStates).forEach(num => {
         if (this.questionStates[num].state === null) {
@@ -939,16 +922,18 @@ markWrong() {
             }
             
             // 分析データを強制更新
-            if (window.Analytics) {
-                console.log("📊 Analytics更新開始");
-                Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
-                Analytics.updateHeatmap(); // ★2. ヒートマップ更新
-                Analytics.updateChartBars(); // ★3. チャート更新
-                Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
-                Analytics.updateHistoryContent(); // ★5. 履歴更新
-                Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
-                console.log("✅ Analytics更新完了");
-            }
+if (window.Analytics) {
+    console.log("📊 Analytics更新開始");
+    Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
+    Analytics.updateHeatmap(); // ★2. ヒートマップ更新
+    Analytics.updateChartBars(); // ★3. チャート更新
+    Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
+    Analytics.updateHistoryContent(); // ★5. 履歴更新
+    Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
+    // ★追加: 科目別進捗（レーダーチャート）を描画
+    Analytics.drawRadarChart(); // ★7. レーダーチャート描画
+    console.log("✅ Analytics更新完了");
+}
             
             console.log("✅ ヒートマップ連動完了");
         }, 100); // ★修正: 100msで確実にデータ保存完了を待つ
@@ -1065,18 +1050,18 @@ markWrong() {
             }
             
             // 分析データを強制更新
-            if (window.Analytics) {
-                console.log("📊 Analytics更新開始");
-                Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
-                Analytics.updateHeatmap(); // ★2. ヒートマップ更新
-                Analytics.updateChartBars(); // ★3. チャート更新
-                Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
-                Analytics.updateHistoryContent(); // ★5. 履歴更新
-                Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
-                // ★追加: 科目別進捗（レーダーチャート）を描画
-                Analytics.drawRadarChart(); // ★7. レーダーチャート描画
-                console.log("✅ Analytics更新完了");
-            }
+if (window.Analytics) {
+    console.log("📊 Analytics更新開始");
+    Analytics.updateHeatmapBookSelect(); // ★1. 問題集リスト更新
+    Analytics.updateHeatmap(); // ★2. ヒートマップ更新
+    Analytics.updateChartBars(); // ★3. チャート更新
+    Analytics.updateWeaknessAnalysis(); // ★4. 弱点分析更新
+    Analytics.updateHistoryContent(); // ★5. 履歴更新
+    Analytics.updateRadarBookSelect(); // ★6. レーダーチャート更新
+    // ★追加: 科目別進捗（レーダーチャート）を描画
+    Analytics.drawRadarChart(); // ★7. レーダーチャート描画
+    console.log("✅ Analytics更新完了");
+}
             
             console.log("✅ ヒートマップ連動完了");
         }, 100); // ★修正: 100msで確実にデータ保存完了を待つ
