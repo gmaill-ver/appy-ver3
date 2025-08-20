@@ -865,36 +865,67 @@ class Application {
     }
 
     saveRecord() {
-        if (!this.currentBook || this.currentPath.length === 0) {
-            alert('問題を選択してください');
-            return;
-        }
-
-        const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
-        if (total === 0) {
-            alert('解答してください');
-            return;
-        }
-
-        const record = {
-            bookId: this.currentBook.id,
-            bookName: this.currentBook.name,
-            path: this.currentPath,
-            questions: this.questionStates,
-            timestamp: new Date().toISOString(),
-            stats: {
-                total: total,
-                correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
-                wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
-                rate: document.getElementById('correctRate')?.textContent || '0%'
-            }
-        };
-        
-        DataManager.saveToHistory(record);
-        DataManager.updateDailyStreak();
-        
-        alert('保存しました！');
+    console.log("💾 学習記録保存（ヒートマップ連動強化版）");
+    
+    if (!this.currentBook || this.currentPath.length === 0) {
+        alert('問題を選択してください');
+        return;
     }
+
+    const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+    if (total === 0) {
+        alert('解答してください');
+        return;
+    }
+
+    // ★追加: 記録保存前にヒートマップ選択状態を保持
+    const heatmapSelect = document.getElementById('heatmapBookSelect');
+    const selectedBookId = heatmapSelect ? heatmapSelect.value : null;
+
+    const record = {
+        bookId: this.currentBook.id,
+        bookName: this.currentBook.name,
+        path: this.currentPath,
+        questions: this.questionStates,
+        timestamp: new Date().toISOString(),
+        stats: {
+            total: total,
+            correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
+            wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
+            rate: document.getElementById('correctRate')?.textContent || '0%'
+        }
+    };
+    
+    DataManager.saveToHistory(record);
+    DataManager.updateDailyStreak();
+    
+    alert('保存しました！');
+    
+    // ★追加: ヒートマップ連動強化 - より短い遅延で確実に更新
+    setTimeout(() => {
+        console.log("🔄 記録保存後のヒートマップ更新開始");
+        
+        // ヒートマップ選択状態を復元
+        if (selectedBookId && heatmapSelect) {
+            heatmapSelect.value = selectedBookId;
+        } else if (this.currentBook && heatmapSelect) {
+            // 現在の問題集を自動選択
+            heatmapSelect.value = this.currentBook.id;
+        }
+        
+        // 分析データを更新
+        if (window.Analytics) {
+            Analytics.updateChartBars();
+            Analytics.updateHeatmap(); // ★重要: ヒートマップを確実に更新
+            Analytics.updateWeaknessAnalysis();
+            Analytics.updateHistoryContent();
+            Analytics.updateHeatmapBookSelect();
+            Analytics.updateRadarBookSelect();
+        }
+        
+        console.log("✅ ヒートマップ更新完了");
+    }, 50); // ★短い遅延で即座に反映
+}
 
     toggleBookSort() {
         this.sortMode = !this.sortMode;
