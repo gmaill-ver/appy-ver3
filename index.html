@@ -185,11 +185,13 @@
                 </div>
                 <div class="radar-chart-container">
                     <div class="radar-chart-controls">
-                        <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()">
-                            <option value="">問題集を選択</option>
-                        </select>
-                        <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()">📌 固定表示</button>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                            <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1;">
+                                <option value="">問題集を選択</option>
+                            </select>
+                            <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()">📌 固定表示</button>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
                             <button class="chart-btn active" id="radarModeSubject" onclick="Analytics.setRadarMode('subject', this)">科目別</button>
                             <button class="chart-btn" id="radarModeCompare" onclick="Analytics.setRadarMode('compare', this)">問題集比較</button>
                         </div>
