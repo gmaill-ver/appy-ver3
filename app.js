@@ -1172,20 +1172,20 @@ class Application {
     }
 
     renderRegisterHierarchy() {
-        const container = document.getElementById('registerHierarchy');
-        if (!container) {
-            console.warn('registerHierarchy element not found');
-            return;
-        }
+    const container = document.getElementById('registerHierarchy');
+    if (!container) {
+        console.warn('registerHierarchy element not found');
+        return;
+    }
 
-        if (!DataManager.books || Object.keys(DataManager.books).length === 0) {
-            container.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">問題集がありません</p>';
-            return;
-        }
+    if (!DataManager.books || Object.keys(DataManager.books).length === 0) {
+        container.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 20px;">問題集がありません</p>';
+        return;
+    }
 
-        let html = '<div class="hierarchy-list">';
-
-        // ★追加: 記録入力タブと同じ順序で問題集を表示
+    let html = '<div class="hierarchy-list">';
+    
+    // ★追加: 記録入力タブと同じ順序で問題集を表示
     const orderedBooks = DataManager.bookOrder
         .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
         .map(id => DataManager.books[id]);
@@ -1203,12 +1203,6 @@ class Application {
         if (DataManager.isDeleted('books', book.id)) {
             return;
         }
-        
-        Object.values(DataManager.books).forEach(book => {
-            // 削除済みの問題集は表示しない
-            if (DataManager.isDeleted('books', book.id)) {
-                return;
-            }
             
             const nodeId = `book_${book.id}`;
             const isExpanded = this.expandedNodes.has(nodeId);
