@@ -137,6 +137,7 @@ if (data.books && typeof data.books === 'object') {
         }
     });
     this.books = filteredBooks;
+    this.saveBooksToStorage(); // ★追加: ローカルにも即座に保存
     console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
 }
                 if (data.bookOrder && Array.isArray(data.bookOrder)) {
