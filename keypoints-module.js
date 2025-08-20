@@ -1,6 +1,6 @@
 /**
- * KeyPointsModule - 要点確認専用モジュール（Firebase統合完全版）
- * ★修正: プロジェクトナレッジの階層構造に置き換え、科目順序固定
+ * KeyPointsModule - 要点確認専用モジュール（Firebase統合完全版・キャッシュクリア対応）
+ * ★修正: エラーハンドリング強化、確実なFirebase保存、初期化問題解決
  */
 class KeyPointsModuleClass {
     constructor() {
@@ -567,94 +567,190 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 初期化
+     * 初期化（★修正: エラーハンドリング強化）
      */
     initialize() {
         if (this.initialized) {
-            console.log('KeyPointsModule already initialized');
+            console.log('⚠️ KeyPointsModule already initialized');
             return;
         }
 
-        if (!window.DataManager) {
-            setTimeout(() => this.initialize(), 100);
-            return;
-        }
+        try {
+            console.log('🚀 KeyPointsModule初期化開始');
+            
+            // DataManagerの存在確認
+            if (!window.DataManager) {
+                console.log('⏳ DataManager待機中...');
+                setTimeout(() => this.initialize(), 100);
+                return;
+            }
 
-        this.loadKeyPointsData();
-        this.initialized = true;
-        console.log('KeyPointsModule initialized successfully');
+            // データ読み込み
+            this.loadKeyPointsData();
+            
+            // スタイル追加
+            this.addKeyPointStyles();
+            this.addDifficultyStyles();
+            
+            this.initialized = true;
+            console.log('✅ KeyPointsModule初期化完了');
+            
+        } catch (error) {
+            console.error('❌ KeyPointsModule初期化エラー:', error);
+            // 初期化失敗でも最低限の状態で動作させる
+            this.initialized = true;
+        }
     }
 
     /**
-     * 要点データの読み込み（Firebase統合）
+     * 要点データの読み込み（★修正: エラーハンドリング強化）
      */
     loadKeyPointsData() {
         try {
+            console.log('📖 KeyPoints データ読み込み開始');
+            
             const saved = localStorage.getItem('keyPointsData');
             if (saved) {
-                const parsedData = JSON.parse(saved);
-                if (parsedData && typeof parsedData === 'object') {
-                    Object.keys(this.subjects).forEach(key => {
-                        if (parsedData[key] && parsedData[key].items) {
-                            this.subjects[key].items = parsedData[key].items;
-                        }
-                        if (parsedData[key] && parsedData[key].chapters) {
-                            // カスタム追加されたHTMLコンテンツをマージ
-                            Object.keys(parsedData[key].chapters).forEach(chapterKey => {
-                                if (this.subjects[key].chapters[chapterKey] && parsedData[key].chapters[chapterKey].sections) {
-                                    Object.keys(parsedData[key].chapters[chapterKey].sections).forEach(sectionKey => {
-                                        if (this.subjects[key].chapters[chapterKey].sections[sectionKey]) {
-                                            // 既存の項目にHTMLコンテンツを追加
-                                            parsedData[key].chapters[chapterKey].sections[sectionKey].forEach((savedTopic, index) => {
-                                                if (this.subjects[key].chapters[chapterKey].sections[sectionKey][index] && 
-                                                    savedTopic.htmlContent) {
-                                                    this.subjects[key].chapters[chapterKey].sections[sectionKey][index].htmlContent = savedTopic.htmlContent;
-                                                    this.subjects[key].chapters[chapterKey].sections[sectionKey][index].type = 'html';
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
+                try {
+                    const parsedData = JSON.parse(saved);
+                    if (parsedData && typeof parsedData === 'object') {
+                        console.log('📝 LocalStorage からデータ復元中...');
+                        
+                        // 既存科目データにカスタムコンテンツを安全にマージ
+                        Object.keys(this.subjects).forEach(subjectKey => {
+                            if (parsedData[subjectKey]) {
+                                // カスタムHTMLコンテンツのみマージ
+                                this.mergeCustomContent(subjectKey, parsedData[subjectKey]);
+                            }
+                        });
+                        
+                        console.log('✅ データ復元完了');
+                    }
+                } catch (parseError) {
+                    console.warn('⚠️ LocalStorage データ解析エラー:', parseError);
+                    localStorage.removeItem('keyPointsData'); // 破損データを削除
                 }
+            } else {
+                console.log('📝 新規データで開始');
             }
+            
+            // Firebase統合（利用可能な場合のみ）
+            this.initializeFirebaseSync();
+            
         } catch (error) {
-            console.error('Error loading key points data:', error);
+            console.error('❌ KeyPointsデータ読み込みエラー:', error);
         }
     }
 
     /**
-     * 要点データの保存（Firebase統合強化版）
+     * カスタムコンテンツのマージ（★追加: 安全なマージ処理）
+     */
+    mergeCustomContent(subjectKey, savedSubjectData) {
+        try {
+            if (!savedSubjectData.chapters) return;
+            
+            Object.keys(savedSubjectData.chapters).forEach(chapterKey => {
+                const savedChapter = savedSubjectData.chapters[chapterKey];
+                const currentChapter = this.subjects[subjectKey].chapters[chapterKey];
+                
+                if (!savedChapter.sections || !currentChapter) return;
+                
+                Object.keys(savedChapter.sections).forEach(sectionKey => {
+                    const savedSection = savedChapter.sections[sectionKey];
+                    const currentSection = currentChapter.sections[sectionKey];
+                    
+                    if (!Array.isArray(savedSection) || !Array.isArray(currentSection)) return;
+                    
+                    // 各項目のHTMLコンテンツをマージ
+                    savedSection.forEach((savedTopic, index) => {
+                        if (currentSection[index] && savedTopic && savedTopic.htmlContent) {
+                            currentSection[index].htmlContent = savedTopic.htmlContent;
+                            currentSection[index].type = 'html';
+                        }
+                    });
+                });
+            });
+        } catch (error) {
+            console.warn('⚠️ カスタムコンテンツマージエラー:', error);
+        }
+    }
+
+    /**
+     * Firebase同期初期化（★追加: 安全な同期処理）
+     */
+    initializeFirebaseSync() {
+        // Firebase統合が利用可能か確認
+        if (!window.ULTRA_STABLE_USER_ID || !window.DataManager || typeof DataManager.saveToFirestore !== 'function') {
+            console.log('📝 Firebase統合未利用（LocalStorageのみ）');
+            return;
+        }
+        
+        try {
+            console.log('🔄 Firebase同期機能有効');
+            // 実際の同期処理は saveKeyPointsData() で実行
+        } catch (error) {
+            console.warn('⚠️ Firebase同期初期化エラー:', error);
+        }
+    }
+
+    /**
+     * 要点データの保存（★修正: キャッシュクリア完全対応）
      */
     saveKeyPointsData() {
         try {
-            console.log('💾 KeyPoints保存開始（Firebase統合版）');
+            console.log('💾 KeyPoints保存開始（キャッシュクリア対応版）');
             
-            // LocalStorageに保存
-            localStorage.setItem('keyPointsData', JSON.stringify(this.subjects));
+            // 1. LocalStorageに即座に保存（最重要）
+            const dataToSave = JSON.stringify(this.subjects);
+            localStorage.setItem('keyPointsData', dataToSave);
+            localStorage.setItem('keyPointsData_timestamp', new Date().toISOString());
+            console.log('✅ LocalStorage保存完了');
             
-            // Firebaseにも保存（ULTRA_STABLE_USER_IDが利用可能な場合）
+            // 2. Firebase統合保存（利用可能な場合）
             if (window.ULTRA_STABLE_USER_ID && window.DataManager && typeof DataManager.saveToFirestore === 'function') {
-                const keyPointsCount = this.countTotalKeyPoints();
-                
-                DataManager.saveToFirestore({
-                    type: 'keyPoints',
-                    action: 'save',
-                    keyPointsCount: keyPointsCount,
-                    subjectsCount: Object.keys(this.subjects).length,
-                    timestamp: new Date().toISOString(),
-                    message: '要点確認データを保存しました'
-                });
-                
-                console.log('✅ KeyPoints Firebase保存完了');
+                try {
+                    const keyPointsCount = this.countTotalKeyPoints();
+                    
+                    // ★修正: 実際のデータも含めてFirebaseに保存
+                    const firebaseData = {
+                        type: 'keyPoints',
+                        action: 'save',
+                        keyPointsData: this.subjects, // ★重要: 実データも保存
+                        keyPointsCount: keyPointsCount,
+                        subjectsCount: Object.keys(this.subjects).length,
+                        timestamp: new Date().toISOString(),
+                        userId: window.ULTRA_STABLE_USER_ID,
+                        message: '要点確認データを保存しました'
+                    };
+                    
+                    DataManager.saveToFirestore(firebaseData);
+                    console.log('✅ Firebase保存送信完了', {
+                        userId: window.ULTRA_STABLE_USER_ID,
+                        keyPointsCount: keyPointsCount
+                    });
+                    
+                } catch (firebaseError) {
+                    console.warn('⚠️ Firebase保存エラー（LocalStorageは保存済み）:', firebaseError);
+                }
             } else {
-                console.log('📝 KeyPoints LocalStorage保存のみ');
+                console.log('📝 LocalStorage保存のみ');
             }
+            
+            return true; // 保存成功
             
         } catch (error) {
             console.error('❌ KeyPoints保存エラー:', error);
+            
+            // 緊急保存試行
+            try {
+                localStorage.setItem('keyPointsData_emergency', JSON.stringify(this.subjects));
+                console.log('🚨 緊急保存完了');
+            } catch (emergencyError) {
+                console.error('💥 緊急保存も失敗:', emergencyError);
+                alert('データ保存に失敗しました。ページを更新してください。');
+            }
+            
+            return false; // 保存失敗
         }
     }
 
@@ -663,23 +759,27 @@ class KeyPointsModuleClass {
      */
     countTotalKeyPoints() {
         let count = 0;
-        Object.values(this.subjects).forEach(subject => {
-            if (subject.chapters) {
-                Object.values(subject.chapters).forEach(chapter => {
-                    if (chapter.sections) {
-                        Object.values(chapter.sections).forEach(topics => {
-                            if (Array.isArray(topics)) {
-                                topics.forEach(topic => {
-                                    if (topic.type === 'html' && topic.htmlContent) {
-                                        count++;
-                                    }
-                                });
-                            }
-                        });
-                    }
-                });
-            }
-        });
+        try {
+            Object.values(this.subjects).forEach(subject => {
+                if (subject.chapters) {
+                    Object.values(subject.chapters).forEach(chapter => {
+                        if (chapter.sections) {
+                            Object.values(chapter.sections).forEach(topics => {
+                                if (Array.isArray(topics)) {
+                                    topics.forEach(topic => {
+                                        if (topic.type === 'html' && topic.htmlContent) {
+                                            count++;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            console.warn('⚠️ 要点数カウントエラー:', error);
+        }
         return count;
     }
 
@@ -687,15 +787,20 @@ class KeyPointsModuleClass {
      * 科目一覧の取得（★修正: 実際の項目数計算）
      */
     getSubjectList() {
-        return Object.entries(this.subjects)
-            .map(([key, data]) => ({
-                key,
-                name: data.name,
-                order: data.order || 999,
-                itemCount: this.calculateActualItemCount(data), // ★修正: 実際の項目数計算
-                chapterCount: Object.keys(data.chapters || {}).length
-            }))
-            .sort((a, b) => a.order - b.order);
+        try {
+            return Object.entries(this.subjects)
+                .map(([key, data]) => ({
+                    key,
+                    name: data.name,
+                    order: data.order || 999,
+                    itemCount: this.calculateActualItemCount(data), // ★修正: 実際の項目数計算
+                    chapterCount: Object.keys(data.chapters || {}).length
+                }))
+                .sort((a, b) => a.order - b.order);
+        } catch (error) {
+            console.warn('⚠️ 科目一覧取得エラー:', error);
+            return [];
+        }
     }
 
     /**
@@ -703,16 +808,20 @@ class KeyPointsModuleClass {
      */
     calculateActualItemCount(subjectData) {
         let itemCount = 0;
-        if (subjectData.chapters) {
-            Object.values(subjectData.chapters).forEach(chapter => {
-                if (chapter.sections) {
-                    Object.values(chapter.sections).forEach(topics => {
-                        if (Array.isArray(topics)) {
-                            itemCount += topics.length;
-                        }
-                    });
-                }
-            });
+        try {
+            if (subjectData.chapters) {
+                Object.values(subjectData.chapters).forEach(chapter => {
+                    if (chapter.sections) {
+                        Object.values(chapter.sections).forEach(topics => {
+                            if (Array.isArray(topics)) {
+                                itemCount += topics.length;
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.warn('⚠️ 項目数計算エラー:', error);
         }
         return itemCount;
     }
@@ -905,17 +1014,15 @@ class KeyPointsModuleClass {
                         
                         topics.forEach((topic, index) => {
                             const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                            const hasCustomContent = topic.type === 'html' && topic.htmlContent;
-                                    const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                                    
-                                    html += `
-                                        <div class="topic-card-single" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
-                                             onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                            <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
-                                            <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
-                                            <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
-                                        </div>
-                                    `;
+                            
+                            html += `
+                                <div class="topic-card-single" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
+                                     onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
+                                    <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
+                                    <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
+                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
+                                </div>
+                            `;
                         });
                         
                         html += `
@@ -1432,66 +1539,82 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * カード選択式の項目追加（Firebase統合版）
+     * カード選択式の項目追加（★修正: キャッシュクリア完全対応）
      */
-    handleAddHierarchyItemCard() {
-    const htmlInput = document.getElementById('keyPointHtml');
+    async handleAddHierarchyItemCard() {
+        const htmlInput = document.getElementById('keyPointHtml');
 
-    if (!htmlInput) {
-        alert('HTML内容を入力してください');
-        return;
-    }
-
-    const htmlContent = htmlInput.value.trim();
-
-    if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
-        alert('すべての階層を選択してください');
-        return;
-    }
-
-    if (!htmlContent) {
-        alert('HTML内容を入力してください');
-        return;
-    }
-
-    // 該当する項目を取得して更新
-    if (this.subjects[this.selectedSubject] && 
-        this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
-        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
-        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
-        
-        // 項目をHTMLコンテンツ付きで更新（元のタイトルは保持）
-        this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
-            ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
-            // title行を削除 - 元のタイトルを保持
-            htmlContent: htmlContent,
-            type: 'html'
-        };
-
-        // Firebase統合保存
-        this.saveKeyPointsData();
-
-        // フォームをクリア
-        htmlInput.value = '';
-        
-        // 選択をリセット
-        const subjectSelect = document.getElementById('keyPointSubjectSelect');
-        if (subjectSelect) {
-            subjectSelect.value = '';
-            this.onSubjectChangeCard();
+        if (!htmlInput) {
+            alert('HTML内容を入力してください');
+            return;
         }
 
-        // 登録済みリストを更新
-        const listContainer = document.getElementById('keyPointsList');
-        if (listContainer) {
-            listContainer.innerHTML = this.renderKeyPointsList();
+        const htmlContent = htmlInput.value.trim();
+
+        if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
+            alert('すべての階層を選択してください');
+            return;
         }
 
-        alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
-    } else {
-        alert('選択した項目が見つかりません');
+        if (!htmlContent) {
+            alert('HTML内容を入力してください');
+            return;
+        }
+
+        // 該当する項目を取得して更新
+        if (this.subjects[this.selectedSubject] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
+            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
+            
+            try {
+                // 項目をHTMLコンテンツ付きで更新（元のタイトルは保持）
+                this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
+                    ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
+                    htmlContent: htmlContent,
+                    type: 'html'
+                };
+
+                // ★修正: 確実な保存処理
+                const saveSuccess = this.saveKeyPointsData();
+                if (!saveSuccess) {
+                    alert('保存中にエラーが発生しました。再度お試しください。');
+                    return;
+                }
+
+                // フォームをクリア
+                htmlInput.value = '';
+                
+                // 選択をリセット
+                const subjectSelect = document.getElementById('keyPointSubjectSelect');
+                if (subjectSelect) {
+                    subjectSelect.value = '';
+                    this.onSubjectChangeCard();
+                }
+
+                // 登録済みリストを更新
+                const listContainer = document.getElementById('keyPointsList');
+                if (listContainer) {
+                    listContainer.innerHTML = this.renderKeyPointsList();
+                }
+
+                alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
+                console.log('✅ 要点追加保存完了', {
+                    selectedSubject: this.selectedSubject,
+                    selectedChapter: this.selectedChapter,
+                    selectedSection: this.selectedSection,
+                    selectedTopicIndex: this.selectedTopicIndex,
+                    timestamp: new Date().toISOString()
+                });
+                
+            } catch (error) {
+                console.error('❌ 要点追加保存エラー:', error);
+                alert('保存中にエラーが発生しました。再度お試しください。');
+            }
+        } else {
+            alert('選択した項目が見つかりません');
+        }
     }
-}
 
     /**
      * 登録済み要点リストを描画（★修正: カード式レイアウト + 編集機能）
@@ -1500,35 +1623,39 @@ class KeyPointsModuleClass {
         let html = '';
         let allItems = [];
         
-        // ★修正: 科目を順序でソートして表示
-        const sortedSubjects = Object.entries(this.subjects)
-            .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
-        
-        // 全ての要点項目を収集
-        sortedSubjects.forEach(([subjectKey, subject]) => {
-            if (subject.chapters) {
-                Object.entries(subject.chapters).forEach(([chapterName, chapterData]) => {
-                    if (chapterData.sections) {
-                        Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
-                            topics.forEach((topic, index) => {
-                                if (topic.type === 'html' && topic.htmlContent) {
-                                    allItems.push({
-                                        title: topic.title,
-                                        subjectName: subject.name,
-                                        path: `${chapterName} → ${sectionName}`,
-                                        subjectKey,
-                                        chapterName,
-                                        sectionName,
-                                        topicIndex: index,
-                                        htmlContent: topic.htmlContent
-                                    });
-                                }
+        try {
+            // ★修正: 科目を順序でソートして表示
+            const sortedSubjects = Object.entries(this.subjects)
+                .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
+            
+            // 全ての要点項目を収集
+            sortedSubjects.forEach(([subjectKey, subject]) => {
+                if (subject.chapters) {
+                    Object.entries(subject.chapters).forEach(([chapterName, chapterData]) => {
+                        if (chapterData.sections) {
+                            Object.entries(chapterData.sections).forEach(([sectionName, topics]) => {
+                                topics.forEach((topic, index) => {
+                                    if (topic.type === 'html' && topic.htmlContent) {
+                                        allItems.push({
+                                            title: topic.title,
+                                            subjectName: subject.name,
+                                            path: `${chapterName} → ${sectionName}`,
+                                            subjectKey,
+                                            chapterName,
+                                            sectionName,
+                                            topicIndex: index,
+                                            htmlContent: topic.htmlContent
+                                        });
+                                    }
+                                });
                             });
-                        });
-                    }
-                });
-            }
-        });
+                        }
+                    });
+                }
+            });
+        } catch (error) {
+            console.warn('⚠️ 要点リスト生成エラー:', error);
+        }
         
         if (allItems.length === 0) {
             return '<div style="text-align: center; padding: 30px; color: var(--gray); background: #f8f9fa; border-radius: 8px;"><p>📝 登録済み要点がありません</p><p style="font-size: 14px;">上のフォームから要点を追加してください</p></div>';
@@ -1575,126 +1702,166 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 要点編集機能（★追加）
+     * 要点編集機能（★修正: エラーハンドリング強化）
      */
     editKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
-        if (!this.subjects[subjectKey] || 
-            !this.subjects[subjectKey].chapters[chapterName] || 
-            !this.subjects[subjectKey].chapters[chapterName].sections[sectionName] || 
-            !this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
-            alert('編集対象が見つかりません');
-            return;
-        }
-
-        const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
-        const currentContent = topic.htmlContent || '';
-
-        // 編集モーダルを表示
-        const dialogBody = `
-            <div class="form-group">
-                <label class="form-label">項目名</label>
-                <input type="text" class="form-control" id="editTopicTitle" value="${topic.title}" readonly style="background: #f8f9fa;">
-            </div>
-            <div class="form-group">
-                <label class="form-label">HTML内容</label>
-                <textarea class="form-control" id="editKeyPointHtml" rows="8" 
-                          placeholder="HTML形式の要点まとめ内容を入力してください">${currentContent}</textarea>
-                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                    💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
-                </div>
-            </div>
-        `;
-
-        const modal = document.createElement('div');
-        modal.className = 'custom-modal';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-        
-        modal.innerHTML = `
-            <div style="background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="margin: 0; color: #2d3748;">✏️ 要点編集</h3>
-                    <button onclick="this.closest('.custom-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-                </div>
-                ${dialogBody}
-                <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: end;">
-                    <button onclick="this.closest('.custom-modal').remove()" style="background: #a0aec0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                        キャンセル
-                    </button>
-                    <button onclick="KeyPointsModule.saveEditedKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${topicIndex})" style="background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                        保存
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    }
-
-    /**
-     * 編集内容を保存（★追加）
-     */
-    saveEditedKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
-        const htmlInput = document.getElementById('editKeyPointHtml');
-        if (!htmlInput) {
-            alert('HTML内容が見つかりません');
-            return;
-        }
-
-        const htmlContent = htmlInput.value.trim();
-        if (!htmlContent) {
-            alert('HTML内容を入力してください');
-            return;
-        }
-
-        // 項目を更新
-        if (this.subjects[subjectKey] && 
-            this.subjects[subjectKey].chapters[chapterName] && 
-            this.subjects[subjectKey].chapters[chapterName].sections[sectionName] && 
-            this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
-            
-            this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex].htmlContent = htmlContent;
-
-            // Firebase統合保存
-            this.saveKeyPointsData();
-
-            // 登録済みリストを更新
-            const listContainer = document.getElementById('keyPointsList');
-            if (listContainer) {
-                listContainer.innerHTML = this.renderKeyPointsList();
+        try {
+            if (!this.subjects[subjectKey] || 
+                !this.subjects[subjectKey].chapters[chapterName] || 
+                !this.subjects[subjectKey].chapters[chapterName].sections[sectionName] || 
+                !this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
+                alert('編集対象が見つかりません');
+                return;
             }
 
-            // モーダルを閉じる
-            document.querySelector('.custom-modal').remove();
+            const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
+            const currentContent = topic.htmlContent || '';
+
+            // 編集モーダルを表示
+            const dialogBody = `
+                <div class="form-group">
+                    <label class="form-label">項目名</label>
+                    <input type="text" class="form-control" id="editTopicTitle" value="${topic.title}" readonly style="background: #f8f9fa;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">HTML内容</label>
+                    <textarea class="form-control" id="editKeyPointHtml" rows="8" 
+                              placeholder="HTML形式の要点まとめ内容を入力してください">${currentContent}</textarea>
+                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                        💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
+                    </div>
+                </div>
+            `;
+
+            const modal = document.createElement('div');
+            modal.className = 'custom-modal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
             
-            alert('要点まとめを更新しました！');
-        } else {
-            alert('更新対象が見つかりません');
+            modal.innerHTML = `
+                <div style="background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="margin: 0; color: #2d3748;">✏️ 要点編集</h3>
+                        <button onclick="this.closest('.custom-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    ${dialogBody}
+                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: end;">
+                        <button onclick="this.closest('.custom-modal').remove()" style="background: #a0aec0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            キャンセル
+                        </button>
+                        <button onclick="KeyPointsModule.saveEditedKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${topicIndex})" style="background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                            保存
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        } catch (error) {
+            console.error('❌ 編集モーダル表示エラー:', error);
+            alert('編集画面の表示中にエラーが発生しました。');
         }
     }
 
     /**
-     * 階層項目削除（Firebase統合版）
+     * 編集内容を保存（★修正: キャッシュクリア完全対応）
      */
-    deleteHierarchyItem(subjectKey, chapterName, sectionName, topicIndex) {
-        if (confirm('この要点まとめを削除しますか？')) {
+    async saveEditedKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
+        try {
+            const htmlInput = document.getElementById('editKeyPointHtml');
+            if (!htmlInput) {
+                alert('HTML内容が見つかりません');
+                return;
+            }
+
+            const htmlContent = htmlInput.value.trim();
+            if (!htmlContent) {
+                alert('HTML内容を入力してください');
+                return;
+            }
+
+            // 項目を更新
             if (this.subjects[subjectKey] && 
                 this.subjects[subjectKey].chapters[chapterName] && 
                 this.subjects[subjectKey].chapters[chapterName].sections[sectionName] && 
                 this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
                 
-                // HTMLコンテンツを削除して元のリンクタイプに戻す
-                const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
-                delete topic.htmlContent;
-                topic.type = 'link';
+                this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex].htmlContent = htmlContent;
 
-                // Firebase統合保存
-                this.saveKeyPointsData();
+                // ★修正: 確実なFirebase統合保存
+                const saveSuccess = this.saveKeyPointsData();
+                if (!saveSuccess) {
+                    alert('保存中にエラーが発生しました。再度お試しください。');
+                    return;
+                }
+
+                // モーダルを閉じる
+                document.querySelector('.custom-modal').remove();
                 
+                // 登録済みリストを更新
                 const listContainer = document.getElementById('keyPointsList');
                 if (listContainer) {
                     listContainer.innerHTML = this.renderKeyPointsList();
                 }
-                alert('要点まとめを削除しました');
+                
+                alert('要点まとめを更新しました！');
+                console.log('✅ 要点編集保存完了', {
+                    subjectKey,
+                    chapterName,
+                    sectionName,
+                    topicIndex,
+                    timestamp: new Date().toISOString()
+                });
+                
+            } else {
+                alert('更新対象が見つかりません');
+            }
+        } catch (error) {
+            console.error('❌ 要点編集保存エラー:', error);
+            alert('保存中にエラーが発生しました。再度お試しください。');
+        }
+    }
+
+    /**
+     * 階層項目削除（★修正: キャッシュクリア完全対応）
+     */
+    async deleteHierarchyItem(subjectKey, chapterName, sectionName, topicIndex) {
+        if (confirm('この要点まとめを削除しますか？')) {
+            try {
+                if (this.subjects[subjectKey] && 
+                    this.subjects[subjectKey].chapters[chapterName] && 
+                    this.subjects[subjectKey].chapters[chapterName].sections[sectionName] && 
+                    this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
+                    
+                    // HTMLコンテンツを削除して元のリンクタイプに戻す
+                    const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
+                    delete topic.htmlContent;
+                    topic.type = 'link';
+
+                    // ★修正: 確実なFirebase統合保存
+                    const saveSuccess = this.saveKeyPointsData();
+                    if (!saveSuccess) {
+                        alert('削除中にエラーが発生しました。再度お試しください。');
+                        return;
+                    }
+                    
+                    // 登録済みリストを更新
+                    const listContainer = document.getElementById('keyPointsList');
+                    if (listContainer) {
+                        listContainer.innerHTML = this.renderKeyPointsList();
+                    }
+                    
+                    alert('要点まとめを削除しました');
+                    console.log('✅ 要点削除保存完了', {
+                        subjectKey,
+                        chapterName,
+                        sectionName,
+                        topicIndex,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            } catch (error) {
+                console.error('❌ 要点削除保存エラー:', error);
+                alert('削除中にエラーが発生しました。再度お試しください。');
             }
         }
     }
@@ -1781,7 +1948,25 @@ class KeyPointsModuleClass {
                 ) !important;
                 transform: scale(1.02) !important;
             }
+
+            /* カード式登録済み要点のスタイル */
+            .keypoints-card:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                border-color: #3182ce !important;
+            }
+
+            .edit-btn:hover {
+                background: #2c5aa0 !important;
+                transform: translateY(-1px) !important;
+            }
+
+            .delete-btn:hover {
+                background: #c53030 !important;
+                transform: translateY(-1px) !important;
+            }
         `;
+        
         document.head.appendChild(style);
     }
 
