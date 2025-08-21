@@ -1559,40 +1559,42 @@ if (window.Analytics) {
     }
 
     showBookListDialog() {
-        let dialogBody = '<div style="max-height: 400px; overflow-y: auto;">';
+    let dialogBody = '<div style="max-height: 400px; overflow-y: auto;">';
+    
+    Object.values(DataManager.books).forEach(book => {
+        // 削除済みの問題集は表示しない
+        if (DataManager.isDeleted('books', book.id)) {
+            return;
+        }
         
-        Object.values(DataManager.books).forEach(book => {
-            // 削除済みの問題集は表示しない
-            if (DataManager.isDeleted('books', book.id)) {
-                return;
-            }
-            
-            const questionCount = DataManager.countQuestionsInBook(book);
-            const numberingText = book.numberingType === 'continuous' ? '連番' : 'リセット';
-            dialogBody += `
-                <div style="padding: 10px; border-bottom: 1px solid var(--light);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600;">${book.name}</div>
-                            <div style="font-size: 12px; color: var(--gray);">
-                                ${Object.keys(book.structure).length}科目 | ${questionCount}問 | ${numberingText}
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="hierarchy-action edit" onclick="App.editBookProperties('${book.id}')" title="編集">✏️</button>
-                            <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
+        const questionCount = DataManager.countQuestionsInBook(book);
+        const numberingText = book.numberingType === 'continuous' ? '連番' : 'リセット';
+        dialogBody += `
+            <div style="padding: 10px; border-bottom: 1px solid var(--light);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600;">${book.name}</div>
+                        <div style="font-size: 12px; color: var(--gray);">
+                            ${Object.keys(book.structure).length}科目 | ${questionCount}問 | ${numberingText}
                         </div>
                     </div>
+                    <div style="display: flex; gap: 5px;">
+                        <!-- ★追加: 全チェック外しボタン -->
+                        <button class="hierarchy-action reset" onclick="App.resetBookAllChecks('${book.id}')" title="全チェック外し" style="background: var(--warning); color: white;">🔄</button>
+                        <button class="hierarchy-action edit" onclick="App.editBookProperties('${book.id}')" title="編集">✏️</button>
+                        <button class="hierarchy-action delete" onclick="App.deleteBook('${book.id}', event)" title="削除">🗑️</button>
+                    </div>
                 </div>
-            `;
-        });
-        
-        dialogBody += '</div>';
-        
-        this.showDialog('問題集一覧', dialogBody, () => {
-            this.closeDialog();
-        });
-    }
+            </div>
+        `;
+    });
+    
+    dialogBody += '</div>';
+    
+    this.showDialog('問題集一覧', dialogBody, () => {
+        this.closeDialog();
+    });
+}
 
     editBookProperties(bookId) {
         const book = DataManager.books[bookId];
