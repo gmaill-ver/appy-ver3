@@ -794,36 +794,6 @@ class Application {
     
     this.saveQuestionStatesForPath();
     this.updateStats();
-
-        /**
- * 全問題をリセット（★追加：記録入力タブ用）
- */
-resetAllQuestions() {
-    if (!confirm('現在の問題のチェック状態をすべてリセットしますか？')) {
-        return;
-    }
-
-    // 全問題状態をリセット
-    Object.keys(this.questionStates).forEach(num => {
-        this.questionStates[num] = {
-            state: null,
-            bookmarked: false
-        };
-        
-        // UIからもクラスを削除
-        const cell = document.querySelector(`[data-number="${num}"]`);
-        if (cell) {
-            cell.classList.remove('correct', 'wrong', 'bookmarked');
-        }
-    });
-
-    // 状態を保存して統計を更新
-    this.saveQuestionStatesForPath();
-    this.updateStats();
-    this.autoSaveRecord();
-    
-    console.log('✅ 全問題リセット完了');
-}
     
     // ★追加: 自動保存機能
     this.autoSaveRecord();
@@ -1945,65 +1915,6 @@ if (window.Analytics) {
         
         alert('問題集を削除しました');
     }
-
-    /**
- * 指定問題集の全チェックを外す（★追加）
- */
-resetBookAllChecks(bookId) {
-    const book = DataManager.books[bookId];
-    if (!book) return;
-
-    if (!confirm(`「${book.name}」の全問題のチェック状態をリセットしますか？`)) {
-        return;
-    }
-
-    // 該当問題集の全記録を削除
-    DataManager.allRecords = DataManager.allRecords.filter(record => record.bookId !== bookId);
-    
-    // 問題状態も削除
-    if (DataManager.questionStates && DataManager.questionStates[bookId]) {
-        delete DataManager.questionStates[bookId];
-    }
-
-    // データを保存
-    DataManager.saveToHistory();
-    DataManager.saveQuestionStates();
-
-    // 現在表示中の問題集と同じ場合、UIも更新
-    if (this.currentBook && this.currentBook.id === bookId) {
-        // 問題状態をリセット
-        this.questionStates = {};
-        
-        // 問題グリッドが表示されている場合、UI更新
-        const questionGrid = document.getElementById('questionGrid');
-        if (questionGrid && questionGrid.children.length > 0) {
-            // 全セルからクラスを削除
-            Array.from(questionGrid.children).forEach(cell => {
-                if (cell.dataset.number) {
-                    cell.classList.remove('correct', 'wrong', 'bookmarked');
-                    // 問題状態も初期化
-                    this.questionStates[cell.dataset.number] = {
-                        state: null,
-                        bookmarked: false
-                    };
-                }
-            });
-            
-            this.updateStats();
-        }
-    }
-
-    // Analytics更新
-    if (window.Analytics) {
-        Analytics.updateHeatmap();
-        Analytics.updateChartBars();
-        Analytics.updateWeaknessAnalysis();
-        Analytics.updateHistoryContent();
-    }
-
-    alert(`「${book.name}」の全チェックをリセットしました`);
-    console.log(`✅ 問題集「${book.name}」全チェックリセット完了`);
-}
 
     /**
      * 階層並び替えモードの切り替え（新規追加）
