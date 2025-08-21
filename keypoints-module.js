@@ -1253,17 +1253,6 @@ navigateToPage(direction) {
     }
 }
         
-        // モーダルフッターを戻るボタン付きに変更
-        const modalFooter = document.querySelector('.modal-footer');
-        if (modalFooter) {
-            modalFooter.innerHTML = `
-                <div style="display: flex; gap: 10px;">
-                    <button style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')">↩️ 戻る</button>
-                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
-                </div>
-            `;
-        }
-        
         const modalContent = document.querySelector('.modal-content');
         if (modalContent) {
             modalContent.scrollTop = 0;
