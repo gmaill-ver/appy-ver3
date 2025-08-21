@@ -343,6 +343,63 @@ markAsDeleted(type, id, additionalData = {}) {
 }
 
 /**
+ * 特定問題集の記録をクリア（★追加）
+ */
+clearBookRecords(bookId) {
+    try {
+        if (!bookId) {
+            console.error('❌ bookId が指定されていません');
+            return false;
+        }
+
+        const book = this.books[bookId];
+        if (!book) {
+            console.error('❌ 指定された問題集が見つかりません:', bookId);
+            return false;
+        }
+
+        console.log(`🔄 問題集「${book.name}」(${bookId})の記録をクリア開始`);
+
+        // 削除前の記録数を保存
+        const beforeCount = this.allRecords.length;
+        
+        // 学習履歴から該当問題集の記録を削除
+        this.allRecords = this.allRecords.filter(record => record.bookId !== bookId);
+        
+        const afterCount = this.allRecords.length;
+        const deletedCount = beforeCount - afterCount;
+        
+        // LocalStorageに保存
+        localStorage.setItem('studyHistory', JSON.stringify(this.allRecords));
+        
+        // 問題状態をより確実にクリア
+        const stateKeys = Object.keys(localStorage).filter(key => 
+            key.startsWith(`questionStates_${bookId}_`)
+        );
+        
+        stateKeys.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🗑️ 削除: ${key}`);
+        });
+        
+        // savedQuestionStatesからも削除
+        Object.keys(this.savedQuestionStates).forEach(key => {
+            if (key.startsWith(`${bookId}_`)) {
+                delete this.savedQuestionStates[key];
+            }
+        });
+        localStorage.setItem('savedQuestionStates', JSON.stringify(this.savedQuestionStates));
+        
+        console.log(`✅ クリア完了: 学習記録 ${deletedCount}件、問題状態 ${stateKeys.length}件を削除`);
+        
+        return true;
+    } catch (error) {
+        console.error('❌ clearBookRecords エラー:', error);
+        return false;
+    }
+}
+
+/**
  * 削除済みアイテム一覧の保存
  */
 saveDeletedItems() {
@@ -584,7 +641,9 @@ saveBookOrder() {
      */
     saveToHistory(record) {
         try {
-            this.allRecords.push(record);
+            if (record) {
+                this.allRecords.push(record);
+            }
             
             // 最大1000件に制限
             if (this.allRecords.length > 1000) {
