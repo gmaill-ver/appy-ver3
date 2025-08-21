@@ -769,35 +769,65 @@ class Application {
     }
 
     toggleQuestion(num) {
-        if (this.bookmarkMode) {
-            this.questionStates[num].bookmarked = !this.questionStates[num].bookmarked;
-            const cell = document.querySelector(`[data-number="${num}"]`);
-            if (cell) {
-                cell.classList.toggle('bookmarked');
-            }
-        } else {
-            const cell = document.querySelector(`[data-number="${num}"]`);
-            const state = this.questionStates[num];
-            
-            if (state.state === null) {
-                state.state = 'correct';
-                cell.classList.add('correct');
-            } else if (state.state === 'correct') {
-                state.state = 'wrong';
-                cell.classList.remove('correct');
-                cell.classList.add('wrong');
-            } else {
-                state.state = null;
-                cell.classList.remove('wrong');
-            }
+    if (this.bookmarkMode) {
+        this.questionStates[num].bookmarked = !this.questionStates[num].bookmarked;
+        const cell = document.querySelector(`[data-number="${num}"]`);
+        if (cell) {
+            cell.classList.toggle('bookmarked');
         }
+    } else {
+        const cell = document.querySelector(`[data-number="${num}"]`);
+        const state = this.questionStates[num];
         
-        this.saveQuestionStatesForPath();
-        this.updateStats();
-        
-        // ★追加: 自動保存機能
-        this.autoSaveRecord();
+        if (state.state === null) {
+            state.state = 'correct';
+            cell.classList.add('correct');
+        } else if (state.state === 'correct') {
+            state.state = 'wrong';
+            cell.classList.remove('correct');
+            cell.classList.add('wrong');
+        } else {
+            state.state = null;
+            cell.classList.remove('wrong');
+        }
     }
+    
+    this.saveQuestionStatesForPath();
+    this.updateStats();
+    
+    // ★追加: 自動保存機能
+    this.autoSaveRecord();
+}
+
+/**
+ * 全問題をリセット（★追加）
+ */
+resetAllQuestions() {
+    if (!confirm('現在の問題のチェック状態をすべてリセットしますか？')) {
+        return;
+    }
+
+    // 全問題状態をリセット
+    Object.keys(this.questionStates).forEach(num => {
+        this.questionStates[num] = {
+            state: null,
+            bookmarked: false
+        };
+        
+        // UIからもクラスを削除
+        const cell = document.querySelector(`[data-number="${num}"]`);
+        if (cell) {
+            cell.classList.remove('correct', 'wrong', 'bookmarked');
+        }
+    });
+
+    // 状態を保存して統計を更新
+    this.saveQuestionStatesForPath();
+    this.updateStats();
+    this.autoSaveRecord();
+    
+    console.log('✅ 全問題リセット完了');
+}
 
     saveQuestionStatesForPath() {
         if (this.currentBook && this.currentPath.length > 0) {
