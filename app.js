@@ -1916,28 +1916,20 @@ class Application {
     }
 
     /**
-     * 指定問題集の全チェックを外す（★追加）
-     */
-    resetBookAllChecks(bookId) {
-        const book = DataManager.books[bookId];
-        if (!book) return;
+ * 指定問題集の全チェックを外す（★修正）
+ */
+resetBookAllChecks(bookId) {
+    const book = DataManager.books[bookId];
+    if (!book) return;
 
-        if (!confirm(`「${book.name}」の全問題のチェック状態をリセットしますか？`)) {
-            return;
-        }
+    if (!confirm(`「${book.name}」の全問題のチェック状態をリセットしますか？`)) {
+        return;
+    }
 
-        // 該当問題集の全記録を削除
-        DataManager.allRecords = DataManager.allRecords.filter(record => record.bookId !== bookId);
-        
-        // 問題状態も削除
-        if (DataManager.questionStates && DataManager.questionStates[bookId]) {
-            delete DataManager.questionStates[bookId];
-        }
-
-        // データを保存
-        DataManager.saveToHistory();
-        DataManager.saveQuestionStates();
-
+    // ★修正: DataManagerのclearBookRecordsメソッドを使用
+    const success = DataManager.clearBookRecords(bookId);
+    
+    if (success) {
         // 現在表示中の問題集と同じ場合、UIも更新
         if (this.currentBook && this.currentBook.id === bookId) {
             // 問題状態をリセット
@@ -1972,7 +1964,10 @@ class Application {
 
         alert(`「${book.name}」の全チェックをリセットしました`);
         console.log(`✅ 問題集「${book.name}」全チェックリセット完了`);
+    } else {
+        alert('リセットに失敗しました');
     }
+}
 
     /**
      * 階層並び替えモードの切り替え（新規追加）
