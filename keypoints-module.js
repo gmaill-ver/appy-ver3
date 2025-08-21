@@ -1113,7 +1113,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 項目内容表示
+     * 項目内容表示（★修正: ページネーション情報を保存）
      */
     viewTopicContent(subjectKey, chapterName, sectionName, topicIndex) {
         const subject = this.subjects[subjectKey];
@@ -1124,6 +1124,14 @@ class KeyPointsModuleClass {
         const topic = subject.chapters[chapterName].sections[sectionName][topicIndex];
         if (!topic) return;
 
+        // ★追加: ページネーション用に現在位置を保存
+        this.currentContentLocation = {
+            subjectKey,
+            chapterName,
+            sectionName,
+            topicIndex
+        };
+
         // HTMLコンテンツが登録されている場合は表示、そうでなければ外部リンク
         if (topic.type === 'html' && topic.htmlContent) {
             this.showHTMLContent(topic.title, topic.htmlContent);
@@ -1133,12 +1141,15 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * HTMLコンテンツ表示
+     * HTMLコンテンツ表示（★修正: ページネーション追加）
      */
     showHTMLContent(title, htmlContent) {
         this.isContentView = true;
         const content = document.getElementById('keyPointsMainContent');
         if (!content) return;
+
+        // ★追加: ページネーション情報を計算
+        const paginationInfo = this.calculatePagination();
 
         const html = `
             <div style="padding: 0; margin: 0;">
@@ -1150,13 +1161,25 @@ class KeyPointsModuleClass {
 
         content.innerHTML = html;
         
-        // モーダルヘッダーに重要語句ボタンを追加
+        // ★修正: モーダルヘッダーにページネーション付きで重要語句ボタンを追加
         const modalHeader = document.querySelector('.modal-header');
-        if (modalHeader && !modalHeader.querySelector('#keyPointToggleBtn')) {
+        if (modalHeader) {
             modalHeader.innerHTML = `
-                <h3 style="margin: 0; flex-grow: 1; text-align: center;">📄 ${title}</h3>
-                <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s;">重要語句を隠す</button>
-                <button class="modal-close" style="width: 24px; height: 24px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <!-- ★追加: 前のページボタン -->
+                    ${paginationInfo.hasPrev ? `<button onclick="KeyPointsModule.navigateToPrevTopic()" title="前の項目: ${paginationInfo.prevTitle}" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">◀︎</button>` : '<div style="width: 44px;"></div>'}
+                    
+                    <h3 style="margin: 0; flex-grow: 1; text-align: center; font-size: 16px;">📄 ${title}</h3>
+                    
+                    <!-- ★追加: ページ情報 -->
+                    <span style="font-size: 12px; color: var(--gray); min-width: 40px; text-align: center;">${paginationInfo.current}/${paginationInfo.total}</span>
+                    
+                    <!-- ★追加: 次のページボタン -->
+                    ${paginationInfo.hasNext ? `<button onclick="KeyPointsModule.navigateToNextTopic()" title="次の項目: ${paginationInfo.nextTitle}" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">▶︎</button>` : '<div style="width: 44px;"></div>'}
+                    
+                    <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s;">重要語句を隠す</button>
+                    <button class="modal-close" style="width: 24px; height: 24px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
+                </div>
             `;
         }
         
@@ -1208,6 +1231,76 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
             
             console.log(`Initialized ${keyTerms.length} key terms`);
         }, 100);
+    }
+
+    /**
+     * ページネーション情報を計算（★追加）
+     */
+    calculatePagination() {
+        if (!this.currentContentLocation) {
+            return { current: 1, total: 1, hasPrev: false, hasNext: false };
+        }
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        
+        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
+            return { current: 1, total: 1, hasPrev: false, hasNext: false };
+        }
+
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        const prevTopic = currentHtmlIndex > 0 ? htmlTopics[currentHtmlIndex - 1] : null;
+        const nextTopic = currentHtmlIndex < htmlTopics.length - 1 ? htmlTopics[currentHtmlIndex + 1] : null;
+
+        return {
+            current: currentHtmlIndex + 1,
+            total: htmlTopics.length,
+            hasPrev: !!prevTopic,
+            hasNext: !!nextTopic,
+            prevTitle: prevTopic ? prevTopic.title : '',
+            nextTitle: nextTopic ? nextTopic.title : ''
+        };
+    }
+
+    /**
+     * 前の項目に移動（★追加）
+     */
+    navigateToPrevTopic() {
+        if (!this.currentContentLocation) return;
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        if (currentHtmlIndex > 0) {
+            const prevTopic = htmlTopics[currentHtmlIndex - 1];
+            const prevTopicIndex = topics.indexOf(prevTopic);
+            this.viewTopicContent(subjectKey, chapterName, sectionName, prevTopicIndex);
+        }
+    }
+
+    /**
+     * 次の項目に移動（★追加）
+     */
+    navigateToNextTopic() {
+        if (!this.currentContentLocation) return;
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        if (currentHtmlIndex < htmlTopics.length - 1) {
+            const nextTopic = htmlTopics[currentHtmlIndex + 1];
+            const nextTopicIndex = topics.indexOf(nextTopic);
+            this.viewTopicContent(subjectKey, chapterName, sectionName, nextTopicIndex);
+        }
     }
 
     /**
