@@ -1177,6 +1177,8 @@ class KeyPointsModuleClass {
         }
         
         this.initializeKeyTerms();
+        // ★追加：HTMLコンテンツ内のtoggleKeyTerms()関数用にグローバル関数も定義
+window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
     }
 
     /**
