@@ -557,6 +557,7 @@ class KeyPointsModuleClass {
         this.keyTermsHidden = false;
         this.initialized = false;
         this.isContentView = false;
+        this.currentContentLocation = null; // ★追加: ページネーション用
         
         // カード式選択用の状態管理
         this.selectedSubject = null;
@@ -1100,6 +1101,16 @@ class KeyPointsModuleClass {
     }
 
     /**
+     * 登録済み要点一覧に戻る（★追加）
+     */
+    backToKeyPointsList() {
+        const listContainer = document.getElementById('keyPointsList');
+        if (listContainer) {
+            listContainer.innerHTML = this.renderKeyPointsList();
+        }
+    }
+
+    /**
      * モーダルヘッダーを通常状態にリセット
      */
     resetModalHeader() {
@@ -1113,7 +1124,7 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 項目内容表示
+     * 項目内容表示（★修正: ページネーション情報を保存）
      */
     viewTopicContent(subjectKey, chapterName, sectionName, topicIndex) {
         const subject = this.subjects[subjectKey];
@@ -1124,6 +1135,14 @@ class KeyPointsModuleClass {
         const topic = subject.chapters[chapterName].sections[sectionName][topicIndex];
         if (!topic) return;
 
+        // ★追加: ページネーション用に現在位置を保存
+        this.currentContentLocation = {
+            subjectKey,
+            chapterName,
+            sectionName,
+            topicIndex
+        };
+
         // HTMLコンテンツが登録されている場合は表示、そうでなければ外部リンク
         if (topic.type === 'html' && topic.htmlContent) {
             this.showHTMLContent(topic.title, topic.htmlContent);
@@ -1133,145 +1152,124 @@ class KeyPointsModuleClass {
     }
 
     /**
- * HTMLコンテンツ表示（★修正: ページネーション追加）
- */
-showHTMLContent(title, htmlContent) {
-    this.isContentView = true;
-    const content = document.getElementById('keyPointsMainContent');
-    if (!content) return;
+     * HTMLコンテンツ表示（★修正: ページネーション追加）
+     */
+    showHTMLContent(title, htmlContent) {
+        this.isContentView = true;
+        const content = document.getElementById('keyPointsMainContent');
+        if (!content) return;
 
-    // ★追加: ページネーション情報を計算
-    const paginationInfo = this.calculatePagination();
+        // ★追加: ページネーション情報を計算
+        const paginationInfo = this.calculatePagination();
 
-    const html = `
-        <div style="padding: 0; margin: 0;">
-            <div style="padding: 20px;" id="keyPointContent">
-                ${htmlContent}
-            </div>
-        </div>
-    `;
-
-    content.innerHTML = html;
-    
-    // ★修正: モーダルヘッダーにページネーション付きで重要語句ボタンを追加
-    const modalHeader = document.querySelector('.modal-header');
-    if (modalHeader) {
-        modalHeader.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                <!-- ★追加: 戻るボタン -->
-                <button onclick="KeyPointsModule.backToKeyPointsList()" 
-                        style="background: var(--gray); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
-                    ↩️ 戻る
-                </button>
-                
-                <!-- ★追加: 前のページボタン -->
-                ${paginationInfo.hasPrev ? 
-                    `<button onclick="KeyPointsModule.navigateToPage(-1)" 
-                            style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="前の項目">
-                        ◀️
-                    </button>` : 
-                    `<button disabled style="background: #ccc; color: #666; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px;" title="前の項目なし">
-                        ◀️
-                    </button>`
-                }
-                
-                <!-- タイトル部分 -->
-                <h3 style="margin: 0; flex-grow: 1; text-align: center; font-size: 16px;">${title}</h3>
-                
-                <!-- ★追加: 次のページボタン -->
-                ${paginationInfo.hasNext ? 
-                    `<button onclick="KeyPointsModule.navigateToPage(1)" 
-                            style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="次の項目">
-                        ▶️
-                    </button>` : 
-                    `<button disabled style="background: #ccc; color: #666; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px;" title="次の項目なし">
-                        ▶️
-                    </button>`
-                }
-                
-                <!-- 重要語句ボタン -->
-                <button onclick="KeyPointsModule.toggleKeyTerms()" 
-                        style="background: var(--secondary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                    💡 重要語句
-                </button>
-                
-                <!-- 閉じるボタン -->
-                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
+        const html = `
+            <div style="padding: 0; margin: 0;">
+                <div style="padding: 20px;" id="keyPointContent">
+                    ${htmlContent}
+                </div>
             </div>
         `;
-    }
-    
-    // ★追加: 重要語句の初期化
-    this.initializeKeyTerms();
-}
 
-/**
- * ページネーション情報を計算（★追加）
- */
-calculatePagination() {
-    if (!this.currentContentLocation) {
-        return { hasPrev: false, hasNext: false };
-    }
-    
-    const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-    const subject = this.subjects[subjectKey];
-    
-    if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
-        return { hasPrev: false, hasNext: false };
-    }
-    
-    const topics = subject.chapters[chapterName].sections[sectionName];
-    const currentIndex = parseInt(topicIndex);
-    
-    return {
-        hasPrev: currentIndex > 0,
-        hasNext: currentIndex < topics.length - 1,
-        currentIndex: currentIndex,
-        totalCount: topics.length
-    };
-}
-
-/**
- * ページナビゲーション（★追加）
- */
-navigateToPage(direction) {
-    if (!this.currentContentLocation) return;
-    
-    const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-    const newIndex = parseInt(topicIndex) + direction;
-    
-    const subject = this.subjects[subjectKey];
-    if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
-        return;
-    }
-    
-    const topics = subject.chapters[chapterName].sections[sectionName];
-    
-    // インデックスが有効範囲内かチェック
-    if (newIndex >= 0 && newIndex < topics.length) {
-        this.viewTopicContent(subjectKey, chapterName, sectionName, newIndex);
-    }
-}
+        content.innerHTML = html;
         
-        // モーダルフッターを戻るボタン付きに変更
-        const modalFooter = document.querySelector('.modal-footer');
-        if (modalFooter) {
-            modalFooter.innerHTML = `
-                <div style="display: flex; gap: 10px;">
-                    <button style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')">↩️ 戻る</button>
-                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
+        // ★修正: モーダルヘッダーにページネーション付きで重要語句ボタンを追加
+        const modalHeader = document.querySelector('.modal-header');
+        if (modalHeader) {
+            modalHeader.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                    <!-- ★追加: 戻るボタン -->
+                    <button onclick="KeyPointsModule.backToSubjectList()" 
+                            style="background: var(--gray); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                        ↩️ 戻る
+                    </button>
+                    
+                    <!-- ★追加: 前のページボタン -->
+                    ${paginationInfo.hasPrev ? 
+                        `<button onclick="KeyPointsModule.navigateToPage(-1)" 
+                                style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="前の項目">
+                            ◀️
+                        </button>` : 
+                        `<button disabled style="background: #ccc; color: #666; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px;" title="前の項目なし">
+                            ◀️
+                        </button>`
+                    }
+                    
+                    <!-- タイトル部分 -->
+                    <h3 style="margin: 0; flex-grow: 1; text-align: center; font-size: 16px;">${title}</h3>
+                    
+                    <!-- ★追加: 次のページボタン -->
+                    ${paginationInfo.hasNext ? 
+                        `<button onclick="KeyPointsModule.navigateToPage(1)" 
+                                style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="次の項目">
+                            ▶️
+                        </button>` : 
+                        `<button disabled style="background: #ccc; color: #666; border: none; padding: 8px 12px; border-radius: 6px; font-size: 14px;" title="次の項目なし">
+                            ▶️
+                        </button>`
+                    }
+                    
+                    <!-- 重要語句ボタン -->
+                    <button onclick="KeyPointsModule.toggleKeyTerms()" 
+                            style="background: var(--secondary); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                        💡 重要語句
+                    </button>
+                    
+                    <!-- 閉じるボタン -->
+                    <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
                 </div>
             `;
         }
         
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
+        // ★追加: 重要語句の初期化
+        this.initializeKeyTerms();
+    }
+
+    /**
+     * ページネーション情報を計算（★追加）
+     */
+    calculatePagination() {
+        if (!this.currentContentLocation) {
+            return { hasPrev: false, hasNext: false };
         }
         
-        this.initializeKeyTerms();
-        // ★追加：HTMLコンテンツ内のtoggleKeyTerms()関数用にグローバル関数も定義
-window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        
+        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
+            return { hasPrev: false, hasNext: false };
+        }
+        
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const currentIndex = parseInt(topicIndex);
+        
+        return {
+            hasPrev: currentIndex > 0,
+            hasNext: currentIndex < topics.length - 1,
+            currentIndex: currentIndex,
+            totalCount: topics.length
+        };
+    }
+
+    /**
+     * ページナビゲーション（★追加）
+     */
+    navigateToPage(direction) {
+        if (!this.currentContentLocation) return;
+        
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const newIndex = parseInt(topicIndex) + direction;
+        
+        const subject = this.subjects[subjectKey];
+        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
+            return;
+        }
+        
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        
+        // インデックスが有効範囲内かチェック
+        if (newIndex >= 0 && newIndex < topics.length) {
+            this.viewTopicContent(subjectKey, chapterName, sectionName, newIndex);
+        }
     }
 
     /**
@@ -1313,10 +1311,9 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
         }
 
         const keyTerms = document.querySelectorAll('.wp-key-term');
-        const btn = document.getElementById('keyPointToggleBtn');
         
-        if (!btn || keyTerms.length === 0) {
-            console.log('No key terms found or button missing');
+        if (keyTerms.length === 0) {
+            console.log('No key terms found');
             return;
         }
         
@@ -1327,18 +1324,294 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
                 term.classList.add('wp-hidden');
                 term.dataset.individualState = 'hidden';
             });
-            btn.textContent = '重要語句を表示';
-            btn.style.background = '#f44336';
         } else {
             keyTerms.forEach((term) => {
                 term.classList.remove('wp-hidden');
                 term.dataset.individualState = 'visible';
             });
-            btn.textContent = '重要語句を隠す';
-            btn.style.background = '#2196f3';
         }
         
         console.log(`Toggled ${keyTerms.length} key terms to ${this.keyTermsHidden ? 'hidden' : 'visible'}`);
+    }
+
+    /**
+     * 前の項目に移動（★追加: 不足していた機能）
+     */
+    navigateToPrevTopic() {
+        if (!this.currentContentLocation) return;
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        if (currentHtmlIndex > 0) {
+            const prevTopic = htmlTopics[currentHtmlIndex - 1];
+            const prevTopicIndex = topics.indexOf(prevTopic);
+            this.viewTopicContent(subjectKey, chapterName, sectionName, prevTopicIndex);
+        }
+    }
+
+    /**
+     * 次の項目に移動（★追加: 不足していた機能）
+     */
+    navigateToNextTopic() {
+        if (!this.currentContentLocation) return;
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        if (currentHtmlIndex < htmlTopics.length - 1) {
+            const nextTopic = htmlTopics[currentHtmlIndex + 1];
+            const nextTopicIndex = topics.indexOf(nextTopic);
+            this.viewTopicContent(subjectKey, chapterName, sectionName, nextTopicIndex);
+        }
+    }
+
+    /**
+     * 詳細なページネーション情報計算（★追加: 拡張版）
+     */
+    calculateDetailedPagination() {
+        if (!this.currentContentLocation) {
+            return { current: 1, total: 1, hasPrev: false, hasNext: false };
+        }
+
+        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        
+        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
+            return { current: 1, total: 1, hasPrev: false, hasNext: false };
+        }
+
+        const topics = subject.chapters[chapterName].sections[sectionName];
+        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+        
+        const prevTopic = currentHtmlIndex > 0 ? htmlTopics[currentHtmlIndex - 1] : null;
+        const nextTopic = currentHtmlIndex < htmlTopics.length - 1 ? htmlTopics[currentHtmlIndex + 1] : null;
+
+        return {
+            current: currentHtmlIndex + 1,
+            total: htmlTopics.length,
+            hasPrev: !!prevTopic,
+            hasNext: !!nextTopic,
+            prevTitle: prevTopic ? prevTopic.title : '',
+            nextTitle: nextTopic ? nextTopic.title : ''
+        };
+    }
+
+    /**
+     * モーダルフッター更新（★追加: 不足していた機能）
+     */
+    updateModalFooter() {
+        const modalFooter = document.querySelector('.modal-footer');
+        if (modalFooter && this.isContentView) {
+            modalFooter.innerHTML = `
+                <div style="display: flex; gap: 10px;">
+                    <button style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')">↩️ 戻る</button>
+                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
+                </div>
+            `;
+        }
+    }
+
+    /**
+     * エラーハンドリング強化（★追加: より詳細なエラー処理）
+     */
+    handleError(error, context = '') {
+        console.error(`❌ KeyPointsModule Error${context ? ' in ' + context : ''}:`, error);
+        
+        // エラーの種類に応じた処理
+        if (error.name === 'QuotaExceededError') {
+            alert('ストレージ容量が不足しています。古いデータを削除してください。');
+        } else if (error.name === 'NetworkError') {
+            console.warn('⚠️ ネットワークエラー - オフラインで継続');
+        } else if (context.includes('save')) {
+            alert('保存中にエラーが発生しました。再度お試しください。');
+        } else if (context.includes('load')) {
+            console.warn('⚠️ データ読み込みエラー - デフォルトデータで継続');
+        }
+        
+        return false;
+    }
+
+    /**
+     * データ検証（★追加: より厳密なデータ検証）
+     */
+    validateData(data, type = 'general') {
+        try {
+            if (!data || typeof data !== 'object') {
+                return false;
+            }
+            
+            switch (type) {
+                case 'subjects':
+                    return this.validateSubjectsData(data);
+                case 'keypoint':
+                    return this.validateKeyPointData(data);
+                default:
+                    return true;
+            }
+        } catch (error) {
+            console.warn('⚠️ データ検証エラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 科目データ検証（★追加）
+     */
+    validateSubjectsData(data) {
+        if (!data || typeof data !== 'object') return false;
+        
+        for (const [key, subject] of Object.entries(data)) {
+            if (!subject.name || typeof subject.name !== 'string') return false;
+            if (!subject.chapters || typeof subject.chapters !== 'object') return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * 要点データ検証（★追加）
+     */
+    validateKeyPointData(data) {
+        if (!data || typeof data !== 'object') return false;
+        
+        const required = ['title', 'difficulty', 'type'];
+        for (const field of required) {
+            if (!data[field]) return false;
+        }
+        
+        if (data.type === 'html' && !data.htmlContent) return false;
+        if (data.type === 'link' && !data.url) return false;
+        
+        return true;
+    }
+
+    /**
+     * パフォーマンス監視（★追加）
+     */
+    measurePerformance(operation, func) {
+        const start = performance.now();
+        try {
+            const result = func();
+            const end = performance.now();
+            console.log(`⚡ ${operation}: ${(end - start).toFixed(2)}ms`);
+            return result;
+        } catch (error) {
+            const end = performance.now();
+            console.error(`❌ ${operation} failed after ${(end - start).toFixed(2)}ms:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * デバッグ情報出力（★追加）
+     */
+    getDebugInfo() {
+        return {
+            initialized: this.initialized,
+            currentSubject: this.currentSubject,
+            currentView: this.currentView,
+            isContentView: this.isContentView,
+            totalSubjects: Object.keys(this.subjects).length,
+            totalKeyPoints: this.countTotalKeyPoints(),
+            selectedSubject: this.selectedSubject,
+            selectedChapter: this.selectedChapter,
+            selectedSection: this.selectedSection,
+            selectedTopic: this.selectedTopic,
+            firebaseEnabled: this.firebaseEnabled,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    /**
+     * メモリ使用量監視（★追加）
+     */
+    checkMemoryUsage() {
+        if (performance.memory) {
+            const memory = performance.memory;
+            console.log('🧠 Memory Usage:', {
+                used: Math.round(memory.usedJSHeapSize / 1024 / 1024) + 'MB',
+                total: Math.round(memory.totalJSHeapSize / 1024 / 1024) + 'MB',
+                limit: Math.round(memory.jsHeapSizeLimit / 1024 / 1024) + 'MB'
+            });
+        }
+    }
+
+    /**
+     * 緊急復旧（★追加: データ破損時の復旧機能）
+     */
+    emergencyRestore() {
+        try {
+            console.log('🚨 緊急復旧開始');
+            
+            // 緊急保存データを確認
+            const emergencyData = localStorage.getItem('keyPointsData_emergency');
+            if (emergencyData) {
+                this.subjects = JSON.parse(emergencyData);
+                console.log('✅ 緊急データから復旧');
+                return true;
+            }
+            
+            // デフォルトデータで初期化
+            this.subjects = this.getDefaultSubjects();
+            console.log('✅ デフォルトデータで復旧');
+            return true;
+            
+        } catch (error) {
+            console.error('💥 緊急復旧失敗:', error);
+            return false;
+        }
+    }
+
+    /**
+     * デフォルト科目データ取得（★追加）
+     */
+    getDefaultSubjects() {
+        return {
+            'constitution': { 
+                name: '憲法',
+                order: 1,
+                chapters: {},
+                items: []
+            },
+            'administrative': { 
+                name: '行政法',
+                order: 2,
+                chapters: {},
+                items: []
+            },
+            'civil': {  
+                name: '民法',
+                order: 3,
+                chapters: {},
+                items: [] 
+            },
+            'commercial': { 
+                name: '商法',
+                order: 4,
+                chapters: {},
+                items: [] 
+            },
+            'basic_law': { 
+                name: '基礎法学',
+                order: 5,
+                chapters: {},
+                items: [] 
+            },
+            'basic_knowledge': { 
+                name: '基礎知識',
+                order: 6,
+                chapters: {},
+                items: [] 
+            }
+        };
     }
 
     /**
@@ -1944,16 +2217,6 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
     }
 
     /**
-     * 登録済み要点一覧に戻る（★追加）
-     */
-    backToKeyPointsList() {
-        const listContainer = document.getElementById('keyPointsList');
-        if (listContainer) {
-            listContainer.innerHTML = this.renderKeyPointsList();
-        }
-    }
-
-    /**
      * 要点編集機能（★修正: エラーハンドリング強化）
      */
     editKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
@@ -2158,11 +2421,6 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
                 border: 1px solid #68d391 !important;
             }
 
-            .topic-card:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            }
-
             /* ★修正: 1列レイアウト用のスタイル */
             .topic-card-single:hover {
                 transform: translateX(4px) !important;
@@ -2214,24 +2472,11 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
                 transform: scale(1.02) !important;
             }
 
-            /* カード式登録済み要点のスタイル */
-            .keypoints-card:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-                border-color: #3182ce !important;
-            }
-
             /* 科目カード（登録済み要点用）のスタイル */
             .keypoints-subject-card:hover {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
                 border-color: #3182ce !important;
-            }
-
-            /* 要点詳細アイテムのスタイル */
-            .keypoint-detail-item:hover {
-                box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
-                border-color: #cbd5e0 !important;
             }
 
             .edit-btn:hover {
@@ -2388,11 +2633,6 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
                 .small-card-meta {
                     font-size: 9px;
                 }
-
-                .topic-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-                    gap: 8px !important;
-                }
             }
 
             @media (max-width: 480px) {
@@ -2417,11 +2657,6 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
 
                 .small-card-meta {
                     font-size: 8px;
-                }
-
-                .topic-grid {
-                    grid-template-columns: 1fr !important;
-                    gap: 8px !important;
                 }
             }
         `;
