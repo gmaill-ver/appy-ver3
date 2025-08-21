@@ -2154,196 +2154,6 @@ resetBookAllChecks(bookId) {
                     
                     <div class="import-help">
                         <strong>CSV形式の例：</strong><br>
-                        問題,答え<br>
-                        "日本国憲法が保障する基本的人権の中で、最も重要とされる権利は何か？","個人の尊厳（憲法13条）"<br>
-                        "行政行為の効力のうち、公定力とは何か？","行政行為が違法であっても、権限ある機関により取り消されるまでは有効として扱われる効力"
-                    </div>
-                    
-                    <button class="save-button" style="margin-top: 15px;" onclick="App.importQACSV()">一問一答をインポート</button>
-                </div>
-            </div>
-            
-            <div class="card" style="margin: 10px;">
-                <button class="save-button" style="background: var(--danger);" onclick="DataManager.clearAllData()">すべてのデータを削除</button>
-            </div>
-        `;
-    }
-
-    renderCSVTemplateList() {
-        const container = document.getElementById('csvTemplateList');
-        if (!container) return;
-
-        if (Object.keys(DataManager.csvTemplates).length === 0) {
-            container.innerHTML = '<p style="color: var(--gray); text-align: center;">保存済みテンプレートはありません</p>';
-            return;
-        }
-        
-        let html = '';
-        Object.values(DataManager.csvTemplates).forEach(template => {
-            // 削除済みテンプレートは表示しない
-            if (DataManager.isDeleted('csvTemplates', template.id)) {
-                return;
-            }
-            
-            const date = new Date(template.createdAt);
-            const lines = template.data.trim().split('\n').length - 1;
-            
-            html += `
-                <div class="csv-item">
-                    <div class="csv-item-info">
-                        <div class="csv-item-name">${template.name}</div>
-                        <div class="csv-item-meta">
-                            ${date.toLocaleDateString('ja-JP')} | ${lines}行
-                        </div>
-                    </div>
-                    <div class="csv-item-actions">
-                        <button class="csv-btn edit" onclick="App.editCSVTemplate('${template.id}')">編集</button>
-                        <button class="csv-btn apply" onclick="App.applyCSVTemplate('${template.id}')">適用</button>
-                        <button class="csv-btn delete" onclick="App.deleteCSVTemplate('${template.id}')">削除</button>
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-    }
-
-    saveCSVTemplate() {
-        const csvData = document.getElementById('importCsvData')?.value;
-        const bookName = document.getElementById('importBookName')?.value || '未命名テンプレート';
-        
-        if (!csvData) {
-            alert('CSVデータを入力してください');
-            return;
-        }
-        
-        const templateId = 'template_' + Date.now();
-        DataManager.csvTemplates[templateId] = {
-            id: templateId,
-            name: bookName,
-            data: csvData,
-            createdAt: new Date().toISOString()
-        };
-        
-        DataManager.saveCSVTemplates();
-        this.renderCSVTemplateList();
-        alert('テンプレートを保存しました');
-    }
-
-    editCSVTemplate(templateId) {
-        const template = DataManager.csvTemplates[templateId];
-        if (!template) return;
-
-        const nameEl = document.getElementById('importBookName');
-        const dataEl = document.getElementById('importCsvData');
-        
-        if (nameEl) nameEl.value = template.name;
-        if (dataEl) dataEl.value = template.data;
-    }
-
-    applyCSVTemplate(templateId) {
-        const template = DataManager.csvTemplates[templateId];
-        if (!template) return;
-
-        const bookName = prompt('問題集名を入力してください', template.name);
-        if (!bookName) return;
-
-        const numberingType = confirm('連番モードにしますか？（OKで連番、キャンセルでリセット）') 
-            ? 'continuous' 
-            : 'reset';
-        
-        if (DataManager.importCSV(bookName, template.data, numberingType)) {
-            this.renderBookCards();
-            
-            // Analyticsが存在する場合のみ更新
-            if (window.Analytics) {
-                Analytics.updateHeatmapBookSelect();
-                Analytics.updateRadarBookSelect();
-            }
-            
-            alert('CSVデータをインポートしました');
-        } else {
-            alert('インポートに失敗しました');
-        }
-    }
-
-    /**
-     * CSVテンプレート削除（Firebase統合強化版）
-     */
-    deleteCSVTemplate(templateId) {
-        if (confirm('このテンプレートを削除しますか？')) {
-            const template = DataManager.csvTemplates[templateId];
-            
-            // 削除済みアイテムとしてマーク（Firebase統合）
-            if (template) {
-                DataManager.markAsDeleted('csvTemplates', templateId, {
-                    templateName: template.name,
-                    dataLength: template.data ? template.data.length : 0
-                });
-            }
-            
-            delete DataManager.csvTemplates[templateId];
-            DataManager.saveCSVTemplates();
-            this.renderCSVTemplateList();
-        }
-    }
-
-    importCSV() {
-        const bookName = document.getElementById('importBookName')?.value;
-        const csvData = document.getElementById('importCsvData')?.value;
-        const numberingType = document.querySelector('input[name="importNumberingType"]:checked')?.value;
-        
-        if (!bookName || !csvData) {
-            alert('問題集名とCSVデータを入力してください');
-            return;
-        }
-        
-        if (DataManager.importCSV(bookName, csvData, numberingType || 'reset')) {
-            this.renderBookCards();
-            
-            // Analyticsが存在する場合のみ更新
-            if (window.Analytics) {
-                Analytics.updateHeatmapBookSelect();
-                Analytics.updateRadarBookSelect();
-            }
-            
-            alert('CSVデータをインポートしました');
-            this.closeFooterModal();
-        } else {
-            alert('CSVの解析に失敗しました。形式を確認してください。');
-        }
-    }
-
-    importQACSV() {
-        const setName = document.getElementById('importQASetName')?.value;
-        const csvData = document.getElementById('importQACsvData')?.value;
-        
-        if (!setName || !csvData) {
-            alert('問題集名とCSVデータを入力してください');
-            return;
-        }
-        
-        if (window.QAModule && typeof QAModule.importFromCSV === 'function') {
-            if (QAModule.importFromCSV(setName, csvData)) {
-                this.closeFooterModal();
-            }
-        } else {
-            alert('一問一答モジュールが読み込まれていません');
-        }
-    }
-}
-
-// グローバルに公開
-window.App = new Application();
-
-// アプリケーション初期化
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await App.initialize();
-    } catch (error) {
-        console.error('Failed to initialize App:', error);
-    }
-});
                         科目,章,節,項,開始番号,終了番号<br>
                         民法,総則,権利能力,,1,5<br>
                         民法,総則,意思能力,,6,8<br>
@@ -2388,3 +2198,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
     }
+}
+
+// グローバルに公開
+window.App = new Application();
+
+// アプリケーション初期化
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await App.initialize();
+    } catch (error) {
+        console.error('Failed to initialize App:', error);
+    }
+});
