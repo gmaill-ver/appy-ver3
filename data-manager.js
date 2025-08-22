@@ -466,11 +466,10 @@ async saveToFirebase() {
         const userId = this.currentUser.uid;
         const userRef = db.collection('users').doc(userId);
 
-        // ★修正：バッチ操作で複数コレクションに分散保存
-        const batch = db.batch();
+        console.log('📤 Firebase分散データ保存開始...');
 
         // 1. メインドキュメントにメタデータのみ保存
-        batch.set(userRef, {
+        await userRef.set({
             bookOrder: this.bookOrder || [],
             examDate: this.examDate ? this.examDate.toISOString() : null,
             deletedItems: this.deletedItems || [],
@@ -480,61 +479,78 @@ async saveToFirebase() {
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
-        // 2. 問題集データをサブコレクションに保存
-        const booksCollection = userRef.collection('books');
+        // 2. 問題集データをサブコレクションに保存（個別保存）
         if (this.books && Object.keys(this.books).length > 0) {
-            Object.entries(this.books).forEach(([bookId, bookData]) => {
-                const bookRef = booksCollection.doc(bookId);
-                batch.set(bookRef, bookData, { merge: true });
+            const booksCollection = userRef.collection('books');
+            const bookPromises = Object.entries(this.books).map(([bookId, bookData]) => {
+                return booksCollection.doc(bookId).set(bookData, { merge: true });
             });
+            await Promise.all(bookPromises);
+            console.log(`📚 問題集保存: ${Object.keys(this.books).length}冊`);
         }
 
-        // 3. 学習記録をサブコレクションに保存（最新1000件ずつ）
-        const recordsCollection = userRef.collection('records');
+        // 3. 学習記録をサブコレクションに保存（チャンク分割）
         if (this.allRecords && this.allRecords.length > 0) {
-            // 記録を100件ずつのチャンクに分割
-            const recentRecords = this.allRecords.slice(-1000);
+            const recordsCollection = userRef.collection('records');
+            // 古いチャンクを削除
+            const oldChunks = await recordsCollection.get();
+            const deletePromises = oldChunks.docs.map(doc => doc.ref.delete());
+            await Promise.all(deletePromises);
+            
+            // 新しいチャンクとして保存（100件ずつ）
             const chunks = [];
-            for (let i = 0; i < recentRecords.length; i += 100) {
-                chunks.push(recentRecords.slice(i, i + 100));
+            for (let i = 0; i < this.allRecords.length; i += 100) {
+                chunks.push(this.allRecords.slice(i, i + 100));
             }
             
-            chunks.forEach((chunk, index) => {
-                const chunkRef = recordsCollection.doc(`chunk_${index}`);
-                batch.set(chunkRef, { records: chunk }, { merge: true });
+            const chunkPromises = chunks.map((chunk, index) => {
+                return recordsCollection.doc(`chunk_${index}`).set({ 
+                    records: chunk,
+                    chunkIndex: index,
+                    totalChunks: chunks.length
+                });
             });
+            await Promise.all(chunkPromises);
+            console.log(`📈 学習記録保存: ${this.allRecords.length}件（${chunks.length}チャンク）`);
         }
 
         // 4. 学習計画をサブコレクションに保存
-        const plansCollection = userRef.collection('studyPlans');
         if (this.studyPlans && this.studyPlans.length > 0) {
-            this.studyPlans.forEach((plan, index) => {
-                const planRef = plansCollection.doc(`plan_${index}`);
-                batch.set(planRef, plan, { merge: true });
+            const plansCollection = userRef.collection('studyPlans');
+            // 古い計画を削除
+            const oldPlans = await plansCollection.get();
+            const deletePromises = oldPlans.docs.map(doc => doc.ref.delete());
+            await Promise.all(deletePromises);
+            
+            // 新規保存
+            const planPromises = this.studyPlans.map((plan, index) => {
+                return plansCollection.doc(`plan_${index}`).set(plan);
             });
+            await Promise.all(planPromises);
+            console.log(`📅 学習計画保存: ${this.studyPlans.length}件`);
         }
 
         // 5. 一問一答をサブコレクションに保存
-        const qaCollection = userRef.collection('qaQuestions');
         if (this.qaQuestions && Object.keys(this.qaQuestions).length > 0) {
-            Object.entries(this.qaQuestions).forEach(([qaId, qaData]) => {
-                const qaRef = qaCollection.doc(qaId);
-                batch.set(qaRef, qaData, { merge: true });
+            const qaCollection = userRef.collection('qaQuestions');
+            const qaPromises = Object.entries(this.qaQuestions).map(([qaId, qaData]) => {
+                return qaCollection.doc(qaId).set(qaData, { merge: true });
             });
+            await Promise.all(qaPromises);
+            console.log(`❓ 一問一答保存: ${Object.keys(this.qaQuestions).length}セット`);
         }
 
         // 6. CSVテンプレートをサブコレクションに保存
-        const templatesCollection = userRef.collection('csvTemplates');
         if (this.csvTemplates && Object.keys(this.csvTemplates).length > 0) {
-            Object.entries(this.csvTemplates).forEach(([templateId, templateData]) => {
-                const templateRef = templatesCollection.doc(templateId);
-                batch.set(templateRef, templateData, { merge: true });
+            const templatesCollection = userRef.collection('csvTemplates');
+            const templatePromises = Object.entries(this.csvTemplates).map(([templateId, templateData]) => {
+                return templatesCollection.doc(templateId).set(templateData, { merge: true });
             });
+            await Promise.all(templatePromises);
+            console.log(`📄 CSVテンプレート保存: ${Object.keys(this.csvTemplates).length}件`);
         }
 
-        // 7. バッチ実行
-        await batch.commit();
-        console.log('✅ データを分散保存しました（サブコレクション使用）');
+        console.log('✅ Firebase分散データ保存完了');
 
     } catch (error) {
         console.warn('Firebase save error (data saved locally):', error);
