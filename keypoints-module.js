@@ -1248,6 +1248,11 @@ calculatePagination() {
         return { current: 1, total: 1, hasPrev: false, hasNext: false };
     }
 
+    // ★この3行を追加
+    const topics = subject.chapters[chapterName].sections[sectionName];
+    const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
+    const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+
     // ★修正: 科目内の全HTMLコンテンツ項目を収集（階層順序で）
     const allHtmlTopics = [];
     
