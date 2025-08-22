@@ -1569,6 +1569,75 @@ if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
     console.log("🔒 超安定Firebase統合完了");
     console.log("🆔 現在のID:", ULTRA_STABLE_USER_ID);
     console.log("🛠️ デバッグ: showIdInfo(), resetUltraStableId()");
+
+    // ★追加: DataManagerのFirebase認証を固定IDモードに変更
+    if (window.DataManager) {
+        // 固定ID認証モードを有効化
+        DataManager.initializeFirebase = async function() {
+            if (!this.firebaseEnabled) return;
+
+            try {
+                // 固定IDモードの場合は通常の認証をスキップ
+                if (window.ULTRA_STABLE_USER_ID) {
+                    console.log('📱 固定IDモード: Firebase認証をスキップ');
+                    this.currentUser = {
+                        uid: window.ULTRA_STABLE_USER_ID,
+                        email: 'fixed-user@local'
+                    };
+                    
+                    // データ同期
+                    await this.syncWithFirebase();
+                    return;
+                }
+
+                // 通常のFirebase認証（固定IDが無い場合のフォールバック）
+                firebase.auth().onAuthStateChanged((user) => {
+                    this.currentUser = user;
+                    if (user) {
+                        console.log('Firebase user logged in:', user.email);
+                        this.syncWithFirebase().catch(error => {
+                            console.warn('Firebase sync failed:', error);
+                        });
+                    }
+                });
+            } catch (error) {
+                console.warn('Firebase initialization error:', error);
+                this.firebaseEnabled = false;
+            }
+        };
+
+        // syncWithFirebaseメソッドも固定ID対応に修正
+        const originalSync = DataManager.syncWithFirebase;
+        DataManager.syncWithFirebase = async function() {
+            // 固定IDモードの場合はusersコレクションの代わりにpermanentUsersを使用
+            if (window.ULTRA_STABLE_USER_ID) {
+                // 既存のcurrentUserを固定IDモードに設定
+                this.currentUser = {
+                    uid: window.ULTRA_STABLE_USER_ID
+                };
+                this.firebaseEnabled = true;
+            }
+            
+            // 通常の同期処理を実行
+            return originalSync.call(this);
+        };
+
+        // saveToFirebaseメソッドも固定ID対応に修正  
+        const originalSave = DataManager.saveToFirebase;
+        DataManager.saveToFirebase = async function() {
+            // 固定IDモードの場合
+            if (window.ULTRA_STABLE_USER_ID) {
+                this.currentUser = {
+                    uid: window.ULTRA_STABLE_USER_ID
+                };
+                this.firebaseEnabled = true;
+            }
+            
+            return originalSave.call(this);
+        };
+        
+        console.log("✅ DataManager Firebase統合を固定IDモードに設定");
+    }
     </script>
 </body>
 </html>
