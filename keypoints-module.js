@@ -679,18 +679,33 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * Firebase同期初期化（★追加: 安全な同期処理）
+     * Firebase同期初期化（★修正: DataManager統合版）
      */
-    initializeFirebaseSync() {
+    async initializeFirebaseSync() {
         // Firebase統合が利用可能か確認
-        if (!window.ULTRA_STABLE_USER_ID || !window.DataManager || typeof DataManager.saveToFirestore !== 'function') {
+        if (!window.ULTRA_STABLE_USER_ID || !window.DataManager) {
             console.log('📝 Firebase統合未利用（LocalStorageのみ）');
             return;
         }
         
         try {
             console.log('🔄 Firebase同期機能有効');
-            // 実際の同期処理は saveKeyPointsData() で実行
+            
+            // DataManagerからKeyPointsデータを読み込み
+            if (typeof DataManager.loadKeyPointsFromFirestore === 'function') {
+                const firebaseData = await DataManager.loadKeyPointsFromFirestore();
+                if (firebaseData) {
+                    console.log('📖 Firebaseからデータ復元中...');
+                    // 既存科目データにカスタムコンテンツを安全にマージ
+                    Object.keys(this.subjects).forEach(subjectKey => {
+                        if (firebaseData[subjectKey]) {
+                            this.mergeCustomContent(subjectKey, firebaseData[subjectKey]);
+                        }
+                    });
+                    console.log('✅ Firebaseデータ復元完了');
+                }
+            }
+            
         } catch (error) {
             console.warn('⚠️ Firebase同期初期化エラー:', error);
         }
