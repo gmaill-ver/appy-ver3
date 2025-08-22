@@ -864,6 +864,7 @@ body {
     display: none;
     background: var(--lighter);
     padding: 8px;
+    
 }
 
 .hierarchy-children.expanded {
@@ -1219,24 +1220,25 @@ body {
 /* アクションボタン */
 .action-buttons {
     display: flex;
-    gap: 8px; /* ★修正: 間隔を狭く */
-    margin-bottom: 20px;
+    gap: 10px;
+    margin: 15px 0;
 }
 
 .action-btn {
     flex: 1;
     padding: 12px;
-    border: 2px solid var(--light);
-    border-radius: 8px;
+    border: 2px solid #333;
+    border-radius: 10px;
+    font-weight: 700;
+    color: #333;
     background: white;
     cursor: pointer;
-    transition: all 0.3s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-weight: 600;
-    min-width: 60px; /* ★追加: 最小幅 */
+    gap: 5px;
+    font-size: 13px;
+    transition: all 0.3s;
 }
 
 /* ★追加: スマホサイズでのボタン調整 */
@@ -1250,28 +1252,33 @@ body {
         min-width: 50px;
         font-size: 14px;
     }
+
+    .action-btn:hover {
+    background: #f8f9fa;
+    border-color: #666;
+    transform: translateY(-1px);
+}
     
     .action-btn.reset {
-        min-width: 45px;
-        flex: 0.8; /* ★追加: リセットボタンをやや小さく */
+    border-color: #333;
     }
-}
 
 .action-btn.correct {
-    background: var(--success);
+    border-color: #333;
 }
 
 .action-btn.wrong {
-    background: var(--danger);
+    border-color: #333;
 }
 
 .action-btn.bookmark {
-    background: var(--warning);
+    border-color: #333;
 }
 
 .action-btn.bookmark.active {
-    background: linear-gradient(135deg, var(--warning), var(--secondary));
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    background: #f8f9fa;
+    border-color: #666;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 問題グリッド */
