@@ -1192,7 +1192,11 @@ saveBookOrder() {
             }
             
             for (let i = startIndex; i < lines.length; i++) {
-                const parts = lines[i].split(',').map(p => p.trim());
+                const line = lines[i].trim();
+                if (!line) continue; // ★追加: 空行スキップ
+                
+                // ★追加: CSVパース改善（カンマがある文字列対応）
+                const parts = this.parseCSVLine(line);
                 const [subject, chapter, section, subsection, startNum, endNum] = parts;
                 
                 if (!subject) continue;
@@ -1218,7 +1222,7 @@ saveBookOrder() {
                         // 節を追加
                         if (!book.structure[subject].children[chapter].children[section]) {
                             book.structure[subject].children[chapter].children[section] = {
-                                type: 'section',
+                                type: 'section', // ★修正: typo修正
                                 children: {}
                             };
                         }
