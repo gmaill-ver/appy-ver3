@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+え<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -54,17 +54,18 @@
                 </div>
                 
                 <div class="action-buttons">
-    <button class="action-btn correct" onclick="App.markCorrect()" title="正解">
-        <span style="font-size: 24px; color: #3182ce;">⭕</span>
+    <button class="action-btn correct" onclick="App.markCorrect()">
+        <span style="font-size: 18px;">○</span><span>正解</span>
     </button>
-    <button class="action-btn wrong" onclick="App.markWrong()" title="不正解">
-        <span style="font-size: 24px; color: #e53e3e;">❌</span>
+    <button class="action-btn wrong" onclick="App.markWrong()">
+        <span style="font-size: 18px;">✕</span><span>不正解</span>
     </button>
-    <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()" title="ブックマーク">
-        <span style="font-size: 20px; color: #38a169;">☑️</span>
+    <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()">
+        <span style="font-size: 16px;">✓</span><span>マーク</span>
     </button>
-    <button class="action-btn reset" onclick="App.resetAllQuestions()" style="background: var(--gray); min-width: 50px;" title="リセット">
-        <span style="font-size: 18px;">🔄</span>
+    <!-- ★追加: リセットボタン -->
+    <button class="action-btn reset" onclick="App.resetAllQuestions()">
+        <span style="font-size: 16px;">↻</span><span>リセット</span>
     </button>
 </div>
                 
