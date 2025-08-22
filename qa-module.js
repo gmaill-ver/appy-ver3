@@ -373,7 +373,6 @@ class QAModuleClass {
             alert('問題集名とCSVデータを入力してください');
             return false;
         }
-
         try {
             const lines = csvData.trim().split('\n');
             const questions = [];
@@ -385,27 +384,32 @@ class QAModuleClass {
             }
             
             for (let i = startIndex; i < lines.length; i++) {
-    // ★追加: より堅牢なCSVパース処理
-    const parts = this.parseCSVLine(lines[i]);
-    if (parts.length >= 2) {
-        const question = parts[0]?.trim();
-        const answer = parts[1]?.trim();
-        
-        if (question && answer) {
-            questions.push({
-                id: Date.now() + i,
+                const line = lines[i].trim();
+                if (!line) continue; // ★追加: 空行スキップ
+                
+                // ★修正: より堅牢なCSVパース処理
+                const parts = this.parseCSVLine(line);
+                if (parts.length >= 2) {
+                    const question = parts[0]?.trim();
+                    const answer = parts[1]?.trim();
+                    
+                    if (question && answer) {
+                        questions.push({
+                            id: Date.now() + i,
                             question: question,
-                            answer: answer
+                            answer: answer,
+                            createdAt: new Date().toISOString()
                         });
                     }
                 }
             }
             
             if (questions.length > 0) {
-                if (!DataManager.qaQuestions[setName]) {
-                    DataManager.qaQuestions[setName] = [];
+                const qaQuestions = DataManager.getQAQuestions();
+                if (!qaQuestions[setName]) {
+                    qaQuestions[setName] = [];
                 }
-                DataManager.qaQuestions[setName].push(...questions);
+                qaQuestions[setName].push(...questions);
                 DataManager.saveQAQuestions();
                 
                 alert(`${questions.length}問の問題をインポートしました`);
@@ -419,6 +423,37 @@ class QAModuleClass {
             alert('CSVの解析に失敗しました。形式を確認してください。');
             return false;
         }
+    }
+
+    /**
+     * ★追加: CSV行の安全なパース処理
+     */
+    parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    current += '"';
+                    i++; // Skip next quote
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        
+        result.push(current.trim());
+        return result;
     }
 
     /**
