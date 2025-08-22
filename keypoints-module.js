@@ -697,65 +697,64 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 要点データの保存（★修正: キャッシュクリア完全対応）
-     */
-    saveKeyPointsData() {
-        try {
-            console.log('💾 KeyPoints保存開始（キャッシュクリア対応版）');
-            
-            // 1. LocalStorageに即座に保存（最重要）
-            const dataToSave = JSON.stringify(this.subjects);
-            localStorage.setItem('keyPointsData', dataToSave);
-            localStorage.setItem('keyPointsData_timestamp', new Date().toISOString());
-            console.log('✅ LocalStorage保存完了');
-            
-            // 2. Firebase統合保存（利用可能な場合）
-            if (window.ULTRA_STABLE_USER_ID && window.DataManager && typeof DataManager.saveToFirestore === 'function') {
-                try {
-                    const keyPointsCount = this.countTotalKeyPoints();
-                    
-                    // ★修正: 実際のデータも含めてFirebaseに保存
-                    const firebaseData = {
-                        type: 'keyPoints',
-                        action: 'save',
-                        keyPointsData: this.subjects, // ★重要: 実データも保存
-                        keyPointsCount: keyPointsCount,
-                        subjectsCount: Object.keys(this.subjects).length,
-                        timestamp: new Date().toISOString(),
-                        userId: window.ULTRA_STABLE_USER_ID,
-                        message: '要点確認データを保存しました'
-                    };
-                    
-                    DataManager.saveToFirestore(firebaseData);
-                    console.log('✅ Firebase保存送信完了', {
-                        userId: window.ULTRA_STABLE_USER_ID,
-                        keyPointsCount: keyPointsCount
-                    });
-                    
-                } catch (firebaseError) {
-                    console.warn('⚠️ Firebase保存エラー（LocalStorageは保存済み）:', firebaseError);
-                }
-            } else {
-                console.log('📝 LocalStorage保存のみ');
-            }
-            
-            return true; // 保存成功
-            
-        } catch (error) {
-            console.error('❌ KeyPoints保存エラー:', error);
-            
-            // 緊急保存試行
+ * 要点データの保存（★修正: DataManager統合版）
+ */
+saveKeyPointsData() {
+    try {
+        console.log('💾 KeyPoints保存開始（キャッシュクリア対応版）');
+        
+        // 1. LocalStorageに即座に保存（最重要）
+        const dataToSave = JSON.stringify(this.subjects);
+        localStorage.setItem('keyPointsData', dataToSave);
+        localStorage.setItem('keyPointsData_timestamp', new Date().toISOString());
+        console.log('✅ LocalStorage保存完了');
+        
+        // 2. Firebase統合保存（DataManager経由）
+        if (window.ULTRA_STABLE_USER_ID && window.DataManager && typeof DataManager.saveToFirestore === 'function') {
             try {
-                localStorage.setItem('keyPointsData_emergency', JSON.stringify(this.subjects));
-                console.log('🚨 緊急保存完了');
-            } catch (emergencyError) {
-                console.error('💥 緊急保存も失敗:', emergencyError);
-                alert('データ保存に失敗しました。ページを更新してください。');
+                const keyPointsCount = this.countTotalKeyPoints();
+                
+                const firebaseData = {
+                    type: 'keyPoints',
+                    action: 'save',
+                    keyPointsData: this.subjects,
+                    keyPointsCount: keyPointsCount,
+                    subjectsCount: Object.keys(this.subjects).length,
+                    timestamp: new Date().toISOString(),
+                    userId: window.ULTRA_STABLE_USER_ID,
+                    message: '要点確認データを保存しました'
+                };
+                
+                DataManager.saveToFirestore(firebaseData);
+                console.log('✅ Firebase保存送信完了', {
+                    userId: window.ULTRA_STABLE_USER_ID,
+                    keyPointsCount: keyPointsCount
+                });
+                
+            } catch (firebaseError) {
+                console.warn('⚠️ Firebase保存エラー（LocalStorageは保存済み）:', firebaseError);
             }
-            
-            return false; // 保存失敗
+        } else {
+            console.log('📝 LocalStorage保存のみ');
         }
+        
+        return true; // 保存成功
+        
+    } catch (error) {
+        console.error('❌ KeyPoints保存エラー:', error);
+        
+        // 緊急保存試行
+        try {
+            localStorage.setItem('keyPointsData_emergency', JSON.stringify(this.subjects));
+            console.log('🚨 緊急保存完了');
+        } catch (emergencyError) {
+            console.error('💥 緊急保存も失敗:', emergencyError);
+            alert('データ保存に失敗しました。ページを更新してください。');
+        }
+        
+        return false; // 保存失敗
     }
+}
 
     /**
      * 総要点数カウント
