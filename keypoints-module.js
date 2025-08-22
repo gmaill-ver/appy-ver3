@@ -1234,74 +1234,142 @@ window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
     }
 
     /**
-     * ページネーション情報を計算（★追加）
-     */
-    calculatePagination() {
-        if (!this.currentContentLocation) {
-            return { current: 1, total: 1, hasPrev: false, hasNext: false };
+ * ページネーション情報を計算（★修正: 全科目対応・階層跨ぎ対応）
+ */
+calculatePagination() {
+    if (!this.currentContentLocation) {
+        return { current: 1, total: 1, hasPrev: false, hasNext: false };
+    }
+
+    const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
+    const subject = this.subjects[subjectKey];
+    
+    if (!subject) {
+        return { current: 1, total: 1, hasPrev: false, hasNext: false };
+    }
+
+    // ★修正: 科目内の全HTMLコンテンツ項目を収集（階層順序で）
+    const allHtmlTopics = [];
+    
+    try {
+        // 章（編）の順序でソート
+        const sortedChapters = Object.entries(subject.chapters || {}).sort((a, b) => {
+            const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
+            const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
+            if (aMatch && bMatch) {
+                const aNum = parseInt(aMatch[1] || aMatch[2]);
+                const bNum = parseInt(bMatch[1] || bMatch[2]);
+                return aNum - bNum;
+            }
+            return a[0].localeCompare(b[0]);
+        });
+
+        sortedChapters.forEach(([chapterKey, chapterData]) => {
+            if (!chapterData.sections) return;
+            
+            // 節の順序でソート
+            const sortedSections = Object.entries(chapterData.sections).sort((a, b) => {
+                const aMatch = a[0].match(/第(\d+)節/);
+                const bMatch = b[0].match(/第(\d+)節/);
+                if (aMatch && bMatch) {
+                    return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+                }
+                return a[0].localeCompare(b[0]);
+            });
+
+            sortedSections.forEach(([sectionKey, topics]) => {
+                if (!Array.isArray(topics)) return;
+                
+                topics.forEach((topic, index) => {
+                    if (topic.type === 'html' && topic.htmlContent) {
+                        allHtmlTopics.push({
+                            subjectKey,
+                            chapterName: chapterKey,
+                            sectionName: sectionKey,
+                            topicIndex: index,
+                            title: topic.title,
+                            difficulty: topic.difficulty
+                        });
+                    }
+                });
+            });
+        });
+
+        // ★修正: 現在の項目の位置を特定
+        const currentIndex = allHtmlTopics.findIndex(item => 
+            item.subjectKey === subjectKey &&
+            item.chapterName === chapterName &&
+            item.sectionName === sectionName &&
+            item.topicIndex === topicIndex
+        );
+
+        if (currentIndex === -1) {
+            return { current: 1, total: allHtmlTopics.length, hasPrev: false, hasNext: false };
         }
 
-        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-        const subject = this.subjects[subjectKey];
-        
-        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
-            return { current: 1, total: 1, hasPrev: false, hasNext: false };
-        }
-
-        const topics = subject.chapters[chapterName].sections[sectionName];
-        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
-        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
-        
-        const prevTopic = currentHtmlIndex > 0 ? htmlTopics[currentHtmlIndex - 1] : null;
-        const nextTopic = currentHtmlIndex < htmlTopics.length - 1 ? htmlTopics[currentHtmlIndex + 1] : null;
+        const prevTopic = currentIndex > 0 ? allHtmlTopics[currentIndex - 1] : null;
+        const nextTopic = currentIndex < allHtmlTopics.length - 1 ? allHtmlTopics[currentIndex + 1] : null;
 
         return {
-            current: currentHtmlIndex + 1,
-            total: htmlTopics.length,
+            current: currentIndex + 1,
+            total: allHtmlTopics.length,
             hasPrev: !!prevTopic,
             hasNext: !!nextTopic,
             prevTitle: prevTopic ? prevTopic.title : '',
-            nextTitle: nextTopic ? nextTopic.title : ''
+            nextTitle: nextTopic ? nextTopic.title : '',
+            prevTopic: prevTopic,
+            nextTopic: nextTopic
         };
-    }
-
-    /**
-     * 前の項目に移動（★追加）
-     */
-    navigateToPrevTopic() {
-        if (!this.currentContentLocation) return;
-
-        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-        const subject = this.subjects[subjectKey];
-        const topics = subject.chapters[chapterName].sections[sectionName];
-        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
-        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
         
-        if (currentHtmlIndex > 0) {
-            const prevTopic = htmlTopics[currentHtmlIndex - 1];
-            const prevTopicIndex = topics.indexOf(prevTopic);
-            this.viewTopicContent(subjectKey, chapterName, sectionName, prevTopicIndex);
-        }
+    } catch (error) {
+        console.warn('⚠️ ページネーション計算エラー:', error);
+        return { current: 1, total: 1, hasPrev: false, hasNext: false };
     }
+}
 
-    /**
-     * 次の項目に移動（★追加）
-     */
-    navigateToNextTopic() {
-        if (!this.currentContentLocation) return;
+/**
+ * 前の項目に移動（★修正: 階層跨ぎ対応）
+ */
+navigateToPrevTopic() {
+    if (!this.currentContentLocation) return;
 
-        const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-        const subject = this.subjects[subjectKey];
-        const topics = subject.chapters[chapterName].sections[sectionName];
-        const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
-        const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
+    try {
+        const paginationInfo = this.calculatePagination();
         
-        if (currentHtmlIndex < htmlTopics.length - 1) {
-            const nextTopic = htmlTopics[currentHtmlIndex + 1];
-            const nextTopicIndex = topics.indexOf(nextTopic);
-            this.viewTopicContent(subjectKey, chapterName, sectionName, nextTopicIndex);
+        if (paginationInfo.hasPrev && paginationInfo.prevTopic) {
+            const prev = paginationInfo.prevTopic;
+            this.viewTopicContent(prev.subjectKey, prev.chapterName, prev.sectionName, prev.topicIndex);
+            console.log('📖 前の項目に移動:', prev.title);
+        } else {
+            console.log('📖 これが最初の項目です');
         }
+    } catch (error) {
+        console.error('❌ 前の項目移動エラー:', error);
+        alert('前の項目に移動できませんでした。');
     }
+}
+
+/**
+ * 次の項目に移動（★修正: 階層跨ぎ対応）
+ */
+navigateToNextTopic() {
+    if (!this.currentContentLocation) return;
+
+    try {
+        const paginationInfo = this.calculatePagination();
+        
+        if (paginationInfo.hasNext && paginationInfo.nextTopic) {
+            const next = paginationInfo.nextTopic;
+            this.viewTopicContent(next.subjectKey, next.chapterName, next.sectionName, next.topicIndex);
+            console.log('📖 次の項目に移動:', next.title);
+        } else {
+            console.log('📖 これが最後の項目です');
+        }
+    } catch (error) {
+        console.error('❌ 次の項目移動エラー:', error);
+        alert('次の項目に移動できませんでした。');
+    }
+}
 
     /**
      * 重要語句の表示切り替え
