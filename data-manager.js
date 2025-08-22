@@ -1152,38 +1152,6 @@ saveBookOrder() {
     }
 
     /**
-     * ★追加: CSV行の安全なパース処理
-     */
-    parseCSVLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-        
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            const nextChar = line[i + 1];
-            
-            if (char === '"') {
-                if (inQuotes && nextChar === '"') {
-                    current += '"';
-                    i++; // Skip next quote
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-            } else {
-                current += char;
-            }
-        }
-        
-        result.push(current.trim());
-        return result;
-    }
-
-
-    /**
      * CSVインポート処理
      */
     importCSV(bookName, csvData, numberingType) {
@@ -1224,11 +1192,7 @@ saveBookOrder() {
             }
             
             for (let i = startIndex; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue; // ★追加: 空行スキップ
-                
-                // ★追加: CSVパース改善（カンマがある文字列対応）
-                const parts = this.parseCSVLine(line);
+                const parts = lines[i].split(',').map(p => p.trim());
                 const [subject, chapter, section, subsection, startNum, endNum] = parts;
                 
                 if (!subject) continue;
@@ -1254,7 +1218,7 @@ saveBookOrder() {
                         // 節を追加
                         if (!book.structure[subject].children[chapter].children[section]) {
                             book.structure[subject].children[chapter].children[section] = {
-                                type: 'section', // ★修正: typo修正
+                                type: 'section',
                                 children: {}
                             };
                         }
