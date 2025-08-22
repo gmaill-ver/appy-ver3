@@ -1258,20 +1258,22 @@ body {
 }
 
 .action-btn.correct {
-    background: var(--success);
+.action-btn.correct {
+    border-color: #333;
 }
 
 .action-btn.wrong {
-    background: var(--danger);
+    border-color: #333;
 }
 
 .action-btn.bookmark {
-    background: var(--warning);
+    border-color: #333;
 }
 
 .action-btn.bookmark.active {
-    background: linear-gradient(135deg, var(--warning), var(--secondary));
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    background: #f8f9fa;
+    border-color: #666;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* 問題グリッド */
