@@ -1373,6 +1373,83 @@ saveBookOrder() {
             return false;
         }
     }
+
+    /**
+     * Firestoreへの汎用保存メソッド（KeyPointsModule用）
+     * ★追加: KeyPointsModuleなど外部モジュールからのFirebase保存用
+     */
+    async saveToFirestore(data) {
+        if (!this.firebaseEnabled || !this.currentUser) {
+            console.log('Firebase not available, saving to localStorage only');
+            return false;
+        }
+
+        try {
+            const db = firebase.firestore();
+            const userId = this.currentUser.uid;
+            
+            // タイムスタンプを追加
+            const saveData = {
+                ...data,
+                userId: userId,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // データタイプに応じて適切なコレクションに保存
+            if (data.type === 'keyPoints') {
+                // KeyPointsデータの保存
+                await db.collection('users').doc(userId).collection('keyPoints').doc('data').set({
+                    keyPointsData: data.keyPointsData || {},
+                    keyPointsCount: data.keyPointsCount || 0,
+                    timestamp: data.timestamp,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                console.log('✅ KeyPoints saved to Firestore');
+            } else if (data.type === 'itemDeleted') {
+                // 削除アイテムの記録
+                await db.collection('users').doc(userId).collection('deletedItems').add(saveData);
+                console.log('✅ Deleted item recorded in Firestore');
+            } else {
+                // その他の汎用データ
+                await db.collection('users').doc(userId).collection('activities').add(saveData);
+                console.log('✅ Activity saved to Firestore');
+            }
+            
+            return true;
+        } catch (error) {
+            console.warn('Firestore save error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Firestoreから KeyPoints データを読み込む
+     * ★追加: KeyPointsModule初期化時のデータ復元用
+     */
+    async loadKeyPointsFromFirestore() {
+        if (!this.firebaseEnabled || !this.currentUser) {
+            return null;
+        }
+
+        try {
+            const db = firebase.firestore();
+            const userId = this.currentUser.uid;
+            
+            const doc = await db.collection('users').doc(userId).collection('keyPoints').doc('data').get();
+            
+            if (doc.exists) {
+                const data = doc.data();
+                console.log('✅ KeyPoints loaded from Firestore');
+                return data.keyPointsData || null;
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('Firestore load error:', error);
+            return null;
+        }
+    }
 }
 
 // グローバルに公開（シングルトンインスタンス）
