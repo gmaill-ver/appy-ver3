@@ -814,6 +814,13 @@ saveBookOrder() {
     }
 
     /**
+     * 一問一答問題の取得（★追加）
+     */
+    getQAQuestions() {
+        return this.qaQuestions || {};
+    }
+
+    /**
      * 試験日の読み込み
      */
     loadExamDate() {
@@ -1152,11 +1159,53 @@ saveBookOrder() {
     }
 
     /**
-     * CSVインポート処理
+     * ★修正: CSV行の安全なパース処理
+     */
+    parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    current += '"';
+                    i++; // Skip next quote
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        
+        result.push(current.trim());
+        return result;
+    }
+
+    /**
+     * ★修正: CSVインポート処理（完全修復版）
      */
     importCSV(bookName, csvData, numberingType) {
         try {
+            console.log('🔄 CSVインポート開始:', bookName, numberingType);
+            
+            if (!csvData || !csvData.trim()) {
+                console.error('❌ CSVデータが空です');
+                return false;
+            }
+            
             const lines = csvData.trim().split('\n');
+            if (lines.length === 0) {
+                console.error('❌ CSVデータに有効な行がありません');
+                return false;
+            }
             
             // 既存の問題集を探す
             let bookId = null;
@@ -1166,6 +1215,7 @@ saveBookOrder() {
                 if (this.books[id].name === bookName && !this.isDeleted('books', id)) {
                     bookId = id;
                     book = this.books[id];
+                    console.log('📚 既存問題集を使用:', bookName);
                     break;
                 }
             }
@@ -1177,97 +1227,149 @@ saveBookOrder() {
                     id: bookId,
                     name: bookName,
                     examType: 'gyousei',
-                    numberingType: numberingType,
+                    numberingType: numberingType || 'reset',
                     structure: {},
                     createdAt: new Date().toISOString()
                 };
                 this.books[bookId] = book;
                 this.bookOrder.push(bookId);
+                console.log('✨ 新規問題集作成:', bookName);
             }
             
             // ヘッダー行をスキップ
             let startIndex = 0;
-            if (lines[0].includes('科目') || lines[0].includes('章')) {
+            if (lines[0].includes('科目') || lines[0].includes('章') || lines[0].includes('subject')) {
                 startIndex = 1;
+                console.log('📋 ヘッダー行をスキップ');
             }
+            
+            let processedCount = 0;
             
             for (let i = startIndex; i < lines.length; i++) {
-                const parts = lines[i].split(',').map(p => p.trim());
-                const [subject, chapter, section, subsection, startNum, endNum] = parts;
-                
-                if (!subject) continue;
-                
-                // 科目を追加
-                if (!book.structure[subject]) {
-                    book.structure[subject] = {
-                        type: 'subject',
-                        children: {}
-                    };
+                const line = lines[i].trim();
+                if (!line) {
+                    console.log(`⏭️ 空行をスキップ: ${i + 1}行目`);
+                    continue;
                 }
                 
-                if (chapter) {
-                    // 章を追加
-                    if (!book.structure[subject].children[chapter]) {
-                        book.structure[subject].children[chapter] = {
-                            type: 'chapter',
+                // ★修正: 安全なCSVパース処理を使用
+                const parts = this.parseCSVLine(line);
+                console.log(`📝 処理中 ${i + 1}行目:`, parts);
+                
+                const [subject, chapter, section, subsection, startNum, endNum] = parts.map(p => p ? p.trim() : '');
+                
+                if (!subject) {
+                    console.log(`⚠️ 科目名が空: ${i + 1}行目`);
+                    continue;
+                }
+                
+                try {
+                    // 科目を追加
+                    if (!book.structure[subject]) {
+                        book.structure[subject] = {
+                            type: 'subject',
                             children: {}
                         };
+                        console.log(`📂 科目追加: ${subject}`);
                     }
                     
-                    if (section) {
-                        // 節を追加
-                        if (!book.structure[subject].children[chapter].children[section]) {
-                            book.structure[subject].children[chapter].children[section] = {
-                                type: 'section',
+                    if (chapter) {
+                        // 章を追加
+                        if (!book.structure[subject].children[chapter]) {
+                            book.structure[subject].children[chapter] = {
+                                type: 'chapter',
                                 children: {}
                             };
+                            console.log(`📄 章追加: ${subject} > ${chapter}`);
                         }
                         
-                        if (subsection) {
-                            // 項を追加
-                            if (!book.structure[subject].children[chapter].children[section].children[subsection]) {
-                                book.structure[subject].children[chapter].children[section].children[subsection] = {
-                                    type: 'subsection'
+                        if (section) {
+                            // 節を追加
+                            if (!book.structure[subject].children[chapter].children[section]) {
+                                book.structure[subject].children[chapter].children[section] = {
+                                    type: 'section',
+                                    children: {}
                                 };
+                                console.log(`📑 節追加: ${subject} > ${chapter} > ${section}`);
                             }
                             
-                            // 項に問題を追加
-                            if (startNum && endNum) {
-                                const questions = [];
-                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
-                                    questions.push(j);
+                            if (subsection) {
+                                // 項を追加
+                                if (!book.structure[subject].children[chapter].children[section].children[subsection]) {
+                                    book.structure[subject].children[chapter].children[section].children[subsection] = {
+                                        type: 'subsection'
+                                    };
+                                    console.log(`📝 項追加: ${subject} > ${chapter} > ${section} > ${subsection}`);
                                 }
-                                book.structure[subject].children[chapter].children[section].children[subsection].questions = questions;
+                                
+                                // 項に問題を追加
+                                if (startNum && endNum) {
+                                    const start = parseInt(startNum);
+                                    const end = parseInt(endNum);
+                                    if (!isNaN(start) && !isNaN(end) && start <= end) {
+                                        const questions = [];
+                                        for (let j = start; j <= end; j++) {
+                                            questions.push(j);
+                                        }
+                                        book.structure[subject].children[chapter].children[section].children[subsection].questions = questions;
+                                        console.log(`✅ 項に問題追加: ${questions.length}問 (${start}-${end})`);
+                                        processedCount++;
+                                    }
+                                }
+                            } else {
+                                // 節に問題を追加
+                                if (startNum && endNum) {
+                                    const start = parseInt(startNum);
+                                    const end = parseInt(endNum);
+                                    if (!isNaN(start) && !isNaN(end) && start <= end) {
+                                        const questions = [];
+                                        for (let j = start; j <= end; j++) {
+                                            questions.push(j);
+                                        }
+                                        book.structure[subject].children[chapter].children[section].questions = questions;
+                                        console.log(`✅ 節に問題追加: ${questions.length}問 (${start}-${end})`);
+                                        processedCount++;
+                                    }
+                                }
                             }
                         } else {
-                            // 節に問題を追加
+                            // 章に問題を追加
                             if (startNum && endNum) {
-                                const questions = [];
-                                for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
-                                    questions.push(j);
+                                const start = parseInt(startNum);
+                                const end = parseInt(endNum);
+                                if (!isNaN(start) && !isNaN(end) && start <= end) {
+                                    const questions = [];
+                                    for (let j = start; j <= end; j++) {
+                                        questions.push(j);
+                                    }
+                                    book.structure[subject].children[chapter].questions = questions;
+                                    console.log(`✅ 章に問題追加: ${questions.length}問 (${start}-${end})`);
+                                    processedCount++;
                                 }
-                                book.structure[subject].children[chapter].children[section].questions = questions;
                             }
-                        }
-                    } else {
-                        // 章に問題を追加
-                        if (startNum && endNum) {
-                            const questions = [];
-                            for (let j = parseInt(startNum); j <= parseInt(endNum); j++) {
-                                questions.push(j);
-                            }
-                            book.structure[subject].children[chapter].questions = questions;
                         }
                     }
+                } catch (rowError) {
+                    console.error(`❌ ${i + 1}行目の処理エラー:`, rowError, parts);
+                    // 個別行のエラーは継続して処理
                 }
             }
             
+            // データを保存
             this.saveBooksToStorage();
             this.saveBookOrder();
             
+            console.log(`✅ CSVインポート完了: ${processedCount}個の項目を処理`);
+            
+            if (processedCount === 0) {
+                console.warn('⚠️ 有効なデータが処理されませんでした');
+                return false;
+            }
+            
             return true;
         } catch (error) {
-            console.error('CSV import error:', error);
+            console.error('❌ CSV import error:', error);
+            console.error('❌ CSVデータ:', csvData?.substring(0, 200) + '...');
             return false;
         }
     }
