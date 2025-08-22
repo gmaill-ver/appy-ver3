@@ -592,6 +592,9 @@ class KeyPointsModuleClass {
             this.addKeyPointStyles();
             this.addDifficultyStyles();
             
+            // ★追加: グローバル関数定義
+            window.toggleKeyTerms = () => this.toggleKeyTerms();
+            
             this.initialized = true;
             console.log('✅ KeyPointsModule初期化完了');
             
@@ -1200,8 +1203,7 @@ class KeyPointsModuleClass {
         }
         
         this.initializeKeyTerms();
-        // ★追加：HTMLコンテンツ内のtoggleKeyTerms()関数用にグローバル関数も定義
-window.toggleKeyTerms = this.toggleKeyTerms.bind(this);
+        // ★修正：グローバル関数定義をinitialize内に移動
     }
 
     /**
@@ -1247,11 +1249,6 @@ calculatePagination() {
     if (!subject) {
         return { current: 1, total: 1, hasPrev: false, hasNext: false };
     }
-
-    // ★この3行を追加
-    const topics = subject.chapters[chapterName].sections[sectionName];
-    const htmlTopics = topics.filter(t => t.type === 'html' && t.htmlContent);
-    const currentHtmlIndex = htmlTopics.findIndex((t, i) => topics.indexOf(t) === topicIndex);
 
     // ★修正: 科目内の全HTMLコンテンツ項目を収集（階層順序で）
     const allHtmlTopics = [];
