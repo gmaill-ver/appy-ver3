@@ -325,9 +325,9 @@ isDeletedQAQuestion(setName, questionId) {
 }
 
 /**
- * アイテム削除処理（Firebase完全削除版）
+ * アイテム削除処理（Firebase統合・階層対応強化版）
  */
-async markAsDeleted(type, id, additionalData = {}) {
+markAsDeleted(type, id, additionalData = {}) {
     const deletedItem = {
         type: type,
         id: id,
@@ -335,134 +335,62 @@ async markAsDeleted(type, id, additionalData = {}) {
         ...additionalData
     };
     
-    // ローカルの削除済みリストに追加
     this.deletedItems.push(deletedItem);
     this.saveDeletedItems();
     
-    // ★修正: Firebaseからも実際に削除
-    if (this.firebaseEnabled && this.currentUser) {
-        try {
-            const db = firebase.firestore();
-            const userId = this.currentUser.uid;
-            const userRef = db.collection('users').doc(userId);
-            
-            if (type === 'books') {
-                // 問題集をFirebaseから削除
-                await userRef.collection('books').doc(id).delete();
-                console.log(`🗑️ Firebase削除: 問題集 ${id}`);
-                
-                // ローカルからも削除
-                delete this.books[id];
-                this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
-                this.saveBooksToStorage();
-                this.saveBookOrder();
-                
-            } else if (type === 'hierarchy') {
-                // 階層削除の場合は問題集を更新
-                const bookId = additionalData.bookId;
-                if (bookId && this.books[bookId]) {
-                    // ローカルデータを更新
-                    if (this.books[bookId].structure) {
-                        this.books[bookId].structure = this.filterDeletedHierarchy(
-                            this.books[bookId].structure, 
-                            bookId, 
-                            []
-                        );
-                    }
-                    this.saveBooksToStorage();
-                    
-                    // Firebaseの問題集データも更新
-                    await userRef.collection('books').doc(bookId).set(this.books[bookId], { merge: false });
-                    console.log(`🗑️ Firebase更新: 階層削除を反映 ${bookId}`);
-                }
-                
-            } else if (type === 'studyPlan') {
-                // 学習計画をFirebaseから削除
-                const plansSnapshot = await userRef.collection('studyPlans').where('id', '==', id).get();
-                for (const doc of plansSnapshot.docs) {
-                    await doc.ref.delete();
-                }
-                console.log(`🗑️ Firebase削除: 学習計画 ${id}`);
-                
-                // ローカルからも削除
-                this.studyPlans = this.studyPlans.filter(plan => plan.id !== id);
-                this.saveStudyPlans();
-                
-            } else if (type === 'qaQuestions') {
-                // 一問一答セットをFirebaseから削除
-                await userRef.collection('qaQuestions').doc(id).delete();
-                console.log(`🗑️ Firebase削除: 一問一答セット ${id}`);
-                
-                // ローカルからも削除
-                delete this.qaQuestions[id];
-                this.saveQAQuestions();
-                
-            } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
-                // 一問一答の個別問題削除
-                if (this.qaQuestions[additionalData.setName]) {
-                    // ローカルデータを更新
-                    this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
-                        .filter(q => q.id !== additionalData.questionId);
-                    
-                    if (this.qaQuestions[additionalData.setName].length === 0) {
-                        // セットが空になったらFirebaseからも削除
-                        await userRef.collection('qaQuestions').doc(additionalData.setName).delete();
-                        delete this.qaQuestions[additionalData.setName];
-                    } else {
-                        // 更新されたセットをFirebaseに保存
-                        await userRef.collection('qaQuestions').doc(additionalData.setName)
-                            .set(this.qaQuestions[additionalData.setName], { merge: false });
-                    }
-                    
-                    this.saveQAQuestions();
-                    console.log(`🗑️ Firebase更新: 一問一答問題削除 ${additionalData.setName}/${additionalData.questionId}`);
-                }
-                
-            } else if (type === 'csvTemplates') {
-                // CSVテンプレートをFirebaseから削除
-                await userRef.collection('csvTemplates').doc(id).delete();
-                console.log(`🗑️ Firebase削除: CSVテンプレート ${id}`);
-                
-                // ローカルからも削除
-                delete this.csvTemplates[id];
-                this.saveCSVTemplates();
-            }
-            
-            // 削除済みリストをFirebaseに保存
-            await userRef.set({
-                deletedItems: this.deletedItems,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-            
-        } catch (error) {
-            console.error('Firebase削除エラー:', error);
-        }
-    } else {
-        // Firebaseが無効な場合はローカルのみ削除
-        if (type === 'books') {
-            delete this.books[id];
-            this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
+    // ★追加: ローカルからも即座に削除
+    if (type === 'books') {
+        delete this.books[id];
+        this.bookOrder = this.bookOrder.filter(bookId => bookId !== id);
+        this.saveBooksToStorage();
+        this.saveBookOrder();
+    } else if (type === 'hierarchy') {
+        // ★追加: 階層削除の場合は、該当問題集の構造を再フィルタリング
+        const bookId = additionalData.bookId;
+        if (bookId && this.books[bookId] && this.books[bookId].structure) {
+            this.books[bookId].structure = this.filterDeletedHierarchy(
+                this.books[bookId].structure, 
+                bookId, 
+                []
+            );
             this.saveBooksToStorage();
-            this.saveBookOrder();
-        } else if (type === 'studyPlan') {
-            this.studyPlans = this.studyPlans.filter(plan => plan.id !== id);
-            this.saveStudyPlans();
-        } else if (type === 'qaQuestions') {
-            delete this.qaQuestions[id];
-            this.saveQAQuestions();
-        } else if (type === 'csvTemplates') {
-            delete this.csvTemplates[id];
-            this.saveCSVTemplates();
         }
+    } else if (type === 'qa' && additionalData.setName && additionalData.questionId) {
+        // ★追加: 一問一答の個別問題削除対応
+        if (this.qaQuestions[additionalData.setName]) {
+            this.qaQuestions[additionalData.setName] = this.qaQuestions[additionalData.setName]
+                .filter(q => q.id !== additionalData.questionId);
+            if (this.qaQuestions[additionalData.setName].length === 0) {
+                delete this.qaQuestions[additionalData.setName];
+            }
+            this.saveQAQuestions();
+        }
+    } else if (type === 'studyPlan') {
+        this.studyPlans = this.studyPlans.filter(plan => plan.id !== id);
+        this.saveStudyPlans();
+    } else if (type === 'csvTemplates') {
+        delete this.csvTemplates[id];
+        this.saveCSVTemplates();
     }
     
-    console.log(`✅ ${type}:${id} を完全削除`);
+    // Firebaseにも保存
+    if (window.ULTRA_STABLE_USER_ID && this.saveToFirestore) {
+        this.saveToFirestore({
+            type: 'itemDeleted',
+            deletedType: type,
+            deletedId: id,
+            message: `${type}:${id}を削除しました`,
+            ...additionalData
+        });
+    }
+    
+    console.log(`✅ ${type}:${id} を削除済みとしてマーク＆即座削除`);
 }
 
 /**
- * 特定問題集の記録をクリア（Firebase対応版）
+ * 特定問題集の記録をクリア（★追加）
  */
-async clearBookRecords(bookId) {
+clearBookRecords(bookId) {
     try {
         if (!bookId) {
             console.error('❌ bookId が指定されていません');
@@ -489,7 +417,7 @@ async clearBookRecords(bookId) {
         // LocalStorageに保存
         localStorage.setItem('studyHistory', JSON.stringify(this.allRecords));
         
-        // 問題状態をクリア
+        // 問題状態をより確実にクリア
         const stateKeys = Object.keys(localStorage).filter(key => 
             key.startsWith(`questionStates_${bookId}_`)
         );
@@ -506,22 +434,6 @@ async clearBookRecords(bookId) {
             }
         });
         localStorage.setItem('savedQuestionStates', JSON.stringify(this.savedQuestionStates));
-        
-        // ★追加: Firebaseの記録も更新
-        if (this.firebaseEnabled && this.currentUser) {
-            try {
-                const db = firebase.firestore();
-                const userId = this.currentUser.uid;
-                const userRef = db.collection('users').doc(userId);
-                
-                // 学習記録をFirebaseに保存（削除済みを反映）
-                await this.saveToFirebase();
-                
-                console.log('✅ Firebase記録更新完了');
-            } catch (error) {
-                console.error('Firebase記録更新エラー:', error);
-            }
-        }
         
         console.log(`✅ クリア完了: 学習記録 ${deletedCount}件、問題状態 ${stateKeys.length}件を削除`);
         
