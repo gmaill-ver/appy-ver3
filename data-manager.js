@@ -1569,6 +1569,21 @@ saveBookOrder() {
             return null;
         }
     }
+
+    // ★追加: 固定ID設定用の関数（ここに追加！）
+setFixedUserId(fixedUserId) {
+    if (fixedUserId) {
+        console.log('🔒 固定ID設定:', fixedUserId);
+        this.currentUser = { uid: fixedUserId };
+        this.firebaseEnabled = true;
+        
+        // 即座に保存実行
+        setTimeout(() => {
+            this.saveToFirebase().catch(error => {
+                console.warn('Fixed ID save failed:', error);
+            });
+        }, 500);
+    }
 }
 
 // グローバルに公開（シングルトンインスタンス）
