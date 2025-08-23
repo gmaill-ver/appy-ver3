@@ -73,32 +73,47 @@ class DataManagerClass {
      * Firebase初期化（エラーハンドリング強化）
      */
     async initializeFirebase() {
-        if (!this.firebaseEnabled) return;
+    if (!this.firebaseEnabled) return;
 
-        try {
-            // Firebase設定が適切か確認
-            if (!firebase.apps || firebase.apps.length === 0) {
-                console.log('Firebase app not initialized');
-                this.firebaseEnabled = false;
-                return;
-            }
-
-            // 認証状態の監視
-            firebase.auth().onAuthStateChanged((user) => {
-                this.currentUser = user;
-                if (user) {
-                    console.log('Firebase user logged in:', user.email);
-                    // 非同期でFirebaseと同期（エラーが発生してもアプリは動作継続）
-                    this.syncWithFirebase().catch(error => {
-                        console.warn('Firebase sync failed:', error);
-                    });
-                }
-            });
-        } catch (error) {
-            console.warn('Firebase initialization error:', error);
+    try {
+        // Firebase設定が適切か確認
+        if (!firebase.apps || firebase.apps.length === 0) {
+            console.log('Firebase app not initialized');
             this.firebaseEnabled = false;
+            return;
         }
+
+        // ★修正: 固定IDモード対応
+        if (window.ULTRA_STABLE_USER_ID) {
+            console.log('🔒 固定IDモード有効:', window.ULTRA_STABLE_USER_ID);
+            this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
+            this.firebaseEnabled = true;
+            
+            // 即座に同期開始
+            setTimeout(() => {
+                this.saveToFirebase().catch(error => {
+                    console.warn('Initial Firebase save failed:', error);
+                });
+            }, 1000);
+            
+            return;
+        }
+
+        // 通常のFirebase認証（フォールバック）
+        firebase.auth().onAuthStateChanged((user) => {
+            this.currentUser = user;
+            if (user) {
+                console.log('Firebase user logged in:', user.email);
+                this.syncWithFirebase().catch(error => {
+                    console.warn('Firebase sync failed:', error);
+                });
+            }
+        });
+    } catch (error) {
+        console.warn('Firebase initialization error:', error);
+        this.firebaseEnabled = false;
     }
+}
 
     /**
  * Firebaseとの同期（サブコレクション分散読み込み版）
