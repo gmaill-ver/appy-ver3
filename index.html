@@ -823,6 +823,7 @@
             };
             
             // ★復活: リアルタイム監視機能
+            /*
             DataManager.startFirebaseMonitoring = async function() {
                 if (!ULTRA_STABLE_USER_ID) return;
                 
@@ -846,6 +847,7 @@
                     console.warn("監視設定失敗:", error);
                 }
             };
+            */
             
             // data-manager.jsのsaveToFirebase()を呼び出し（★重要: サブコレクション分散保存を使用）
             setTimeout(() => {
@@ -855,9 +857,11 @@
             }, 1000);
             
             // ★復活: リアルタイム監視開始
+            /*
             setTimeout(() => {
                 DataManager.startFirebaseMonitoring();
             }, 2000);
+            */
         }
     }
 
