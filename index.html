@@ -997,6 +997,14 @@
             originalSaveRecord.call(this);
             
             if (ULTRA_STABLE_USER_ID) {
+                // ★修正: メインデータをFirebaseに保存
+                DataManager.saveToFirebase().then(() => {
+                    console.log("✅ 学習記録Firebase保存完了");
+                }).catch(error => {
+                    console.warn("学習記録Firebase保存失敗:", error);
+                });
+                
+                // 追加: アクティビティログも保存
                 const record = {
                     type: "studyRecord",
                     bookId: this.currentBook?.id,
@@ -1024,6 +1032,13 @@
             originalSavePlan.call(this);
             
             if (ULTRA_STABLE_USER_ID) {
+                DataManager.saveToFirebase().then(() => {
+                    console.log("✅ 学習計画Firebase保存完了");
+                }).catch(error => {
+                    console.warn("学習計画Firebase保存失敗:", error);
+                });
+                
+                // 追加: アクティビティログも保存
                 DataManager.saveActivityToFirestore({
                     type: "studyPlan",
                     action: "save",
