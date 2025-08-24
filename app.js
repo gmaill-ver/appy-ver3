@@ -12,54 +12,125 @@ class Application {
         this.sortMode = false;
         this.analysisSortMode = false;
         this.initialized = false;
+        this.initializationRetries = 0;
+        this.maxRetries = 3;
     }
 
     /**
-     * アプリケーション初期化
+     * アプリケーション初期化（修正版：完全依存関係対応）
      */
     async initialize() {
-        // 二重初期化を防ぐ
         if (this.initialized) {
             console.log('App already initialized');
             return true;
         }
 
         try {
-            console.log('Starting App initialization...');
+            console.log('🚀 App初期化開始...');
             
-            // DataManagerの初期化を待つ（最大5秒）
-            const maxWait = 50;
-            let attempts = 0;
-            while (!window.DataManager && attempts < maxWait) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
+            // 固定IDが設定されるまで待つ（最大15秒）
+            await this.waitForStableUserId(15);
+            
+            // DataManagerの初期化を待つ（最大10秒）
+            await this.waitForDataManager(10);
+            
+            // DataManagerの初期化を実行
+            if (window.DataManager && !DataManager.initialized) {
+                const dataInitialized = await DataManager.initialize();
+                if (!dataInitialized) {
+                    console.error('DataManager初期化に失敗しました');
+                    throw new Error('DataManager初期化失敗');
+                }
             }
             
-            if (!window.DataManager) {
-                console.error('DataManager not found after waiting');
-                return false;
-            }
-
-            // DataManagerの初期化
-            const dataInitialized = await DataManager.initialize();
-            if (!dataInitialized) {
-                console.error('DataManager initialization failed');
-                return false;
-            }
-            
-            // 他のモジュールの存在確認（初期化は各モジュール内で行う）
+            // 他のモジュールの存在確認
             await this.waitForModules();
             
             // 初期描画
             this.renderBookCards();
             this.initializeSampleDataIfNeeded();
             
+            // 自動保存機能の初期化
+            this.initializeAutoSave();
+            
             this.initialized = true;
-            console.log('Application initialized successfully');
+            console.log('✅ App初期化完了');
+            
+            // 初期化完了通知
+            this.showInitializationNotification();
+            
             return true;
         } catch (error) {
-            console.error('Application initialization error:', error);
+            console.error('❌ App初期化エラー:', error);
+            
+            // リトライ機能
+            if (this.initializationRetries < this.maxRetries) {
+                this.initializationRetries++;
+                console.log(`🔄 初期化リトライ ${this.initializationRetries}/${this.maxRetries}`);
+                
+                // 3秒待ってリトライ
+                setTimeout(() => {
+                    this.initialized = false;
+                    this.initialize();
+                }, 3000);
+                
+                return false;
+            } else {
+                console.error('❌ 初期化リトライ回数上限に達しました');
+                // 最低限の機能で動作させる
+                this.initializeMinimalMode();
+                return true;
+            }
+        }
+    }
+
+    /**
+     * 固定IDの設定を待つ
+     */
+    async waitForStableUserId(maxWaitSeconds = 15) {
+        const maxAttempts = maxWaitSeconds * 10;
+        let attempts = 0;
+        
+        while (!window.ULTRA_STABLE_USER_ID && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+            
+            if (attempts % 50 === 0) {
+                console.log(`⏳ 固定ID待機中... ${attempts/10}秒経過`);
+            }
+        }
+        
+        if (window.ULTRA_STABLE_USER_ID) {
+            console.log('🔑 固定ID確認完了');
+            return true;
+        } else {
+            console.warn('⚠️ 固定ID取得タイムアウト');
             return false;
+        }
+    }
+
+    /**
+     * DataManagerの存在を待つ
+     */
+    async waitForDataManager(maxWaitSeconds = 10) {
+        const maxAttempts = maxWaitSeconds * 10;
+        let attempts = 0;
+        
+        while (!window.DataManager && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+            
+            if (attempts % 30 === 0) {
+                console.log(`⏳ DataManager待機中... ${attempts/10}秒経過`);
+            }
+        }
+        
+        if (window.DataManager) {
+            console.log('📊 DataManager確認完了');
+            return true;
+        } else {
+            console.error('❌ DataManager読み込み失敗');
+            throw new Error('DataManager未読み込み');
         }
     }
 
@@ -67,244 +138,266 @@ class Application {
      * モジュールの存在確認を待つ
      */
     async waitForModules() {
-        const maxAttempts = 50;
+        const maxAttempts = 30;
         let attempts = 0;
         
         while (attempts < maxAttempts) {
-            // モジュールの存在のみ確認（初期化は各モジュール内で行う）
-            if (window.UIComponents && window.Analytics && window.QAModule && window.TimerModule) {
-                console.log('All modules loaded');
+            const modulesLoaded = 
+                window.UIComponents && 
+                window.Analytics && 
+                window.QAModule && 
+                window.TimerModule;
+                
+            if (modulesLoaded) {
+                console.log('📦 全モジュール読み込み完了');
                 return true;
             }
-            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            await new Promise(resolve => setTimeout(resolve, 200));
             attempts++;
         }
         
-        console.warn('Some modules may not be loaded');
+        console.warn('⚠️ 一部モジュールが読み込まれていません');
         return false;
     }
 
     /**
-     * サンプルデータの初期化（必要な場合）
+     * 最小限モードで初期化
      */
-    initializeSampleDataIfNeeded() {
-        if (Object.keys(DataManager.books).length === 0) {
-            DataManager.initializeSampleData();
-            this.renderBookCards();
+    initializeMinimalMode() {
+        console.log('🔧 最小限モードで初期化');
+        
+        try {
+            // 基本機能のみ初期化
+            if (window.DataManager) {
+                this.renderBookCards();
+            }
+            
+            this.initialized = true;
+            alert('アプリケーションを最小限の機能で開始しました。一部機能が制限される場合があります。');
+        } catch (error) {
+            console.error('最小限モード初期化エラー:', error);
+            alert('アプリケーションの初期化に失敗しました。ページを再読み込みしてください。');
         }
     }
 
     /**
-     * メインタブ切り替え（進捗タブデータ更新強化）
+     * 自動保存機能の初期化
      */
-    switchMainTab(tabName, event) {
-        // タブボタンの状態更新
-        document.querySelectorAll('.main-tab').forEach(btn => {
-            btn.classList.remove('active');
+    initializeAutoSave() {
+        // 定期的な自動保存（5分間隔）
+        setInterval(() => {
+            if (this.currentBook && Object.keys(this.questionStates).length > 0) {
+                const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+                if (total > 0) {
+                    console.log('⏰ 定期自動保存実行');
+                    this.performAutoSave('scheduled');
+                }
+            }
+        }, 5 * 60 * 1000); // 5分
+
+        // ページ離脱時の自動保存
+        window.addEventListener('beforeunload', (event) => {
+            if (this.currentBook && Object.keys(this.questionStates).length > 0) {
+                const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+                if (total > 0) {
+                    console.log('🔄 ページ離脱時自動保存');
+                    this.performAutoSave('beforeunload');
+                    
+                    // ユーザーに保存中であることを示す
+                    event.preventDefault();
+                    event.returnValue = 'データを保存中です...';
+                    return 'データを保存中です...';
+                }
+            }
         });
-        if (event && event.target) {
-            event.target.classList.add('active');
-        }
-        
-        // タブコンテンツの切り替え
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
+
+        // フォーカス離脱時の自動保存
+        window.addEventListener('blur', () => {
+            if (this.currentBook && Object.keys(this.questionStates).length > 0) {
+                const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+                if (total > 0) {
+                    console.log('👁️ フォーカス離脱時自動保存');
+                    this.performAutoSave('blur');
+                }
+            }
         });
-        
-        const tabContent = document.getElementById(tabName + '-tab');
-        if (tabContent) {
-            tabContent.classList.add('active');
+
+        console.log('💾 自動保存機能初期化完了');
+    }
+
+    /**
+     * 自動保存実行
+     */
+    async performAutoSave(trigger = 'manual') {
+        try {
+            if (!this.currentBook || this.currentPath.length === 0) {
+                return;
+            }
+
+            const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+            if (total === 0) {
+                return;
+            }
+
+            console.log(`💾 自動保存実行（${trigger}）`);
+
+            const record = {
+                bookId: this.currentBook.id,
+                bookName: this.currentBook.name,
+                path: [...this.currentPath],
+                questions: {...this.questionStates},
+                timestamp: new Date().toISOString(),
+                trigger: trigger,
+                stats: {
+                    total: total,
+                    correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
+                    wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
+                    rate: document.getElementById('correctRate')?.textContent || '0%'
+                }
+            };
+
+            // 重複記録を除去
+            const pathKey = this.currentPath.join('/');
+            DataManager.allRecords = DataManager.allRecords.filter(r => 
+                !(r.bookId === this.currentBook.id && r.path.join('/') === pathKey)
+            );
+
+            // 新しい記録を保存
+            DataManager.saveToHistory(record);
+            DataManager.updateDailyStreak();
+
+            // Firebase保存
+            if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                await DataManager.saveToFirestore({
+                    type: 'autoSave',
+                    trigger: trigger,
+                    ...record
+                });
+            }
+
+            console.log(`✅ 自動保存完了（${trigger}）`);
+
+            // UI更新
+            this.updateAnalyticsAfterSave();
+
+        } catch (error) {
+            console.error('❌ 自動保存エラー:', error);
         }
-        
-        // タブ別の初期化処理
-        if (window.Analytics) {
-            setTimeout(() => {
-                if (tabName === 'analysis') {
-                    // 分析タブ:最新データで更新
+    }
+
+    /**
+     * 保存後の分析データ更新
+     */
+    updateAnalyticsAfterSave() {
+        setTimeout(() => {
+            try {
+                if (window.Analytics) {
                     Analytics.updateChartBars();
                     Analytics.updateHeatmap();
                     Analytics.updateWeaknessAnalysis();
                     Analytics.updateHistoryContent();
                     Analytics.updateHeatmapBookSelect();
                     Analytics.updateRadarBookSelect();
-                } else if (tabName === 'progress') {
-                    // 進捗タブ:最新データで強制更新
-                    Analytics.updateProgressContent();
                     Analytics.drawRadarChart();
-                    Analytics.updateRadarBookSelect();
-                    Analytics.updateHeatmapBookSelect();
                 }
-                
-                // ★統合: 両タブ共通のピン留め設定復元
-                Analytics.restorePinnedSettings();
-            }, 100);
-        }
+            } catch (error) {
+                console.error('分析データ更新エラー:', error);
+            }
+        }, 200);
     }
 
     /**
-     * 問題ナビゲーション（前後移動） ★追加: このメソッド全体を追加
+     * 初期化完了通知
      */
-    navigateQuestion(direction) {
-        if (!this.currentPath || this.currentPath.length === 0) return;
+    showInitializationNotification() {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            z-index: 9999;
+            font-weight: 600;
+            font-size: 14px;
+            animation: slideInRight 0.3s ease;
+        `;
+        notification.innerHTML = `🚀 学習トラッカー起動完了！`;
         
-        const currentBook = this.currentBook;
-        if (!currentBook) return;
-        
-        // 現在の階層パスから親階層を取得
-        const parentPath = this.currentPath.slice(0, -1);
-        const currentName = this.currentPath[this.currentPath.length - 1];
-        
-        // 親階層の構造を取得
-        let parentStructure = currentBook.structure;
-        for (let i = 0; i < parentPath.length; i++) {
-            if (parentStructure[parentPath[i]]) {
-                parentStructure = parentStructure[parentPath[i]].children || {};
-            }
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    /**
+     * 学習記録保存（修正版：完全Firebase統合）
+     */
+    async saveRecord() {
+        if (!this.currentBook || this.currentPath.length === 0) {
+            alert('問題を選択してください');
+            return;
         }
-        
-        // ★修正: 自然順ソート関数（renderRecordLevelと同じ）
-        const naturalSort = (a, b) => {
-            const extractNumbers = (str) => {
-                const parts = str.split(/(\d+)/);
-                return parts.map(part => {
-                    const num = parseInt(part, 10);
-                    return isNaN(num) ? part : num;
-                });
+
+        const total = parseInt(document.getElementById('totalCount')?.textContent || '0');
+        if (total === 0) {
+            alert('解答してください');
+            return;
+        }
+
+        try {
+            const record = {
+                bookId: this.currentBook.id,
+                bookName: this.currentBook.name,
+                path: [...this.currentPath],
+                questions: {...this.questionStates},
+                timestamp: new Date().toISOString(),
+                stats: {
+                    total: total,
+                    correct: parseInt(document.getElementById('correctCount')?.textContent || '0'),
+                    wrong: parseInt(document.getElementById('wrongCount')?.textContent || '0'),
+                    rate: document.getElementById('correctRate')?.textContent || '0%'
+                }
             };
-            
-            const aParts = extractNumbers(a[0]);
-            const bParts = extractNumbers(b[0]);
-            
-            for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
-                const aPart = aParts[i];
-                const bPart = bParts[i];
-                
-                if (typeof aPart === 'number' && typeof bPart === 'number') {
-                    if (aPart !== bPart) return aPart - bPart;
-                } else if (typeof aPart === 'string' && typeof bPart === 'string') {
-                    const comp = aPart.localeCompare(bPart);
-                    if (comp !== 0) return comp;
-                } else {
-                    return typeof aPart === 'number' ? -1 : 1;
-                }
+
+            console.log("💾 手動保存実行:", record);
+
+            // 重複記録を除去
+            const pathKey = this.currentPath.join('/');
+            DataManager.allRecords = DataManager.allRecords.filter(r => 
+                !(r.bookId === this.currentBook.id && r.path.join('/') === pathKey)
+            );
+
+            // データ保存
+            DataManager.saveToHistory(record);
+            DataManager.updateDailyStreak();
+
+            // Firebase保存
+            if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
+                await DataManager.saveToFirestore({
+                    type: 'manualSave',
+                    ...record
+                });
             }
-            return aParts.length - bParts.length;
-        };
-        
-        // ★修正: orderプロパティ優先、なければ自然順ソート
-        const siblings = Object.entries(parentStructure)
-            .filter(([name, item]) => item.questions && item.questions.length > 0)
-            .sort((a, b) => {
-                const orderA = a[1].order !== undefined ? a[1].order : Infinity;
-                const orderB = b[1].order !== undefined ? b[1].order : Infinity;
-                if (orderA !== orderB) return orderA - orderB;
-                return naturalSort(a, b);
-            });
-        
-        // 現在のインデックスを見つける
-        const currentIndex = siblings.findIndex(([name]) => name === currentName);
-        if (currentIndex === -1) return;
-        
-        // 次/前の要素を取得
-        const newIndex = currentIndex + direction;
-        if (newIndex >= 0 && newIndex < siblings.length) {
-            const [newName] = siblings[newIndex];
-            const newPath = [...parentPath, newName].join('/');
-            this.showQuestions(newPath);
+
+            console.log("✅ 手動保存完了");
+            alert('保存しました！');
+
+            // 分析データ更新
+            this.updateAnalyticsAfterSave();
+
+        } catch (error) {
+            console.error('❌ 保存エラー:', error);
+            alert('保存中にエラーが発生しました');
         }
     }
 
     /**
-     * フッタータブ切り替え（カレンダー予定保存強化版）
+     * 試験日保存（修正版：Firebase統合強化）
      */
-    switchFooterTab(tabName, event) {
-        const modal = document.getElementById('footerModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalBody = document.getElementById('modalBody');
-        const modalFooter = modal.querySelector('.modal-footer');
-        
-        if (!modal || !modalTitle || !modalBody) return;
-
-        const titles = {
-            'register': '📝 問題集登録',
-            'qa': '❓ 一問一答',
-            'keypoints': '📚 要点確認',
-            'results': '🏆 獲得バッジ',
-            'settings': '⚙️ 設定'
-        };
-        
-        modalTitle.textContent = titles[tabName] || 'タイトル';
-        
-        // モーダルヘッダーを動的に再構築（要点確認以外の場合のみ）
-        const modalHeader = modal.querySelector('.modal-header');
-        if (modalHeader && tabName !== 'keypoints') {
-            // 要点確認以外の場合：通常ヘッダー
-            modalHeader.innerHTML = `
-                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-            `;
-        } else if (modalHeader && tabName === 'keypoints') {
-            // 要点確認の場合：初期状態は通常ヘッダー（重要語句ボタンはコンテンツ表示時のみ追加）
-            modalHeader.innerHTML = `
-                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">${titles[tabName]}</h3>
-                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-            `;
-        }
-        
-        // モーダルフッターを動的に再構築
-        if (modalFooter) {
-            if (tabName === 'keypoints') {
-                // 要点確認の場合：戻るボタン + 閉じるボタン
-                modalFooter.innerHTML = `
-                    <div style="display: flex; gap: 10px;">
-                        <button id="modalBackBtn" style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.backToSubjectList()">↩️ 戻る</button>
-                        <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
-                    </div>
-                `;
-            } else {
-                // その他の場合：閉じるボタンのみ
-                modalFooter.innerHTML = `
-                    <button class="modal-close-bottom" onclick="App.closeFooterModal()">閉じる</button>
-                `;
-            }
-        }
-        
-        switch(tabName) {
-            case 'register':
-                modalBody.innerHTML = this.getRegisterContent();
-                setTimeout(() => this.renderRegisterHierarchy(), 100);
-                break;
-            case 'qa':
-                if (window.QAModule && typeof QAModule.renderQAContent === 'function') {
-                    modalBody.innerHTML = QAModule.renderQAContent();
-                } else {
-                    modalBody.innerHTML = '<p>一問一答モジュールを読み込み中...</p>';
-                }
-                break;
-            case 'keypoints':
-                if (window.KeyPointsModule && typeof KeyPointsModule.renderKeyPointsContent === 'function') {
-                    modalBody.innerHTML = KeyPointsModule.renderKeyPointsContent();
-                    // KeyPointsModuleにヘッダー制御を委ねるため、ここでは重要語句ボタンを追加しない
-                } else {
-                    modalBody.innerHTML = '<p>要点確認モジュールを読み込み中...</p>';
-                }
-                break;
-            case 'results':
-                modalBody.innerHTML = this.getResultsContent();
-                break;
-            case 'settings':
-                modalBody.innerHTML = this.getSettingsContent();
-                setTimeout(() => this.renderCSVTemplateList(), 100);
-                break;
-        }
-        
-        modal.classList.add('active');
-    }
-
-    /**
-     * 試験日保存（修正版）
-     */
-    saveExamDate() {
+    async saveExamDate() {
         const input = document.getElementById('examDateInput');
         if (!input || !input.value) {
             alert('試験日を入力してください');
@@ -313,18 +406,17 @@ class Application {
 
         try {
             const examDate = new Date(input.value);
-            // DataManager.saveExamDateの戻り値をチェック
             const success = DataManager.saveExamDate(examDate);
             
             if (success) {
-                // UIComponentsが存在する場合のみ更新
+                // UI更新
                 if (window.UIComponents && typeof UIComponents.updateExamCountdown === 'function') {
                     UIComponents.updateExamCountdown();
                 }
                 
-                // Firebase保存強化
+                // Firebase保存
                 if (window.ULTRA_STABLE_USER_ID && DataManager.saveToFirestore) {
-                    DataManager.saveToFirestore({
+                    await DataManager.saveToFirestore({
                         type: 'examDate',
                         action: 'save',
                         examDate: examDate.toISOString(),
@@ -332,14 +424,16 @@ class Application {
                     });
                 }
                 
+                console.log('✅ 試験日保存完了:', examDate);
                 alert('試験日を設定しました');
+                
                 // モーダルを閉じる
                 setTimeout(() => this.closeFooterModal(), 100);
             } else {
                 alert('試験日の設定に失敗しました。有効な日付を入力してください。');
             }
         } catch (error) {
-            console.error('Error saving exam date:', error);
+            console.error('❌ 試験日保存エラー:', error);
             alert('試験日の設定に失敗しました');
         }
     }
@@ -2313,22 +2407,42 @@ if (window.Analytics) {
 // グローバルに公開
 window.App = new Application();
 
-// アプリケーション初期化
+// アプリケーション初期化（修正版：完全依存関係対応）
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // ★追加: 固定IDが設定されるまで待つ（最大5秒）
-        let attempts = 0;
-        while (!window.ULTRA_STABLE_USER_ID && attempts < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-        }
+        console.log('📄 DOM読み込み完了 - App初期化開始');
         
-        if (!window.ULTRA_STABLE_USER_ID) {
-            console.warn('固定IDの取得がタイムアウトしました');
-        }
+        // 最大30秒待機してから初期化開始
+        let initStarted = false;
         
-        await App.initialize();
+        // 即座に初期化を試行
+        setTimeout(async () => {
+            if (!initStarted) {
+                initStarted = true;
+                await App.initialize();
+            }
+        }, 100);
+        
+        // フォールバック：5秒後に強制初期化
+        setTimeout(async () => {
+            if (!initStarted) {
+                console.warn('⚠️ フォールバック初期化を実行');
+                initStarted = true;
+                await App.initialize();
+            }
+        }, 5000);
+        
+        // 最終フォールバック：30秒後に最小限初期化
+        setTimeout(() => {
+            if (!App.initialized && !initStarted) {
+                console.warn('⚠️ 最終フォールバック - 最小限初期化');
+                initStarted = true;
+                App.initializeMinimalMode();
+            }
+        }, 30000);
+        
     } catch (error) {
-        console.error('Failed to initialize App:', error);
+        console.error('❌ アプリケーション初期化に失敗しました:', error);
+        alert('アプリケーションの読み込みに失敗しました。ページを再読み込みしてください。');
     }
 });
