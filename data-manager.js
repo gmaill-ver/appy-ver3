@@ -426,7 +426,7 @@ loadDeletedItems() {
 }
 
 /**
- * Firebaseにデータを保存（削除済みアイテム含む）
+ * Firebaseにデータを保存（サブコレクション分散構造版） // ★追加: 1MB制限対応
  */
 async saveToFirebase() {
     if (!this.firebaseEnabled || !this.currentUser) return;
@@ -434,23 +434,98 @@ async saveToFirebase() {
     try {
         const db = firebase.firestore();
         const userId = this.currentUser.uid;
+        const userRef = db.collection('users').doc(userId);
 
-        await db.collection('users').doc(userId).set({
-            books: this.books || {},
+        // ★追加: メインドキュメントには最小限のメタデータのみ保存
+        await userRef.set({
             bookOrder: this.bookOrder || [],
-            records: (this.allRecords || []).slice(-1000), // 最新1000件のみ
-            studyPlans: this.studyPlans || [],
-            qaQuestions: this.qaQuestions || {},
-            csvTemplates: this.csvTemplates || {},
             examDate: this.examDate ? this.examDate.toISOString() : null,
-            deletedItems: this.deletedItems || [], // 削除済みアイテムも保存
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            deletedItems: this.deletedItems || [],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            metadata: { // ★追加: カウント情報のみ
+                bookCount: Object.keys(this.books || {}).length,
+                recordCount: (this.allRecords || []).length,
+                planCount: (this.studyPlans || []).length
+            }
         }, { merge: true });
 
-        console.log('Data saved to Firebase');
+        // ★追加: 問題集を個別にサブコレクションへ保存
+        const booksRef = userRef.collection('books');
+        const bookPromises = [];
+        for (const [bookId, bookData] of Object.entries(this.books || {})) {
+            bookPromises.push(
+                booksRef.doc(bookId).set({
+                    ...bookData,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true })
+            );
+        }
+        await Promise.all(bookPromises);
+
+        // ★追加: 学習記録を500件ごとにチャンク化してサブコレクションへ保存
+        const recordsRef = userRef.collection('records');
+        const records = this.allRecords || [];
+        const chunkSize = 500;
+        const recordChunks = [];
+        for (let i = 0; i < records.length; i += chunkSize) {
+            recordChunks.push(records.slice(i, i + chunkSize));
+        }
+        
+        const recordPromises = [];
+        recordChunks.forEach((chunk, index) => {
+            recordPromises.push(
+                recordsRef.doc(`chunk_${index}`).set({
+                    records: chunk,
+                    chunkIndex: index,
+                    totalChunks: recordChunks.length,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            );
+        });
+        await Promise.all(recordPromises);
+
+        // ★追加: 学習計画をサブコレクションへ保存
+        const plansRef = userRef.collection('studyPlans');
+        const planPromises = [];
+        for (const [index, plan] of (this.studyPlans || []).entries()) {
+            planPromises.push(
+                plansRef.doc(`plan_${index}`).set({
+                    ...plan,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            );
+        }
+        await Promise.all(planPromises);
+
+        // ★追加: 一問一答をサブコレクションへ保存
+        const qaRef = userRef.collection('qaQuestions');
+        const qaPromises = [];
+        for (const [setId, questions] of Object.entries(this.qaQuestions || {})) {
+            qaPromises.push(
+                qaRef.doc(setId).set({
+                    questions: questions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            );
+        }
+        await Promise.all(qaPromises);
+
+        // ★追加: CSVテンプレートをサブコレクションへ保存
+        const templatesRef = userRef.collection('csvTemplates');
+        const templatePromises = [];
+        for (const [templateId, template] of Object.entries(this.csvTemplates || {})) {
+            templatePromises.push(
+                templatesRef.doc(templateId).set({
+                    ...template,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                })
+            );
+        }
+        await Promise.all(templatePromises);
+
+        console.log('Data saved to Firebase with subcollections');
     } catch (error) {
         console.warn('Firebase save error (data saved locally):', error);
-        // Firebaseへの保存が失敗してもローカルには保存されている
     }
 }
 
