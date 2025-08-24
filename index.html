@@ -792,22 +792,96 @@
     })();
 
     // 🔥 Firebase操作設定
-    function setupFirebaseOperations() {
-        // 保存処理
-        DataManager.saveToFirestore = async function(data) {
-            try {
-                if (!ULTRA_STABLE_USER_ID) {
-                    console.error("❌ 固定IDが未設定");
-                    return false;
-                }
+function setupFirebaseOperations() {
+    // 保存処理 // ★追加: サブコレクション対応
+    DataManager.saveToFirestore = async function(data) {
+        try {
+            if (!ULTRA_STABLE_USER_ID) {
+                console.error("❌ 固定IDが未設定");
+                return false;
+            }
+            
+            console.log("📤 超安定ID保存開始（サブコレクション版）:", ULTRA_STABLE_USER_ID);
+            
+            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+            
+            // ★追加: メタデータのみメインドキュメントに保存
+            const metadata = {
+                userId: ULTRA_STABLE_USER_ID,
+                deviceFingerprint: ULTRA_STABLE_USER_ID.split('_')[1],
+                lastUpdated: new Date().toISOString(),
+                deviceInfo: {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language
+                },
+                recordCount: 0 // ★追加: 記録数カウンタ
+            };
+
+            // ★追加: 既存の記録数を取得
+            const userDoc = await userRef.get();
+            if (userDoc.exists) {
+                const existing = userDoc.data();
+                metadata.recordCount = existing.recordCount || 0;
+                metadata.createdAt = existing.createdAt || new Date().toISOString();
+            } else {
+                metadata.createdAt = new Date().toISOString();
+            }
+
+            // ★追加: 学習記録をサブコレクションに保存
+            if (data) {
+                const recordRef = userRef.collection('studyRecords').doc();
+                await recordRef.set({
+                    ...data,
+                    timestamp: new Date().toISOString(),
+                    deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop'
+                });
                 
-                console.log("📤 超安定ID保存開始:", ULTRA_STABLE_USER_ID);
-                
-                const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-                
-                // 現在のデータを取得
-                const userDoc = await userRef.get();
-                let existingData = userDoc.exists ? userDoc.data() : {
+                metadata.recordCount++; // ★追加: カウンタ更新
+                console.log(`✅ 学習記録保存成功（記録数: ${metadata.recordCount}）`);
+            }
+
+            // ★追加: メタデータを更新
+            await userRef.set(metadata, { merge: true });
+            
+            return true;
+        } catch (error) {
+            console.error("❌ Firestore保存エラー:", error);
+            return false;
+        }
+    };
+
+    // ★追加: データ読み込み処理もサブコレクション対応に
+    DataManager.loadFromFirestore = async function() {
+        try {
+            if (!ULTRA_STABLE_USER_ID) return null;
+            
+            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+            const userDoc = await userRef.get();
+            
+            if (!userDoc.exists) return null;
+            
+            // ★追加: サブコレクションから学習記録を取得
+            const recordsSnapshot = await userRef.collection('studyRecords')
+                .orderBy('timestamp', 'desc')
+                .limit(100)
+                .get();
+            
+            const records = [];
+            recordsSnapshot.forEach(doc => {
+                records.push(doc.data());
+            });
+            
+            return {
+                metadata: userDoc.data(),
+                studyRecords: records
+            };
+        } catch (error) {
+            console.error("❌ Firestore読み込みエラー:", error);
+            return null;
+        }
+    };
+}
                     userId: ULTRA_STABLE_USER_ID,
                     deviceFingerprint: ULTRA_STABLE_USER_ID.split('_')[1],
                     createdAt: new Date().toISOString(),
