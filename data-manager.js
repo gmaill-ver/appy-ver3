@@ -592,15 +592,21 @@ loadDeletedItems() {
     }
 }
 
-/**
- * Firebaseにデータを保存（サブコレクション分散構造版） // ★追加: 1MB制限対応
- */
 async saveToFirebase() {
-    if (!this.firebaseEnabled || !this.currentUser) return;
+    // ★修正: 固定IDが必要
+    if (!this.firebaseEnabled || !this.currentUser) {
+        // 固定IDを再取得試行
+        if (window.ULTRA_STABLE_USER_ID) {
+            this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
+        } else {
+            console.warn('固定IDが未設定のため保存をスキップ');
+            return;
+        }
+    }
 
     try {
         const db = firebase.firestore();
-        const userId = this.currentUser.uid;
+        const userId = this.currentUser.uid; // 固定ID
         const userRef = db.collection('users').doc(userId);
 
         // ★追加: メインドキュメントには最小限のメタデータのみ保存
