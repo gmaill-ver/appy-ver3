@@ -2316,6 +2316,17 @@ window.App = new Application();
 // アプリケーション初期化
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // ★追加: 固定IDが設定されるまで待つ（最大5秒）
+        let attempts = 0;
+        while (!window.ULTRA_STABLE_USER_ID && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (!window.ULTRA_STABLE_USER_ID) {
+            console.warn('固定IDの取得がタイムアウトしました');
+        }
+        
         await App.initialize();
     } catch (error) {
         console.error('Failed to initialize App:', error);
