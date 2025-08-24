@@ -972,33 +972,47 @@ function setupFirebaseOperations() {
         };
     }
 
-    // 📥 即座にデータ読み込み
-    async function loadFromFirebaseInstantly() {
-        if (!ULTRA_STABLE_USER_ID) return;
-        
-        try {
-            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-            const doc = await userRef.get();
-            
-            if (doc.exists) {
-                console.log("📥 即座にFirebaseデータ復元");
-                restoreAllDataFromFirebase(doc.data());
-            } else {
-                console.log("📭 Firebaseに初回データなし");
-                // 初回データ移行スケジュール
-                setTimeout(() => {
-                    if (DataManager.books && Object.keys(DataManager.books).length > 0) {
-                        DataManager.saveToFirestore({
-                            type: "initialMigration",
-                            message: "初回データ移行"
-                        });
-                    }
-                }, 2000);
-            }
-        } catch (error) {
-            console.error("❌ 即座読み込みエラー:", error);
+    // 📥 初回読み込み // ★追加: サブコレクション対応
+async function loadFromFirebaseInstantly() {
+    try {
+        if (!ULTRA_STABLE_USER_ID) {
+            console.error("❌ 固定IDが未設定");
+            return;
         }
+        
+        console.log("📥 Firebase即座読み込み開始（サブコレクション版）:", ULTRA_STABLE_USER_ID);
+        
+        const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+        const userDoc = await userRef.get();
+        
+        if (userDoc.exists) {
+            const metadata = userDoc.data();
+            console.log("📊 メタデータ取得:", metadata);
+            
+            // ★追加: サブコレクションから学習記録を読み込み
+            const recordsSnapshot = await userRef.collection('studyRecords')
+                .orderBy('timestamp', 'desc')
+                .limit(50)
+                .get();
+            
+            const records = [];
+            recordsSnapshot.forEach(doc => {
+                records.push(doc.data());
+            });
+            
+            console.log(`✅ Firebase読み込み完了: ${records.length}件の学習記録`);
+            
+            // ★追加: UIに反映（必要に応じて）
+            if (records.length > 0) {
+                console.log("最新の学習記録:", records[0]);
+            }
+        } else {
+            console.log("⚠️ Firebaseデータなし（新規ユーザー）");
+        }
+    } catch (error) {
+        console.error("❌ Firebase読み込みエラー:", error);
     }
+}
 
     // 🔄 全データ復元処理（修正版）
     // 🔄 全データ復元処理（修正版）
