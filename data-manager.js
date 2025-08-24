@@ -109,86 +109,113 @@ async syncWithFirebase() {
     try {
         const db = firebase.firestore();
         const userId = this.currentUser.uid;
+        const userRef = db.collection('users').doc(userId);
 
-        // ユーザーデータを取得
-        const userDoc = await db.collection('users').doc(userId).get();
+        // ★修正: メインドキュメントからメタデータを取得
+        const userDoc = await userRef.get();
         
         if (userDoc.exists) {
-            const data = userDoc.data();
+            const metadata = userDoc.data();
             
-            // ★追加: 削除済みアイテムリストを最初に読み込み（重要！）
-            if (data.deletedItems && Array.isArray(data.deletedItems)) {
-                this.deletedItems = data.deletedItems;
-                this.saveDeletedItems(); // ローカルにも即座に保存
-                console.log(`🗑️ 削除済みアイテム読み込み: ${data.deletedItems.length}件`);
-            }
-            
-            // ★修正: 削除済みアイテムを除外してからデータ復元（階層削除対応）
-            if (data.books && typeof data.books === 'object') {
-                const filteredBooks = {};
-                Object.keys(data.books).forEach(bookId => {
-                    if (!this.isDeleted('books', bookId)) {
-                        const book = data.books[bookId];
-                        // ★追加: 削除済み階層アイテムを除外
-                        if (book.structure) {
-                            book.structure = this.filterDeletedHierarchy(book.structure, bookId, []);
-                        }
-                        filteredBooks[bookId] = book;
-                    }
-                });
-                this.books = filteredBooks;
-                this.saveBooksToStorage(); // ★追加: ローカルにも即座に保存
-                console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件（削除済み除外後）`);
+            // ★追加: 削除済みアイテムリストを最初に読み込み
+            if (metadata.deletedItems && Array.isArray(metadata.deletedItems)) {
+                this.deletedItems = metadata.deletedItems;
+                this.saveDeletedItems();
+                console.log(`🗑️ 削除済みアイテム読み込み: ${metadata.deletedItems.length}件`);
             }
 
-            // ★追加: 問題集順序の個別保存
-            if (data.bookOrder && Array.isArray(data.bookOrder)) {
-                this.bookOrder = data.bookOrder.filter(id => !this.isDeleted('books', id));
-                this.saveBookOrder(); // ★追加: ローカルにも保存
-                console.log(`📋 問題集順序復元: ${this.bookOrder.length}件`);
+            // ★追加: 問題集順序を読み込み
+            if (metadata.bookOrder && Array.isArray(metadata.bookOrder)) {
+                this.bookOrder = metadata.bookOrder.filter(id => !this.isDeleted('books', id));
+                this.saveBookOrder();
             }
 
-            // ★追加: 学習記録の個別保存
-            if (data.records && Array.isArray(data.records)) {
-                this.allRecords = data.records;
-                localStorage.setItem('studyHistory', JSON.stringify(this.allRecords)); // ★追加: ローカル保存
-            }
-
-            // ★追加: 学習計画の個別保存
-            if (data.studyPlans && Array.isArray(data.studyPlans)) {
-                this.studyPlans = this.filterDeletedItems(data.studyPlans, 'studyPlans');
-                this.saveStudyPlans(); // ★追加: ローカル保存
-            }
-
-            // ★追加: 一問一答の個別保存
-            if (data.qaQuestions && typeof data.qaQuestions === 'object') {
-                this.qaQuestions = this.filterDeletedItems(data.qaQuestions, 'qaQuestions');
-                this.saveQAQuestions(); // ★追加: ローカル保存
-            }
-
-            // ★追加: CSVテンプレートの個別保存
-            if (data.csvTemplates && typeof data.csvTemplates === 'object') {
-                this.csvTemplates = this.filterDeletedItems(data.csvTemplates, 'csvTemplates');
-                this.saveCSVTemplates(); // ★追加: ローカル保存
-            }
-
-            // ★追加: 試験日の個別保存
-            if (data.examDate) {
+            // ★追加: 試験日を読み込み
+            if (metadata.examDate) {
                 try {
-                    this.examDate = new Date(data.examDate);
-                    localStorage.setItem('examDate', data.examDate); // ★追加: ローカル保存
+                    this.examDate = new Date(metadata.examDate);
+                    localStorage.setItem('examDate', metadata.examDate);
                 } catch (e) {
                     console.warn('Invalid exam date from Firebase');
                 }
             }
+
+            // ★追加: 問題集をサブコレクションから読み込み
+            const booksSnapshot = await userRef.collection('books').get();
+            const filteredBooks = {};
+            booksSnapshot.forEach(doc => {
+                const bookId = doc.id;
+                if (!this.isDeleted('books', bookId)) {
+                    const book = doc.data();
+                    if (book.structure) {
+                        book.structure = this.filterDeletedHierarchy(book.structure, bookId, []);
+                    }
+                    filteredBooks[bookId] = book;
+                }
+            });
+            this.books = filteredBooks;
+            this.saveBooksToStorage();
+            console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件`);
+
+            // ★追加: 学習記録をチャンクから復元
+            const recordsSnapshot = await userRef.collection('records').orderBy('chunkIndex').get();
+            const allRecords = [];
+            recordsSnapshot.forEach(doc => {
+                const chunk = doc.data();
+                if (chunk.records && Array.isArray(chunk.records)) {
+                    allRecords.push(...chunk.records);
+                }
+            });
+            this.allRecords = allRecords;
+            localStorage.setItem('studyHistory', JSON.stringify(this.allRecords));
+            console.log(`📊 学習記録復元: ${this.allRecords.length}件`);
+
+            // ★追加: 学習計画をサブコレクションから読み込み
+            const plansSnapshot = await userRef.collection('studyPlans').get();
+            const plans = [];
+            plansSnapshot.forEach(doc => {
+                const plan = doc.data();
+                if (plan && !this.isDeleted('studyPlans', plan.id)) {
+                    plans.push(plan);
+                }
+            });
+            this.studyPlans = plans;
+            this.saveStudyPlans();
+            console.log(`📅 学習計画復元: ${plans.length}件`);
+
+            // ★追加: 一問一答をサブコレクションから読み込み
+            const qaSnapshot = await userRef.collection('qaQuestions').get();
+            const qaQuestions = {};
+            qaSnapshot.forEach(doc => {
+                const setId = doc.id;
+                if (!this.isDeleted('qaQuestions', setId)) {
+                    const data = doc.data();
+                    qaQuestions[setId] = data.questions || data;
+                }
+            });
+            this.qaQuestions = qaQuestions;
+            this.saveQAQuestions();
+            console.log(`❓ 一問一答復元: ${Object.keys(qaQuestions).length}セット`);
+
+            // ★追加: CSVテンプレートをサブコレクションから読み込み
+            const templatesSnapshot = await userRef.collection('csvTemplates').get();
+            const csvTemplates = {};
+            templatesSnapshot.forEach(doc => {
+                const templateId = doc.id;
+                if (!this.isDeleted('csvTemplates', templateId)) {
+                    csvTemplates[templateId] = doc.data();
+                }
+            });
+            this.csvTemplates = csvTemplates;
+            this.saveCSVTemplates();
+            console.log(`📄 CSVテンプレート復元: ${Object.keys(csvTemplates).length}件`);
             
         } else {
-            // 新規ユーザーの場合、現在のデータをFirebaseに保存
+            // ★追加: 新規ユーザーの場合、現在のデータをFirebaseに保存
             await this.saveToFirebase();
         }
     } catch (error) {
         console.error('Firebase sync error:', error);
-        // エラーが発生してもローカルデータは維持
     }
 }
 
