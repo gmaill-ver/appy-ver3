@@ -972,7 +972,7 @@ function setupFirebaseOperations() {
         };
     }
 
-    // 📥 初回読み込み // ★追加: サブコレクション対応
+    // 📥 初回読み込み // ★修正: usersコレクションからの読み込み
 async function loadFromFirebaseInstantly() {
     try {
         if (!ULTRA_STABLE_USER_ID) {
@@ -980,9 +980,25 @@ async function loadFromFirebaseInstantly() {
             return;
         }
         
-        console.log("📥 Firebase即座読み込み開始（サブコレクション版）:", ULTRA_STABLE_USER_ID);
+        console.log("📥 Firebase即座読み込み開始:", ULTRA_STABLE_USER_ID);
         
-        const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
+        // ★修正: permanentUsersではなくusersコレクションを使用
+        const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+        const userDoc = await userRef.get();
+        
+        if (userDoc.exists) {
+            console.log("✅ Firebaseにデータあり - DataManagerで同期処理");
+            // DataManagerの同期処理に任せる
+            if (window.DataManager && !DataManager.initialized) {
+                await DataManager.initialize();
+            }
+        } else {
+            console.log("⚠️ Firebaseデータなし（新規ユーザー）");
+        }
+    } catch (error) {
+        console.error("❌ Firebase読み込みエラー:", error);
+    }
+}
         const userDoc = await userRef.get();
         
         if (userDoc.exists) {
