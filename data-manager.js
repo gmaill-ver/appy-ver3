@@ -70,7 +70,7 @@ class DataManagerClass {
     }
 
     /**
- * Firebase初期化（固定ID対応版） // ★修正: 認証不要、固定ID使用
+ * Firebase初期化（エラーハンドリング強化）
  */
 async initializeFirebase() {
     if (!this.firebaseEnabled) return;
@@ -83,26 +83,25 @@ async initializeFirebase() {
             return;
         }
 
-        // ★修正: 固定IDが利用可能になるまで待つ
-        let attempts = 0;
-        while (!window.ULTRA_STABLE_USER_ID && attempts < 30) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
+        // ★修正: 固定IDを使用する場合と認証を使用する場合の両方に対応
+        if (window.ULTRA_STABLE_USER_ID) {
+            // 固定IDが利用可能な場合
+            this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
+            console.log('Firebase固定ID使用:', this.currentUser.uid);
+            // 即座に同期
+            await this.syncWithFirebase();
+        } else {
+            // 従来の認証方式にフォールバック
+            firebase.auth().onAuthStateChanged(async (user) => {
+                this.currentUser = user;
+                if (user) {
+                    console.log('Firebase user logged in:', user.email);
+                    await this.syncWithFirebase().catch(error => {
+                        console.warn('Firebase sync failed:', error);
+                    });
+                }
+            });
         }
-
-        if (!window.ULTRA_STABLE_USER_ID) {
-            console.warn('固定IDが取得できませんでした');
-            this.firebaseEnabled = false;
-            return;
-        }
-
-        // ★修正: 固定IDを使用（認証不要）
-        this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
-        console.log('Firebase固定ID設定:', this.currentUser.uid);
-        
-        // ★修正: 即座にFirebaseと同期
-        await this.syncWithFirebase();
-        
     } catch (error) {
         console.warn('Firebase initialization error:', error);
         this.firebaseEnabled = false;
@@ -615,7 +614,7 @@ async saveToFirebase() {
             examDate: this.examDate ? this.examDate.toISOString() : null,
             deletedItems: this.deletedItems || [],
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            metadata: { // ★追加: カウント情報のみ
+            metadata: {
                 bookCount: Object.keys(this.books || {}).length,
                 recordCount: (this.allRecords || []).length,
                 planCount: (this.studyPlans || []).length
