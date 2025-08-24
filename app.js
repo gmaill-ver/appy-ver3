@@ -81,7 +81,348 @@ class Application {
                 this.initializeMinimalMode();
                 return true;
             }
+
+            /**
+ * App.js に追加する不足しているメソッド群
+ * 既存のApplicationクラス内に以下のメソッドを追加してください
+ */
+
+/**
+ * サンプルデータの初期化（必要な場合）
+ */
+initializeSampleDataIfNeeded() {
+    try {
+        if (Object.keys(DataManager.books).length === 0) {
+            console.log('📚 サンプルデータを初期化します');
+            DataManager.initializeSampleData();
+            this.renderBookCards();
+        } else {
+            console.log('📚 既存の問題集データが見つかりました');
         }
+    } catch (error) {
+        console.error('サンプルデータ初期化エラー:', error);
+    }
+}
+
+/**
+ * 問題集カードの描画（エラーハンドリング強化版）
+ */
+renderBookCards() {
+    try {
+        const container = document.getElementById('bookCardsContainer');
+        if (!container) {
+            console.warn('bookCardsContainer要素が見つかりません');
+            return;
+        }
+
+        let html = '';
+        
+        // 順序に従って問題集を取得
+        const orderedBooks = DataManager.bookOrder
+            .filter(id => DataManager.books[id] && !DataManager.isDeleted('books', id))
+            .map(id => DataManager.books[id]);
+        
+        // 順序にない問題集も追加
+        Object.values(DataManager.books).forEach(book => {
+            if (!DataManager.bookOrder.includes(book.id) && !DataManager.isDeleted('books', book.id)) {
+                orderedBooks.push(book);
+                DataManager.bookOrder.push(book.id);
+            }
+        });
+        
+        orderedBooks.forEach(book => {
+            const questionCount = DataManager.countQuestionsInBook(book);
+            const sortClass = this.sortMode ? 'sortable' : '';
+            html += `
+                <div class="book-card ${sortClass}" id="book-card-${book.id}" 
+                     onclick="${this.sortMode ? '' : `App.toggleBookCard('${book.id}')`}">
+                    <span class="book-card-drag-handle">☰</span>
+                    <div class="book-card-title">📚 ${book.name}</div>
+                    <div class="book-card-meta">
+                        ${Object.keys(book.structure).length}科目 | ${questionCount}問
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        console.log(`📋 ${orderedBooks.length}件の問題集カードを描画しました`);
+        
+    } catch (error) {
+        console.error('問題集カード描画エラー:', error);
+    }
+}
+
+/**
+ * 問題集カードの選択切り替え
+ */
+toggleBookCard(bookId) {
+    try {
+        const card = document.getElementById(`book-card-${bookId}`);
+        if (!card) return;
+
+        if (this.selectedBookCard === bookId) {
+            // 選択解除
+            card.classList.remove('selected');
+            this.selectedBookCard = null;
+            this.currentBook = null;
+            this.currentPath = [];
+            
+            const breadcrumb = document.getElementById('breadcrumb');
+            const hierarchyContainer = document.getElementById('recordHierarchyContainer');
+            const questionSection = document.getElementById('questionSection');
+            
+            if (breadcrumb) breadcrumb.style.display = 'none';
+            if (hierarchyContainer) hierarchyContainer.style.display = 'none';
+            if (questionSection) questionSection.style.display = 'none';
+        } else {
+            // 新しい選択
+            document.querySelectorAll('.book-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            card.classList.add('selected');
+            this.selectedBookCard = bookId;
+            this.selectBook(bookId);
+        }
+    } catch (error) {
+        console.error('問題集カード選択エラー:', error);
+    }
+}
+
+/**
+ * 問題集の選択
+ */
+selectBook(bookId) {
+    try {
+        this.currentBook = DataManager.books[bookId];
+        this.currentPath = [];
+        
+        const breadcrumb = document.getElementById('breadcrumb');
+        const questionSection = document.getElementById('questionSection');
+        
+        if (breadcrumb) breadcrumb.style.display = 'flex';
+        if (questionSection) questionSection.style.display = 'none';
+        
+        this.updateBreadcrumb();
+        this.renderRecordHierarchy();
+        
+        console.log(`📖 問題集「${this.currentBook.name}」を選択しました`);
+    } catch (error) {
+        console.error('問題集選択エラー:', error);
+    }
+}
+
+/**
+ * パンくずナビゲーションの更新
+ */
+updateBreadcrumb() {
+    try {
+        const breadcrumb = document.getElementById('breadcrumb');
+        if (!breadcrumb || !this.currentBook) return;
+
+        const items = [this.currentBook.name, ...this.currentPath];
+        
+        let html = '';
+        items.forEach((item, index) => {
+            if (index > 0) html += '<span class="breadcrumb-separator">›</span>';
+            html += `<span class="breadcrumb-item ${index === items.length - 1 ? 'active' : ''}" 
+                     onclick="App.navigateTo(${index - 1})">${item}</span>`;
+        });
+        
+        breadcrumb.innerHTML = html;
+    } catch (error) {
+        console.error('パンくず更新エラー:', error);
+    }
+}
+
+/**
+ * パンくずナビゲーション
+ */
+navigateTo(index) {
+    try {
+        if (index === -1) {
+            this.currentPath = [];
+            document.getElementById('recordHierarchyContainer').style.display = 'block';
+            document.getElementById('questionSection').style.display = 'none';
+            this.renderRecordHierarchy();
+        } else if (index >= 0 && index < this.currentPath.length) {
+            this.currentPath = this.currentPath.slice(0, index);
+            document.getElementById('recordHierarchyContainer').style.display = 'block';
+            document.getElementById('questionSection').style.display = 'none';
+            this.renderRecordHierarchy();
+        }
+        this.updateBreadcrumb();
+    } catch (error) {
+        console.error('ナビゲーションエラー:', error);
+    }
+}
+
+/**
+ * 記録階層の描画
+ */
+renderRecordHierarchy() {
+    try {
+        const container = document.getElementById('recordHierarchyContainer');
+        if (!container || !this.currentBook) return;
+
+        container.style.display = 'block';
+        
+        let structure = this.currentBook.structure;
+        if (this.currentPath.length > 0) {
+            for (let i = 0; i < this.currentPath.length; i++) {
+                if (structure[this.currentPath[i]]) {
+                    structure = structure[this.currentPath[i]].children || {};
+                }
+            }
+        }
+        
+        let html = '<div class="hierarchy-list">';
+        html += this.renderRecordLevel(structure, this.currentPath);
+        html += '</div>';
+        
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('記録階層描画エラー:', error);
+    }
+}
+
+/**
+ * 記録レベルの描画（自然順ソート対応）
+ */
+renderRecordLevel(structure, basePath) {
+    let html = '';
+    
+    try {
+        // 自然順ソート関数
+        const naturalSort = (a, b) => {
+            const extractNumbers = (str) => {
+                const parts = str.split(/(\d+)/);
+                return parts.map(part => {
+                    const num = parseInt(part, 10);
+                    return isNaN(num) ? part : num;
+                });
+            };
+            
+            const aParts = extractNumbers(a);
+            const bParts = extractNumbers(b);
+            
+            for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+                const aPart = aParts[i];
+                const bPart = bParts[i];
+                
+                if (typeof aPart === 'number' && typeof bPart === 'number') {
+                    if (aPart !== bPart) return aPart - bPart;
+                } else if (typeof aPart === 'string' && typeof bPart === 'string') {
+                    const comp = aPart.localeCompare(bPart);
+                    if (comp !== 0) return comp;
+                } else {
+                    return typeof aPart === 'number' ? -1 : 1;
+                }
+            }
+            return aParts.length - bParts.length;
+        };
+        
+        // orderプロパティ優先、なければ自然順ソート
+        const sortedEntries = Object.entries(structure).sort((a, b) => {
+            const orderA = a[1].order !== undefined ? a[1].order : Infinity;
+            const orderB = b[1].order !== undefined ? b[1].order : Infinity;
+            if (orderA !== orderB) return orderA - orderB;
+            return naturalSort(a[0], b[0]);
+        });
+        
+        sortedEntries.forEach(([name, item]) => {
+            const currentPath = [...basePath, name];
+            const pathStr = currentPath.join('/');
+            const hasChildren = item.children && Object.keys(item.children).length > 0;
+            const isExpanded = this.expandedNodes.has(pathStr);
+            
+            html += `<div class="hierarchy-item">`;
+            
+            if (item.questions) {
+                html += `
+                    <div class="hierarchy-row" onclick="App.showQuestions('${pathStr}')">
+                        <span style="width: 28px;"></span>
+                        <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
+                        <span class="hierarchy-label">${name}</span>
+                        <span class="hierarchy-meta">${item.questions.length}問</span>
+                    </div>
+                `;
+                
+                if (hasChildren) {
+                    html += `
+                        <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                            ${this.renderRecordLevel(item.children, currentPath)}
+                        </div>
+                    `;
+                }
+            } else if (hasChildren) {
+                html += `
+                    <div class="hierarchy-row" onclick="App.toggleRecordNode('${pathStr}', event)">
+                        <span class="hierarchy-toggle ${isExpanded ? 'expanded' : ''}">▶</span>
+                        <span class="hierarchy-icon">${this.getHierarchyIcon(item.type)}</span>
+                        <span class="hierarchy-label">${name}</span>
+                    </div>
+                    <div class="hierarchy-children ${isExpanded ? 'expanded' : ''}">
+                        ${this.renderRecordLevel(item.children, currentPath)}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+        });
+    } catch (error) {
+        console.error('記録レベル描画エラー:', error);
+    }
+    
+    return html;
+}
+
+/**
+ * 階層アイコンの取得
+ */
+getHierarchyIcon(type) {
+    const icons = {
+        'subject': '📂',
+        'chapter': '📄',
+        'section': '📑',
+        'subsection': ''
+    };
+    return icons[type] || '📄';
+}
+
+/**
+ * 記録ノードの開閉切り替え
+ */
+toggleRecordNode(path, event) {
+    try {
+        event.stopPropagation();
+        
+        if (this.expandedNodes.has(path)) {
+            this.expandedNodes.delete(path);
+        } else {
+            this.expandedNodes.add(path);
+        }
+        
+        this.renderRecordHierarchy();
+    } catch (error) {
+        console.error('記録ノード切り替えエラー:', error);
+    }
+}
+
+/**
+ * 問題表示（基本版）
+ */
+showQuestions(pathStr) {
+    try {
+        // 基本的な問題表示機能を実装
+        console.log(`問題表示: ${pathStr}`);
+        // 実際の問題表示ロジックは既存のコードから移植する必要があります
+    } catch (error) {
+        console.error('問題表示エラー:', error);
+    }
+}
+        
     }
 
     /**
