@@ -645,16 +645,22 @@ class DataManagerClass {
      * 削除済みアイテム一覧の読み込み
      */
     loadDeletedItems() {
-        try {
-            const saved = localStorage.getItem('deletedItems');
-            if (saved) {
-                this.deletedItems = JSON.parse(saved);
+    try {
+        const saved = localStorage.getItem('deletedItems');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                this.deletedItems = parsed;
+                console.log(`🗑️ 削除済みアイテム読み込み: ${this.deletedItems.length}件`);
             }
-        } catch (error) {
-            console.error('削除済みアイテム読み込みエラー:', error);
+        } else {
             this.deletedItems = [];
         }
+    } catch (error) {
+        console.error('Error loading deleted items:', error);
+        this.deletedItems = [];
     }
+}
 
 async saveToFirebase() {
     // ★修正: 固定IDが必要
