@@ -643,20 +643,20 @@ filterDeletedItems(items, type) {
      * 全データの読み込み（削除済みアイテム含む）
      */
     loadAllData() {
-        try {
-            this.loadDeletedItems(); // 削除済みアイテムを最初に読み込み
-            this.loadBooksFromStorage();
-            this.loadBookOrder();
-            this.loadAllRecords();
-            this.loadSavedQuestionStates();
-            this.loadStudyPlans();
-            this.loadCSVTemplates();
-            this.loadQAQuestions();
-            this.loadExamDate();
-            this.loadAnalysisCardOrder();
-            this.loadPinnedSettings();
-        } catch (error) {
-            console.error('データ読み込みエラー:', error);
+    try {
+        this.loadDeletedItems(); // ★重要: 削除済みアイテムを最初に読み込み
+        this.loadBooksFromStorage();
+        this.loadBookOrder();
+        this.loadAllRecords();
+        this.loadSavedQuestionStates();
+        this.loadStudyPlans();
+        this.loadCSVTemplates();
+        this.loadQAQuestions();
+        this.loadExamDate();
+        this.loadAnalysisCardOrder();
+        this.loadPinnedSettings();
+    } catch (error) {
+        console.error('Error loading data:', error);
         }
     }
 
@@ -856,15 +856,29 @@ loadBooksFromStorage() {
         const stored = localStorage.getItem('studyTrackerBooks');
         if (stored) {
             const parsedData = JSON.parse(stored);
-            // データ形式の妥当性チェック
-            if (parsedData && typeof parsedData === 'object') {
-                // 削除済みアイテムを除外
-                this.books = this.filterDeletedItems(parsedData, 'books');
-                // 古いデータ形式の変換（必要に応じて）
-                this.migrateOldDataFormat();
+            if (typeof parsedData === 'object') {
+                // 削除済み問題集を除外
+                const filteredBooks = {};
+                Object.keys(parsedData).forEach(bookId => {
+                    if (!this.isDeleted('books', bookId)) {
+                        const book = parsedData[bookId];
+                        // 削除済み階層を除外
+                        if (book.structure) {
+                            book.structure = this.filterDeletedHierarchy(
+                                book.structure,
+                                bookId,
+                                []
+                            );
+                        }
+                        filteredBooks[bookId] = book;
+                    }
+                });
+                this.books = filteredBooks;
             } else {
                 this.books = {};
             }
+        } else {
+            this.books = {};
         }
     } catch (error) {
         console.error('Error loading books:', error);
