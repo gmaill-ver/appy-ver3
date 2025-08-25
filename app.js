@@ -1596,50 +1596,112 @@ if (window.Analytics) {
     });
 }
 
-    editBookProperties(bookId) {
-        const book = DataManager.books[bookId];
-        if (!book) return;
-
-        const dialogBody = `
-            <div class="form-group">
-                <label class="form-label">問題集名</label>
-                <input type="text" class="form-control" id="editBookName" value="${book.name}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">問題番号タイプ</label>
-                <div class="numbering-type">
-                    <label>
-                        <input type="radio" name="editNumberingType" value="reset" ${book.numberingType === 'reset' ? 'checked' : ''}>
-                        <span>項目ごとリセット</span>
-                    </label>
-                    <label>
-                        <input type="radio" name="editNumberingType" value="continuous" ${book.numberingType === 'continuous' ? 'checked' : ''}>
-                        <span>連番</span>
-                    </label>
-                </div>
-            </div>
-        `;
+    /**
+     * 問題集の全チェックを外す（★新規追加）
+     */
+    resetBookAllChecks(bookId) {
+        if (!confirm('この問題集のすべてのチェック（正解・不正解・ブックマーク）をリセットしますか？')) {
+            return;
+        }
         
-        this.showDialog('問題集を編集', dialogBody, () => {
-            const newName = document.getElementById('editBookName')?.value;
-            const newNumberingType = document.querySelector('input[name="editNumberingType"]:checked')?.value;
-            
-            if (newName) {
-                book.name = newName;
-                book.numberingType = newNumberingType || 'reset';
-                DataManager.saveBooksToStorage();
-                this.renderBookCards();
-                
-                // Analyticsが存在する場合のみ更新
-                if (window.Analytics) {
-                    Analytics.updateHeatmapBookSelect();
-                    Analytics.updateRadarBookSelect();
-                }
-                
-                this.closeDialog();
-                this.showBookListDialog();
+        const book = DataManager.books[bookId];
+        if (!book) {
+            alert('問題集が見つかりません');
+            return;
+        }
+        
+        console.log(`🔄 問題集「${book.name}」の全チェックリセット開始`);
+        
+        // この問題集に関連するすべての保存済み問題状態を削除
+        const keysToDelete = [];
+        Object.keys(DataManager.savedQuestionStates).forEach(key => {
+            if (key.startsWith(bookId + '_')) {
+                keysToDelete.push(key);
             }
         });
+        
+        // 削除実行
+        keysToDelete.forEach(key => {
+            delete DataManager.savedQuestionStates[key];
+        });
+        
+        // 保存
+        localStorage.setItem('savedQuestionStates', JSON.stringify(DataManager.savedQuestionStates));
+        
+        // Firebase同期
+        if (window.ULTRA_STABLE_USER_ID && typeof DataManager.saveToFirestore === 'function') {
+            DataManager.saveToFirestore({
+                type: 'resetChecks',
+                action: 'resetAll',
+                bookId: bookId,
+                bookName: book.name,
+                resetCount: keysToDelete.length,
+                message: `「${book.name}」のチェックをリセットしました`
+            });
+        }
+        
+        console.log(`✅ ${keysToDelete.length}件の問題状態をリセット`);
+        
+        // 現在表示中の問題集の場合は画面を更新
+        if (this.currentBook && this.currentBook.id === bookId) {
+            // 問題状態をクリア
+            this.questionStates = {};
+            
+            // UIからもクラスを削除
+            const cells = document.querySelectorAll('.question-cell');
+            cells.forEach(cell => {
+                cell.classList.remove('correct', 'wrong', 'bookmarked');
+            });
+            
+            // 統計を更新
+            this.updateStats();
+        }
+        
+        // 通知表示
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: linear-gradient(135deg, #f44336, #e91e63);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.3);
+            z-index: 9999;
+            font-weight: 600;
+            animation: slideInRight 0.3s ease;
+        `;
+        notification.innerHTML = `🔄 「${book.name}」のチェックをリセットしました`;
+        
+        // アニメーション追加
+        if (!document.querySelector('#resetNotificationStyle')) {
+            const style = document.createElement('style');
+            style.id = 'resetNotificationStyle';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+        
+        // ダイアログを更新
+        this.showBookListDialog();
     }
 
     addHierarchy(bookId, parentPath, type, event) {
