@@ -435,9 +435,9 @@
 
     <!-- 🔥 完全固定ユーザーID版Firebase統合コード（キャッシュクリア完全対応） -->
     <script>
-    console.log("🚀 修正版Firebase統合開始");
+    console.log("🚀 Firebase統合開始（カテゴリー分割対応・完全修正版）");
 
-// Firebase設定とオフライン永続化
+// 🔧 Firebase設定とオフライン永続化
 try {
     firebase.firestore().enablePersistence({ 
         synchronizeTabs: true,
@@ -455,7 +455,7 @@ try {
     console.error("Firebase設定エラー:", error);
 }
 
-// 超安定固定ユーザーID生成（修正版）
+// 🔑 超安定固定ユーザーID生成（完全固定版）
 function generateUltraStableUserId() {
     const stableElements = [
         navigator.userAgent.split(' ')[0],
@@ -482,621 +482,373 @@ function generateUltraStableUserId() {
     return `${deviceType}_${baseId}_permanent`;
 }
 
-// 複数ストレージからの確実なID取得（修正版）
+// 🏪 複数ストレージからの確実なID取得
 async function getOrCreateFixedUserId() {
     console.log("🔍 固定ID取得・生成開始");
     
-    // 既存IDを複数の場所から検索
-    let existingId = localStorage.getItem('ultraStableUserId') ||
-                    sessionStorage.getItem('ultraStableUserId') ||
-                    getCookieValue('ultraStableUserId') ||
-                    await loadFromIndexedDB('ultraStableUserId');
-    
-    if (existingId) {
-        console.log("✅ 既存固定ID取得:", existingId.substring(0, 20) + '...');
-        await backupIdToAllStorages(existingId);
-        return existingId;
+    // 1. LocalStorageから取得
+    let userId = localStorage.getItem('ultraStableUserId');
+    if (userId) {
+        console.log("✅ LocalStorageから固定ID取得:", userId);
+        return userId;
     }
     
-    // Firebase検索
-    const calculatedId = generateUltraStableUserId();
-    const firebaseId = await searchExistingDataInFirebase(calculatedId);
-    if (firebaseId) {
-        console.log("✅ Firebaseから既存データ発見");
-        await backupIdToAllStorages(firebaseId);
-        return firebaseId;
-    }
-    
-    // 新規ID生成
-    console.log("🆕 新しい超安定固定ID生成");
-    await backupIdToAllStorages(calculatedId);
-    return calculatedId;
-}
-
-// Firebase既存データ検索（修正版：統一コレクション名）
-async function searchExistingDataInFirebase(calculatedId) {
-    try {
-        console.log("🔍 Firebase既存データ検索中...");
-        
-        // ★修正: permanentUsersコレクション統一
-        const directDoc = await db.collection('permanentUsers').doc(calculatedId).get();
-        if (directDoc.exists) {
-            console.log("✅ Firebase直接検索ヒット");
-            return calculatedId;
-        }
-        
-        const fingerprint = generateUltraStableUserId().split('_')[1];
-        const querySnapshot = await db.collection('permanentUsers')
-            .where('deviceFingerprint', '==', fingerprint)
-            .limit(1)
-            .get();
-        
-        if (!querySnapshot.empty) {
-            const doc = querySnapshot.docs[0];
-            console.log("✅ Firebase指紋検索ヒット");
-            return doc.id;
-        }
-        
-        console.log("📭 Firebase既存データなし");
-        return null;
-    } catch (error) {
-        console.error("Firebase検索エラー:", error);
-        return null;
-    }
-}
-
-// 全ストレージにバックアップ（修正版：エラーハンドリング強化）
-async function backupIdToAllStorages(userId) {
-    try {
+    // 2. SessionStorageから取得
+    userId = sessionStorage.getItem('ultraStableUserId');
+    if (userId) {
+        console.log("✅ SessionStorageから固定ID取得:", userId);
         localStorage.setItem('ultraStableUserId', userId);
-        sessionStorage.setItem('ultraStableUserId', userId);
-        setCookie('ultraStableUserId', userId, 365);
-        await saveToIndexedDB('ultraStableUserId', userId);
-        console.log("💾 全ストレージにID保存完了:", userId.substring(0, 20) + '...');
-    } catch (error) {
-        console.error("ストレージ保存エラー:", error);
-        // 最低限LocalStorageには保存
-        try {
-            localStorage.setItem('ultraStableUserId', userId);
-        } catch (localError) {
-            console.error("LocalStorage保存も失敗:", localError);
-        }
+        return userId;
     }
+    
+    // 3. 新規生成
+    userId = generateUltraStableUserId();
+    console.log("🆕 新規固定ID生成:", userId);
+    
+    // 全ストレージに保存
+    localStorage.setItem('ultraStableUserId', userId);
+    sessionStorage.setItem('ultraStableUserId', userId);
+    
+    return userId;
 }
 
-// Cookie操作
-function setCookie(name, value, days) {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax;Secure`;
-}
-
-function getCookieValue(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-// IndexedDB操作（修正版：エラーハンドリング強化）
-function saveToIndexedDB(key, value) {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open('StudyTrackerPermanentDB', 1);
-            
-            request.onupgradeneeded = function(e) {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains('permanentData')) {
-                    db.createObjectStore('permanentData', { keyPath: 'key' });
-                }
-            };
-            
-            request.onsuccess = function(e) {
-                const db = e.target.result;
-                try {
-                    if (!db.objectStoreNames.contains('permanentData')) {
-                        resolve(false);
-                        return;
-                    }
-                    
-                    const transaction = db.transaction(['permanentData'], 'readwrite');
-                    const store = transaction.objectStore('permanentData');
-                    
-                    store.put({ 
-                        key: key, 
-                        value: value, 
-                        timestamp: Date.now()
-                    });
-                    
-                    transaction.oncomplete = () => resolve(true);
-                    transaction.onerror = () => resolve(false);
-                    
-                } catch (error) {
-                    resolve(false);
-                }
-            };
-            
-            request.onerror = () => resolve(false);
-            
-        } catch (error) {
-            resolve(false);
-        }
-    });
-}
-
-function loadFromIndexedDB(key) {
-    return new Promise((resolve) => {
-        try {
-            const request = indexedDB.open('StudyTrackerPermanentDB', 1);
-            
-            request.onsuccess = function(e) {
-                const db = e.target.result;
-                try {
-                    if (!db.objectStoreNames.contains('permanentData')) {
-                        resolve(null);
-                        return;
-                    }
-                    
-                    const transaction = db.transaction(['permanentData'], 'readonly');
-                    const store = transaction.objectStore('permanentData');
-                    const getRequest = store.get(key);
-                    
-                    getRequest.onsuccess = function() {
-                        resolve(getRequest.result?.value || null);
-                    };
-                    
-                    getRequest.onerror = () => resolve(null);
-                    
-                } catch (error) {
-                    resolve(null);
-                }
-            };
-            
-            request.onerror = () => resolve(null);
-            
-        } catch (error) {
-            resolve(null);
-        }
-    });
-}
-
-// グローバル固定ID
+// 🚀 固定IDの初期化と設定
 let ULTRA_STABLE_USER_ID = null;
 
-// 初期化メイン処理（修正版）
-(async function initializeFirebaseIntegration() {
+(async function initializeUltraStableId() {
     try {
-        console.log("🔄 Firebase統合初期化開始");
-        
-        // 固定ID取得・生成
         ULTRA_STABLE_USER_ID = await getOrCreateFixedUserId();
-        console.log("🔒 確定した超安定固定ID:", ULTRA_STABLE_USER_ID.substring(0, 20) + '...');
-        
-        // グローバルからアクセス可能に
         window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
+        console.log("🔒 超安定固定ID設定完了:", ULTRA_STABLE_USER_ID);
         
-        // Firebase操作の強化版を設定
-        setupEnhancedFirebaseOperations();
+        // DataManagerの拡張
+        extendDataManager();
         
-        console.log("✅ Firebase統合初期化完了");
-        
-        // DataManagerの初期化を促進
-        if (window.DataManager && !DataManager.initialized) {
-            setTimeout(async () => {
-                await DataManager.initialize();
-            }, 100);
-        }
+        // 即座にデータ読み込み
+        await loadFromFirebaseInstantly();
         
     } catch (error) {
-        console.error("❌ Firebase統合初期化エラー:", error);
+        console.error("固定ID初期化エラー:", error);
     }
 })();
 
-// Firebase操作設定（修正版：統一コレクション名と完全データ保存）
-function setupEnhancedFirebaseOperations() {
-    // 強化版保存処理
-    DataManager.saveToFirestore = async function(data) {
+// 📊 DataManager拡張（カテゴリー分割対応・完全修正版）
+function extendDataManager() {
+    if (!window.DataManager) {
+        console.warn("DataManager未定義");
+        return;
+    }
+    
+    console.log("🔧 DataManager拡張開始（カテゴリー分割対応）");
+    
+    // ★完全修正版: カテゴリー分割保存
+    DataManager.saveToFirestore = async function(additionalData = {}) {
+        if (!ULTRA_STABLE_USER_ID) return false;
+        
         try {
-            if (!ULTRA_STABLE_USER_ID) {
-                console.error("❌ 固定IDが未設定");
-                return false;
+            console.log("💾 カテゴリー分割Firebase保存開始");
+            const batch = db.batch();
+            const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+            
+            // メインドキュメント（メタデータと小さいデータ）
+            const mainDoc = userRef;
+            const mainData = {
+                userId: ULTRA_STABLE_USER_ID,
+                lastSyncTime: firebase.firestore.FieldValue.serverTimestamp(),
+                deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
+                examDate: this.examDate ? this.examDate.toISOString() : null,
+                bookOrder: this.bookOrder || [],
+                analysisCardOrder: this.analysisCardOrder || [],
+                heatmapPinnedBook: this.heatmapPinnedBook || null,
+                radarPinnedBook: this.radarPinnedBook || null,
+                deletedItems: this.deletedItems || [],
+                syncCount: firebase.firestore.FieldValue.increment(1),
+                ...additionalData
+            };
+            batch.set(mainDoc, mainData, { merge: true });
+            
+            // サブコレクション1: 問題集データ
+            if (this.books && Object.keys(this.books).length > 0) {
+                const booksRef = userRef.collection('books').doc('data');
+                batch.set(booksRef, {
+                    books: this.books,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
             
-            console.log("📤 Firebase保存開始（強化版）");
-            
-            // ★修正: permanentUsersコレクション統一
-            const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-            
-            // 既存データを取得
-            let existingData = {};
-            try {
-                const doc = await userRef.get();
-                if (doc.exists) {
-                    existingData = doc.data();
-                }
-            } catch (error) {
-                console.warn("既存データ取得エラー:", error);
+            // サブコレクション2: 学習記録（大きいデータ）
+            if (this.allRecords && this.allRecords.length > 0) {
+                const recordsRef = userRef.collection('records').doc('data');
+                // 最新500件のみ保存（容量制限対策）
+                const recentRecords = this.allRecords.slice(-500);
+                batch.set(recordsRef, {
+                    records: recentRecords,
+                    totalCount: this.allRecords.length,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
             
-            // メタデータを更新
-            existingData.userId = ULTRA_STABLE_USER_ID;
-            existingData.deviceFingerprint = ULTRA_STABLE_USER_ID.split('_')[1];
-            existingData.lastUpdated = new Date().toISOString();
-            existingData.lastDevice = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop';
-            existingData.syncCount = (existingData.syncCount || 0) + 1;
-            
-            if (!existingData.createdAt) {
-                existingData.createdAt = new Date().toISOString();
+            // サブコレクション3: 学習計画
+            if (this.studyPlans && this.studyPlans.length > 0) {
+                const plansRef = userRef.collection('plans').doc('data');
+                batch.set(plansRef, {
+                    plans: this.studyPlans,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
             
-            // 学習記録を追加
-            if (data) {
-                if (!existingData.studyRecords) {
-                    existingData.studyRecords = [];
-                }
-                
-                const newRecord = {
-                    ...data,
-                    timestamp: new Date().toISOString(),
-                    deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
-                    recordId: 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
-                };
-                
-                existingData.studyRecords.unshift(newRecord);
-                
-                // 最新100件まで保持
-                if (existingData.studyRecords.length > 100) {
-                    existingData.studyRecords = existingData.studyRecords.slice(0, 100);
-                }
+            // サブコレクション4: 一問一答
+            if (this.qaQuestions && Object.keys(this.qaQuestions).length > 0) {
+                const qaRef = userRef.collection('qa').doc('data');
+                batch.set(qaRef, {
+                    questions: this.qaQuestions,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
             
-            // 全データを統合保存
-            existingData.allRecords = DataManager.allRecords || [];
-            existingData.books = DataManager.books || {};
-            existingData.studyPlans = DataManager.studyPlans || [];
-            existingData.qaQuestions = DataManager.qaQuestions || {};
-            existingData.csvTemplates = DataManager.csvTemplates || {};
-            existingData.examDate = DataManager.examDate ? DataManager.examDate.toISOString() : null;
-            existingData.heatmapPinnedBook = DataManager.heatmapPinnedBook || null;
-            existingData.radarPinnedBook = DataManager.radarPinnedBook || null;
-            existingData.bookOrder = DataManager.bookOrder || [];
-            existingData.analysisCardOrder = DataManager.analysisCardOrder || [];
-            existingData.deletedItems = DataManager.deletedItems || [];
-            existingData.savedQuestionStates = DataManager.savedQuestionStates || {};
-            
-            // 要点確認データも保存
-            if (window.KeyPointsModule && KeyPointsModule.subjects) {
-                existingData.keyPointsData = KeyPointsModule.subjects;
+            // サブコレクション5: CSVテンプレート
+            if (this.csvTemplates && Object.keys(this.csvTemplates).length > 0) {
+                const csvRef = userRef.collection('csv').doc('data');
+                batch.set(csvRef, {
+                    templates: this.csvTemplates,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
             
-            // Firestore保存
-            await userRef.set(existingData, { merge: true });
+            // サブコレクション6: 問題状態
+            if (this.savedQuestionStates && Object.keys(this.savedQuestionStates).length > 0) {
+                const statesRef = userRef.collection('states').doc('data');
+                batch.set(statesRef, {
+                    states: this.savedQuestionStates,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
             
-            console.log("✅ Firebase保存成功（強化版）");
-            showSuccessNotification(existingData.studyRecords?.length || 0, existingData.syncCount);
+            // バッチコミット
+            await batch.commit();
+            console.log("✅ カテゴリー分割Firebase保存完了");
             
             return true;
         } catch (error) {
             console.error("❌ Firebase保存エラー:", error);
-            showErrorNotification(error.message);
             return false;
         }
     };
     
-    // 強化版読み込み処理
+    // ★完全修正版: カテゴリー分割読み込み
     DataManager.loadFromFirestore = async function() {
         if (!ULTRA_STABLE_USER_ID) return;
         
-        console.log("📥 Firebase読み込み開始（強化版）");
+        console.log("📥 カテゴリー分割Firebase読み込み開始");
         
-        // ★修正: permanentUsersコレクション統一
-        const userRef = db.collection('permanentUsers').doc(ULTRA_STABLE_USER_ID);
-        
-        // リアルタイム監視
-        userRef.onSnapshot((doc) => {
-            if (doc.exists) {
-                const userData = doc.data();
-                console.log("📥 Firebase更新検知");
-                restoreAllDataFromFirebase(userData);
-            } else {
-                console.log("📭 Firebaseデータなし");
-            }
-        }, (error) => {
-            console.error("❌ リアルタイム監視エラー:", error);
-        });
-    };
-}
-
-// 全データ復元処理（修正版：完全復元対応）
-function restoreAllDataFromFirebase(userData) {
-    if (!userData || typeof userData !== 'object') {
-        console.warn("無効なFirebaseデータ");
-        return;
-    }
-    
-    let restoredCount = 0;
-    
-    try {
-        // 削除済みアイテムリストを最初に復元
-        if (userData.deletedItems && Array.isArray(userData.deletedItems)) {
-            DataManager.deletedItems = userData.deletedItems;
-            localStorage.setItem('deletedItems', JSON.stringify(userData.deletedItems));
-            restoredCount++;
-        }
-        
-        // 学習履歴
-        if (userData.allRecords && Array.isArray(userData.allRecords)) {
-            DataManager.allRecords = userData.allRecords;
-            localStorage.setItem('studyHistory', JSON.stringify(userData.allRecords));
-            restoredCount++;
-        }
-        
-        // 問題集（削除済み除外）
-        if (userData.books && typeof userData.books === 'object') {
-            const filteredBooks = {};
-            Object.keys(userData.books).forEach(bookId => {
-                if (!DataManager.isDeleted('books', bookId)) {
-                    const book = userData.books[bookId];
-                    if (book.structure) {
-                        book.structure = DataManager.filterDeletedHierarchy(book.structure, bookId, []);
-                    }
-                    filteredBooks[bookId] = book;
-                }
-            });
-            DataManager.books = filteredBooks;
-            localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
-            restoredCount++;
-        }
-        
-        // 問題集順序（削除済み除外）
-        if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
-            DataManager.bookOrder = userData.bookOrder.filter(id => !DataManager.isDeleted('books', id));
-            localStorage.setItem('bookOrder', JSON.stringify(DataManager.bookOrder));
-            restoredCount++;
-        }
-        
-        // 学習計画
-        if (userData.studyPlans && Array.isArray(userData.studyPlans)) {
-            const filteredPlans = userData.studyPlans.filter(plan => 
-                plan && !DataManager.isDeleted('studyPlans', plan.id)
-            );
-            DataManager.studyPlans = filteredPlans;
-            localStorage.setItem('studyPlans', JSON.stringify(DataManager.studyPlans));
-            restoredCount++;
-        }
-        
-        // 一問一答
-        if (userData.qaQuestions && typeof userData.qaQuestions === 'object') {
-            const filteredQA = {};
-            Object.keys(userData.qaQuestions).forEach(setName => {
-                if (!DataManager.isDeleted('qaQuestions', setName)) {
-                    const questions = userData.qaQuestions[setName];
-                    if (Array.isArray(questions)) {
-                        const filteredQuestions = questions.filter(q => 
-                            !DataManager.isDeletedQAQuestion(setName, q.id)
-                        );
-                        if (filteredQuestions.length > 0) {
-                            filteredQA[setName] = filteredQuestions;
-                        }
-                    }
-                }
-            });
-            DataManager.qaQuestions = filteredQA;
-            localStorage.setItem('qaQuestions', JSON.stringify(DataManager.qaQuestions));
-            restoredCount++;
-        }
-        
-        // CSVテンプレート
-        if (userData.csvTemplates && typeof userData.csvTemplates === 'object') {
-            const filteredTemplates = {};
-            Object.keys(userData.csvTemplates).forEach(templateId => {
-                if (!DataManager.isDeleted('csvTemplates', templateId)) {
-                    filteredTemplates[templateId] = userData.csvTemplates[templateId];
-                }
-            });
-            DataManager.csvTemplates = filteredTemplates;
-            localStorage.setItem('csvTemplates', JSON.stringify(DataManager.csvTemplates));
-            restoredCount++;
-        }
-        
-        // 問題チェック状態
-        if (userData.savedQuestionStates && typeof userData.savedQuestionStates === 'object') {
-            DataManager.savedQuestionStates = userData.savedQuestionStates;
-            localStorage.setItem('savedQuestionStates', JSON.stringify(userData.savedQuestionStates));
-            restoredCount++;
-        }
-        
-        // 要点確認データ
-        if (userData.keyPointsData && typeof userData.keyPointsData === 'object') {
-            localStorage.setItem('keyPointsData', JSON.stringify(userData.keyPointsData));
-            if (window.KeyPointsModule && KeyPointsModule.subjects) {
-                KeyPointsModule.subjects = userData.keyPointsData;
-            }
-            restoredCount++;
-        }
-        
-        // 試験日
-        if (userData.examDate) {
-            try {
-                DataManager.examDate = new Date(userData.examDate);
-                localStorage.setItem('examDate', userData.examDate);
-                restoredCount++;
-            } catch (e) {
-                console.warn("試験日データが無効:", userData.examDate);
-            }
-        }
-        
-        // その他設定
-        if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
-            DataManager.bookOrder = userData.bookOrder.filter(id => !DataManager.isDeleted('books', id));
-            localStorage.setItem('bookOrder', JSON.stringify(DataManager.bookOrder));
-        }
-        
-        if (userData.heatmapPinnedBook && !DataManager.isDeleted('books', userData.heatmapPinnedBook)) {
-            DataManager.heatmapPinnedBook = userData.heatmapPinnedBook;
-            localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
-        }
-        
-        if (userData.radarPinnedBook && !DataManager.isDeleted('books', userData.radarPinnedBook)) {
-            DataManager.radarPinnedBook = userData.radarPinnedBook;
-            localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
-        }
-        
-        if (userData.analysisCardOrder && Array.isArray(userData.analysisCardOrder)) {
-            DataManager.analysisCardOrder = userData.analysisCardOrder;
-            localStorage.setItem('analysisCardOrder', JSON.stringify(userData.analysisCardOrder));
-        }
-        
-        console.log(`✅ データ復元完了 - ${restoredCount}項目`);
-        
-        if (restoredCount > 0) {
-            showRestoreNotification(restoredCount, userData.syncCount || 0);
-            updateAllUI();
-        }
-        
-    } catch (error) {
-        console.error("❌ データ復元エラー:", error);
-    }
-}
-
-// UI更新（修正版：カレンダー再描画強化）
-function updateAllUI() {
-    setTimeout(() => {
         try {
+            const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+            
+            // メインドキュメント読み込み
+            const mainDoc = await userRef.get();
+            if (mainDoc.exists) {
+                const mainData = mainDoc.data();
+                
+                // ★重要: 削除済みアイテムを最初に復元
+                if (mainData.deletedItems && Array.isArray(mainData.deletedItems)) {
+                    this.deletedItems = mainData.deletedItems;
+                    localStorage.setItem('deletedItems', JSON.stringify(mainData.deletedItems));
+                    console.log(`🗑️ 削除済みアイテム復元: ${mainData.deletedItems.length}件`);
+                }
+                
+                // メタデータ復元
+                if (mainData.bookOrder) {
+                    this.bookOrder = mainData.bookOrder.filter(id => !this.isDeleted('books', id));
+                    localStorage.setItem('bookOrder', JSON.stringify(this.bookOrder));
+                }
+                
+                if (mainData.analysisCardOrder) {
+                    this.analysisCardOrder = mainData.analysisCardOrder;
+                    localStorage.setItem('analysisCardOrder', JSON.stringify(this.analysisCardOrder));
+                }
+                
+                if (mainData.examDate) {
+                    this.examDate = new Date(mainData.examDate);
+                    localStorage.setItem('examDate', mainData.examDate);
+                }
+                
+                if (mainData.heatmapPinnedBook) {
+                    this.heatmapPinnedBook = mainData.heatmapPinnedBook;
+                    localStorage.setItem('heatmapPinnedBook', mainData.heatmapPinnedBook);
+                }
+                
+                if (mainData.radarPinnedBook) {
+                    this.radarPinnedBook = mainData.radarPinnedBook;
+                    localStorage.setItem('radarPinnedBook', mainData.radarPinnedBook);
+                }
+            }
+            
+            // サブコレクション読み込み（並列処理）
+            const [booksDoc, recordsDoc, plansDoc, qaDoc, csvDoc, statesDoc] = await Promise.all([
+                userRef.collection('books').doc('data').get(),
+                userRef.collection('records').doc('data').get(),
+                userRef.collection('plans').doc('data').get(),
+                userRef.collection('qa').doc('data').get(),
+                userRef.collection('csv').doc('data').get(),
+                userRef.collection('states').doc('data').get()
+            ]);
+            
+            // 問題集復元（削除済み除外）
+            if (booksDoc.exists && booksDoc.data().books) {
+                const books = booksDoc.data().books;
+                const filteredBooks = {};
+                Object.keys(books).forEach(bookId => {
+                    if (!this.isDeleted('books', bookId)) {
+                        filteredBooks[bookId] = books[bookId];
+                    }
+                });
+                this.books = filteredBooks;
+                localStorage.setItem('studyTrackerBooks', JSON.stringify(filteredBooks));
+                console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件`);
+            }
+            
+            // 学習記録復元
+            if (recordsDoc.exists && recordsDoc.data().records) {
+                this.allRecords = recordsDoc.data().records;
+                localStorage.setItem('studyHistory', JSON.stringify(this.allRecords));
+                console.log(`📝 学習記録復元: ${this.allRecords.length}件`);
+            }
+            
+            // 学習計画復元（削除済み除外）
+            if (plansDoc.exists && plansDoc.data().plans) {
+                const plans = plansDoc.data().plans;
+                this.studyPlans = plans.filter(plan => !this.isDeleted('studyPlans', plan.id));
+                localStorage.setItem('studyPlans', JSON.stringify(this.studyPlans));
+                console.log(`📅 学習計画復元: ${this.studyPlans.length}件`);
+            }
+            
+            // 一問一答復元（削除済み除外）
+            if (qaDoc.exists && qaDoc.data().questions) {
+                const questions = qaDoc.data().questions;
+                const filteredQuestions = {};
+                Object.keys(questions).forEach(setId => {
+                    if (!this.isDeleted('qaQuestions', setId)) {
+                        filteredQuestions[setId] = questions[setId];
+                    }
+                });
+                this.qaQuestions = filteredQuestions;
+                localStorage.setItem('qaQuestions', JSON.stringify(filteredQuestions));
+                console.log(`❓ 一問一答復元: ${Object.keys(filteredQuestions).length}セット`);
+            }
+            
+            // CSVテンプレート復元（削除済み除外）
+            if (csvDoc.exists && csvDoc.data().templates) {
+                const templates = csvDoc.data().templates;
+                const filteredTemplates = {};
+                Object.keys(templates).forEach(templateId => {
+                    if (!this.isDeleted('csvTemplates', templateId)) {
+                        filteredTemplates[templateId] = templates[templateId];
+                    }
+                });
+                this.csvTemplates = filteredTemplates;
+                localStorage.setItem('csvTemplates', JSON.stringify(filteredTemplates));
+                console.log(`📄 CSVテンプレート復元: ${Object.keys(filteredTemplates).length}件`);
+            }
+            
+            // 問題状態復元
+            if (statesDoc.exists && statesDoc.data().states) {
+                this.savedQuestionStates = statesDoc.data().states;
+                localStorage.setItem('savedQuestionStates', JSON.stringify(this.savedQuestionStates));
+                console.log(`✏️ 問題状態復元: ${Object.keys(this.savedQuestionStates).length}件`);
+            }
+            
+            // UIを更新
             if (window.App && typeof App.renderBookCards === 'function') {
                 App.renderBookCards();
             }
             if (window.Analytics) {
-                if (typeof Analytics.updateHistoryContent === 'function') {
-                    Analytics.updateHistoryContent();
-                }
-                if (typeof Analytics.updateHeatmapBookSelect === 'function') {
-                    Analytics.updateHeatmapBookSelect();
-                }
-                if (typeof Analytics.updateRadarBookSelect === 'function') {
-                    Analytics.updateRadarBookSelect();
-                }
+                Analytics.updateHeatmapBookSelect();
+                Analytics.updateRadarBookSelect();
             }
-            if (window.UIComponents) {
-                if (typeof UIComponents.renderCalendar === 'function') {
-                    UIComponents.renderCalendar();
-                }
-                if (typeof UIComponents.updateExamCountdown === 'function') {
-                    UIComponents.updateExamCountdown();
-                }
-            }
-            if (window.KeyPointsModule && typeof KeyPointsModule.loadKeyPointsData === 'function') {
-                KeyPointsModule.loadKeyPointsData();
-            }
-            console.log("✅ UI更新完了");
+            
+            console.log("✅ カテゴリー分割Firebase読み込み完了");
+            
         } catch (error) {
-            console.error("⚠️ UI更新エラー:", error);
-        }
-    }, 300);
-}
-
-// 通知機能（修正版）
-function showSuccessNotification(recordCount, syncCount) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #4caf50, #66bb6a);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
-        z-index: 9999;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `
-        ✅ 保存完了！<br>
-        記録: ${recordCount}件<br>
-        同期: ${syncCount}回
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 3000);
-}
-
-function showRestoreNotification(restoredCount, syncCount) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: linear-gradient(135deg, #2196f3, #42a5f5);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
-        z-index: 9999;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `
-        🔄 データ復元完了！<br>
-        復元: ${restoredCount}項目<br>
-        同期: ${syncCount}回
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 4000);
-}
-
-function showErrorNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #f44336, #ef5350);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(244, 67, 54, 0.4);
-        z-index: 9999;
-        font-weight: 600;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `❌ エラー<br>${message}`;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 5000);
-}
-
-// アニメーション追加
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
-
-// デバッグ用関数をグローバルに
-window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
-
-    // 🧹 リセット機能（デバッグ用）
-    window.resetUltraStableId = function() {
-        if (confirm('超安定IDをリセットしますか？\n\n⚠️新しいIDが生成されます')) {
-            localStorage.removeItem('ultraStableUserId');
-            sessionStorage.removeItem('ultraStableUserId');
-            setCookie('ultraStableUserId', '', -1);
-            location.reload();
+            console.error("❌ Firebase読み込みエラー:", error);
         }
     };
+    
+    // リアルタイム監視設定
+    const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+    userRef.onSnapshot((doc) => {
+        if (doc.exists && doc.data().lastSyncTime) {
+            console.log("📡 リアルタイム更新検知");
+            // 他デバイスからの更新を検知したら再読み込み
+            DataManager.loadFromFirestore();
+        }
+    });
+}
 
-    // デバッグ用関数をグローバルに
-    window.showIdInfo = showIdInfo;
-    window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
+// 📥 即座にデータ読み込み
+async function loadFromFirebaseInstantly() {
+    if (!ULTRA_STABLE_USER_ID || !window.DataManager) return;
+    
+    console.log("📥 即座Firebase読み込み開始");
+    
+    try {
+        await DataManager.loadFromFirestore();
+        console.log("✅ 即座Firebase読み込み完了");
+    } catch (error) {
+        console.error("❌ 即座読み込みエラー:", error);
+    }
+}
 
-    console.log("🔒 超安定Firebase統合完了");
-    console.log("🆔 現在のID:", ULTRA_STABLE_USER_ID);
-    console.log("🛠️ デバッグ: showIdInfo(), resetUltraStableId()");
+// 全モジュール拡張（DOMContentLoaded時）
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🎛️ 全モジュール拡張開始");
+    
+    setTimeout(() => {
+        // 各モジュールの保存メソッドを拡張
+        extendModuleSaveMethods();
+        console.log("✅ 全モジュールFirebase統合完了");
+    }, 1000);
+});
+
+// モジュール保存メソッドの拡張
+function extendModuleSaveMethods() {
+    // 学習記録保存の拡張
+    if (window.App && window.App.saveRecord) {
+        const originalSaveRecord = window.App.saveRecord;
+        window.App.saveRecord = function() {
+            originalSaveRecord.call(this);
+            DataManager.saveToFirestore({ type: "record", action: "save" });
+        };
+    }
+    
+    // 自動保存の拡張
+    if (window.App && window.App.autoSaveRecord) {
+        const originalAutoSave = window.App.autoSaveRecord;
+        window.App.autoSaveRecord = function() {
+            originalAutoSave.call(this);
+            DataManager.saveToFirestore({ type: "record", action: "autosave" });
+        };
+    }
+    
+    // 学習計画保存の拡張
+    if (window.UIComponents && window.UIComponents.savePlan) {
+        const originalSavePlan = window.UIComponents.savePlan;
+        window.UIComponents.savePlan = function() {
+            originalSavePlan.call(this);
+            DataManager.saveToFirestore({ type: "plan", action: "save" });
+        };
+    }
+    
+    // 一問一答保存の拡張
+    if (window.QAModule && window.QAModule.saveQuestions) {
+        const originalSaveQA = window.QAModule.saveQuestions;
+        window.QAModule.saveQuestions = function() {
+            originalSaveQA.call(this);
+            DataManager.saveToFirestore({ type: "qa", action: "save" });
+        };
+    }
+}
+
+console.log("✅ Firebase統合コード読み込み完了（カテゴリー分割対応版）");
     </script>
 </body>
 </html>
