@@ -76,14 +76,17 @@ class DataManagerClass {
             }
         }
         
-        if (window.ULTRA_STABLE_USER_ID) {
-            console.log('🔑 固定ID取得完了:', window.ULTRA_STABLE_USER_ID.substring(0, 20) + '...');
-            return true;
-        } else {
-            console.warn('⚠️ 固定ID取得タイムアウト（ローカルストレージのみで動作）');
-            return false;
-        }
+        if (window.ULTRA_STABLE_USER_ID && typeof this.saveToFirestore === 'function') {
+        this.saveToFirestore({
+            type: 'deletion',
+            action: 'markDeleted',
+            deletedType: type,
+            deletedId: id
+        });
     }
+
+    console.log(`🗑️ ${type}:${id} を削除済みとしてマーク`);
+}
 
     /**
      * Firebase初期化（修正版：一貫性のあるコレクション名）
@@ -513,38 +516,65 @@ class DataManagerClass {
      * 削除済みアイテムかチェック
      */
     isDeleted(type, id) {
-        return this.deletedItems.some(item => 
-            item.type === type && item.id === id
-        );
-    }
+    return this.deletedItems.some(item => 
+        item.type === type && item.id === id
+    );
+}
 
     /**
      * 削除済み階層アイテムを除外するフィルタ
      */
     filterDeletedHierarchy(structure, bookId, basePath) {
-        if (!structure || typeof structure !== 'object') {
-            return {};
-        }
+    if (!structure || typeof structure !== 'object') {
+        return structure;
+    }
+    
+    const filtered = {};
+    Object.keys(structure).forEach(key => {
+        const path = [...basePath, key].join('/');
+        const hierarchyId = `${bookId}_${path}`;
         
-        const filtered = {};
-        
-        Object.keys(structure).forEach(name => {
-            const currentPath = [...basePath, name];
-            const hierarchyId = `${bookId}_${currentPath.join('/')}`;
+        if (!this.isDeleted('hierarchy', hierarchyId)) {
+            filtered[key] = {
+                ...structure[key]
+            };
             
-            if (!this.isDeleted('hierarchy', hierarchyId)) {
-                const item = { ...structure[name] };
-                
-                if (item.children && Object.keys(item.children).length > 0) {
-                    item.children = this.filterDeletedHierarchy(item.children, bookId, currentPath);
-                }
-                
-                filtered[name] = item;
+            if (structure[key].children) {
+                filtered[key].children = this.filterDeletedHierarchy(
+                    structure[key].children,
+                    bookId,
+                    [...basePath, key]
+                );
+            }
+        }
+    });
+    
+    return filtered;
+}
+
+/**
+ * 削除済みアイテムをフィルタ（★重要：このメソッドが不足していました）
+ */
+filterDeletedItems(items, type) {
+    if (Array.isArray(items)) {
+        return items.filter(item => {
+            // itemがオブジェクトでidを持つ場合
+            if (item && typeof item === 'object' && item.id) {
+                return !this.isDeleted(type, item.id);
+            }
+            return true;
+        });
+    } else if (typeof items === 'object') {
+        const filtered = {};
+        Object.keys(items).forEach(key => {
+            if (!this.isDeleted(type, key)) {
+                filtered[key] = items[key];
             }
         });
-        
         return filtered;
     }
+    return items;
+}
 
     /**
      * 一問一答の個別問題が削除済みかチェック
@@ -560,13 +590,13 @@ class DataManagerClass {
     /**
      * アイテム削除処理（Firebase統合強化版）
      */
-    markAsDeleted(type, id, additionalData = {}) {
-        const deletedItem = {
-            type: type,
-            id: id,
-            deletedAt: new Date().toISOString(),
-            ...additionalData
-        };
+    markAsDeleted(type, id, metadata = {}) {
+    const deletedItem = {
+        type: type,
+        id: id,
+        deletedAt: new Date().toISOString(),
+        ...metadata
+    };
         
         this.deletedItems.push(deletedItem);
         this.saveDeletedItems();
@@ -634,17 +664,18 @@ class DataManagerClass {
      * 削除済みアイテム一覧の保存
      */
     saveDeletedItems() {
-        try {
-            localStorage.setItem('deletedItems', JSON.stringify(this.deletedItems));
-        } catch (error) {
-            console.error('削除済みアイテム保存エラー:', error);
-        }
+    try {
+        localStorage.setItem('deletedItems', JSON.stringify(this.deletedItems));
+    } catch (error) {
+        console.error('Error saving deleted items:', error);
     }
+}
 
-    /**
-     * 削除済みアイテム一覧の読み込み
-     */
-    loadDeletedItems() {
+    
+/**
+ * 削除済みアイテムの読み込み
+ */
+loadDeletedItems() {
     try {
         const saved = localStorage.getItem('deletedItems');
         if (saved) {
@@ -1128,10 +1159,12 @@ saveBookOrder() {
                 this.allRecords.push(record);
             }
             
-            // 最大1000件に制限
-            if (this.allRecords.length > 1000) {
-                this.allRecords = this.allRecords.slice(-1000);
-            }
+            // 最大500件に制限
+    if (this.deletedItems.length > 500) {
+        this.deletedItems = this.deletedItems.slice(-500);
+    }
+    
+    this.saveDeletedItems();
             
             localStorage.setItem('studyHistory', JSON.stringify(this.allRecords));
             
