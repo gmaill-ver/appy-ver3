@@ -46,7 +46,7 @@
                 <div class="card-header">
                     <span class="card-icon">✍️</span>
                     <span class="card-title">問題別正誤入力</span>
-                    <!-- ページネーション -->
+                    <!-- ★追加: ページネーション -->
                     <div class="question-nav-buttons">
                         <button class="nav-btn" onclick="App.navigateQuestion(-1)" title="前へ">◀</button>
                         <button class="nav-btn" onclick="App.navigateQuestion(1)" title="次へ">▶</button>
@@ -54,20 +54,20 @@
                 </div>
                 
                 <div class="action-buttons">
-                    <button class="action-btn correct" onclick="App.markCorrect()">
-                        <span style="font-size: 18px;">○</span>
-                    </button>
-                    <button class="action-btn wrong" onclick="App.markWrong()">
-                        <span style="font-size: 18px;">✕</span>
-                    </button>
-                    <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()">
-                        <span style="font-size: 16px;">✓</span>
-                    </button>
-                    <!-- リセットボタン -->
-                    <button class="action-btn reset" onclick="App.resetAllQuestions()">
-                        <span style="font-size: 16px;">↻</span>
-                    </button>
-                </div>
+    <button class="action-btn correct" onclick="App.markCorrect()">
+        <span style="font-size: 18px;">○</span>
+    </button>
+    <button class="action-btn wrong" onclick="App.markWrong()">
+        <span style="font-size: 18px;">✕</span>
+    </button>
+    <button class="action-btn bookmark" id="bookmarkBtn" onclick="App.toggleBookmarkMode()">
+        <span style="font-size: 16px;">✓</span>
+    </button>
+    <!-- ★追加: リセットボタン -->
+    <button class="action-btn reset" onclick="App.resetAllQuestions()">
+        <span style="font-size: 16px;">↻</span>
+    </button>
+</div>
                 
                 <div class="question-grid" id="questionGrid"></div>
                 
@@ -89,6 +89,7 @@
                         <div class="stat-label">正答率</div>
                     </div>
                 </div>
+                
             </div>
             
             <!-- カレンダー -->
@@ -113,6 +114,7 @@
         <div id="analysis-tab" class="tab-content">
             <button class="card-sort-btn" onclick="App.toggleAnalysisSort()">並替え</button>
             <div id="analysisCardsContainer">
+                <!-- 学習グラフ -->
                 <!-- 学習グラフ -->
                 <div class="accordion" data-card-id="chart">
                     <div class="accordion-header active" onclick="App.toggleAccordion(this)">
@@ -139,11 +141,11 @@
                     </div>
                     <div class="accordion-content active">
                         <div class="heatmap-controls" style="display: flex; gap: 10px; align-items: center;">
-                            <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()" style="flex: 1; min-width: 0;">
-                                <option value="">問題集を選択</option>
-                            </select>
-                            <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
-                        </div>
+    <select class="heatmap-select" id="heatmapBookSelect" onchange="Analytics.updateHeatmap()" style="flex: 1; min-width: 0;">
+        <option value="">問題集を選択</option>
+    </select>
+    <button class="heatmap-toggle-btn" id="heatmapToggleBtn" onclick="Analytics.toggleHeatmapPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
+</div>
                         <div class="heatmap-grid" id="heatmapGrid"></div>
                     </div>
                 </div>
@@ -190,11 +192,11 @@
                 <div class="radar-chart-container">
                     <div class="radar-chart-controls">
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-                            <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1; min-width: 0;">
-                                <option value="">問題集を選択</option>
-                            </select>
-                            <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
-                        </div>
+    <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1; min-width: 0;">
+        <option value="">問題集を選択</option>
+    </select>
+    <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
+</div>
                         <div style="display: flex; gap: 10px;">
                             <button class="chart-btn active" id="radarModeSubject" onclick="Analytics.setRadarMode('subject', this)">科目別</button>
                             <button class="chart-btn" id="radarModeCompare" onclick="Analytics.setRadarMode('compare', this)">問題集比較</button>
@@ -431,13 +433,13 @@
     <script src="keypoints-module.js"></script>
     <script src="app.js"></script>
 
-    <!-- 🔥 Firebase統合コード（CORS対応・完全修正版） -->
+    <!-- 🔥 完全固定ユーザーID版Firebase統合コード（キャッシュクリア完全対応） -->
     <script>
-    console.log("🚀 Firebase統合開始（CORS対応版）");
+    console.log("🚀 Firebase統合開始（カテゴリー分割対応・完全修正版）");
 
 // 🔧 Firebase設定とオフライン永続化（修正版）
 try {
-    // ★修正: Firestoreのオフライン永続化（エラー修正版）
+    // Firestoreのオフライン永続化（エラー修正版）
     firebase.firestore().enablePersistence({ 
         synchronizeTabs: true  // ★修正: experimentalForceOwningTabを削除
     }).then(() => {
@@ -447,31 +449,10 @@ try {
             console.log("⚠️ 複数タブ開いているため永続化無効");
         } else if (err.code === 'unimplemented') {
             console.log("⚠️ ブラウザが永続化非対応");
-        } else {
-            console.warn("⚠️ 永続化エラー:", err.code, err.message);
         }
     });
 } catch (error) {
     console.error("Firebase設定エラー:", error);
-}
-
-// ★追加: Firebase匿名認証でCORS問題を解決
-async function initializeFirebaseAuth() {
-    try {
-        // 匿名認証でログイン（CORS問題回避）
-        const userCredential = await firebase.auth().signInAnonymously();
-        const user = userCredential.user;
-        console.log("✅ Firebase匿名認証成功:", user.uid);
-        
-        // グローバル変数として設定
-        window.FIREBASE_USER = user;
-        
-        return user;
-    } catch (error) {
-        console.warn("⚠️ Firebase匿名認証エラー:", error);
-        console.log("📱 オフラインモードで継続");
-        return null;
-    }
 }
 
 // 🔑 超安定固定ユーザーID生成（完全固定版）
@@ -531,64 +512,48 @@ async function getOrCreateFixedUserId() {
     return userId;
 }
 
-// 🚀 固定IDの初期化と設定（匿名認証併用）
+// 🚀 固定IDの初期化と設定
 let ULTRA_STABLE_USER_ID = null;
-let FIREBASE_AUTH_USER = null;
 
 (async function initializeUltraStableId() {
     try {
-        // 1. 固定IDを生成
         ULTRA_STABLE_USER_ID = await getOrCreateFixedUserId();
         window.ULTRA_STABLE_USER_ID = ULTRA_STABLE_USER_ID;
         console.log("🔒 超安定固定ID設定完了:", ULTRA_STABLE_USER_ID);
         
-        // 2. Firebase匿名認証を試行
-        FIREBASE_AUTH_USER = await initializeFirebaseAuth();
-        
-        // 3. DataManagerの拡張
+        // DataManagerの拡張
         extendDataManager();
         
-        // 4. データ読み込み
+        // 即座にデータ読み込み
         await loadFromFirebaseInstantly();
         
     } catch (error) {
         console.error("固定ID初期化エラー:", error);
-        console.log("📱 ローカルストレージのみで動作継続");
     }
 })();
 
-// 📊 DataManager拡張（CORS対応・完全修正版）
+// 📊 DataManager拡張（カテゴリー分割対応・完全修正版）
 function extendDataManager() {
     if (!window.DataManager) {
         console.warn("DataManager未定義");
         return;
     }
     
-    console.log("🔧 DataManager拡張開始（CORS対応版）");
+    console.log("🔧 DataManager拡張開始（カテゴリー分割対応）");
     
-    // ★完全修正版: CORS対応Firebase保存
+    // ★完全修正版: カテゴリー分割保存
     DataManager.saveToFirestore = async function(additionalData = {}) {
-        if (!ULTRA_STABLE_USER_ID) {
-            console.log("📱 固定ID未設定のためローカル保存のみ");
-            return false;
-        }
-        
-        // Firebase認証ユーザーがいない場合はローカル保存のみ
-        if (!FIREBASE_AUTH_USER) {
-            console.log("📱 Firebase未認証のためローカル保存のみ");
-            return false;
-        }
+        if (!ULTRA_STABLE_USER_ID) return false;
         
         try {
-            console.log("💾 CORS対応Firebase保存開始");
+            console.log("💾 カテゴリー分割Firebase保存開始");
             const batch = db.batch();
+            const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
             
-            // ★修正: 認証済みユーザーのUIDを使用
-            const userRef = db.collection('users').doc(FIREBASE_AUTH_USER.uid);
-            
-            // メインドキュメント（メタデータ）
+            // メインドキュメント（メタデータと小さいデータ）
+            const mainDoc = userRef;
             const mainData = {
-                ultraStableUserId: ULTRA_STABLE_USER_ID, // ★追加: 固定IDも保存
+                userId: ULTRA_STABLE_USER_ID,
                 lastSyncTime: firebase.firestore.FieldValue.serverTimestamp(),
                 deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop',
                 examDate: this.examDate ? this.examDate.toISOString() : null,
@@ -600,7 +565,7 @@ function extendDataManager() {
                 syncCount: firebase.firestore.FieldValue.increment(1),
                 ...additionalData
             };
-            batch.set(userRef, mainData, { merge: true });
+            batch.set(mainDoc, mainData, { merge: true });
             
             // サブコレクション1: 問題集データ
             if (this.books && Object.keys(this.books).length > 0) {
@@ -611,9 +576,10 @@ function extendDataManager() {
                 }, { merge: true });
             }
             
-            // サブコレクション2: 学習記録（最新500件のみ）
+            // サブコレクション2: 学習記録（大きいデータ）
             if (this.allRecords && this.allRecords.length > 0) {
                 const recordsRef = userRef.collection('records').doc('data');
+                // 最新500件のみ保存（容量制限対策）
                 const recentRecords = this.allRecords.slice(-500);
                 batch.set(recordsRef, {
                     records: recentRecords,
@@ -658,43 +624,30 @@ function extendDataManager() {
                 }, { merge: true });
             }
             
-            // バッチコミット（CORS対応）
+            // バッチコミット
             await batch.commit();
-            console.log("✅ CORS対応Firebase保存完了");
-            
-            // 成功通知
-            showSaveNotification();
+            console.log("✅ カテゴリー分割Firebase保存完了");
             
             return true;
         } catch (error) {
             console.error("❌ Firebase保存エラー:", error);
-            console.log("📱 ローカル保存は完了済み");
-            
-            // エラー通知
-            showErrorNotification(error.message);
-            
             return false;
         }
     };
     
-    // ★完全修正版: CORS対応Firebase読み込み
+    // ★完全修正版: カテゴリー分割読み込み
     DataManager.loadFromFirestore = async function() {
-        if (!FIREBASE_AUTH_USER) {
-            console.log("📱 Firebase未認証のためローカルデータのみ使用");
-            return;
-        }
+        if (!ULTRA_STABLE_USER_ID) return;
         
-        console.log("📥 CORS対応Firebase読み込み開始");
+        console.log("📥 カテゴリー分割Firebase読み込み開始");
         
         try {
-            const userRef = db.collection('users').doc(FIREBASE_AUTH_USER.uid);
+            const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
             
             // メインドキュメント読み込み
             const mainDoc = await userRef.get();
             if (mainDoc.exists) {
                 const mainData = mainDoc.data();
-                
-                console.log("📊 Firebase固定ID確認:", mainData.ultraStableUserId);
                 
                 // ★重要: 削除済みアイテムを最初に復元
                 if (mainData.deletedItems && Array.isArray(mainData.deletedItems)) {
@@ -730,7 +683,7 @@ function extendDataManager() {
                 }
             }
             
-            // サブコレクション並列読み込み
+            // サブコレクション読み込み（並列処理）
             const [booksDoc, recordsDoc, plansDoc, qaDoc, csvDoc, statesDoc] = await Promise.all([
                 userRef.collection('books').doc('data').get(),
                 userRef.collection('records').doc('data').get(),
@@ -813,38 +766,27 @@ function extendDataManager() {
                 Analytics.updateRadarBookSelect();
             }
             
-            console.log("✅ CORS対応Firebase読み込み完了");
-            
-            // 復元通知
-            showRestoreNotification();
+            console.log("✅ カテゴリー分割Firebase読み込み完了");
             
         } catch (error) {
             console.error("❌ Firebase読み込みエラー:", error);
-            console.log("📱 ローカルデータで動作継続");
         }
     };
     
-    // ★追加: リアルタイム監視設定（CORS対応）
-    if (FIREBASE_AUTH_USER) {
-        const userRef = db.collection('users').doc(FIREBASE_AUTH_USER.uid);
-        userRef.onSnapshot((doc) => {
-            if (doc.exists && doc.data().lastSyncTime) {
-                console.log("📡 リアルタイム更新検知");
-                // 他デバイスからの更新を検知したら再読み込み
-                DataManager.loadFromFirestore();
-            }
-        }, (error) => {
-            console.warn("📡 リアルタイム監視エラー:", error);
-        });
-    }
+    // リアルタイム監視設定
+    const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+    userRef.onSnapshot((doc) => {
+        if (doc.exists && doc.data().lastSyncTime) {
+            console.log("📡 リアルタイム更新検知");
+            // 他デバイスからの更新を検知したら再読み込み
+            DataManager.loadFromFirestore();
+        }
+    });
 }
 
 // 📥 即座にデータ読み込み
 async function loadFromFirebaseInstantly() {
-    if (!FIREBASE_AUTH_USER || !window.DataManager) {
-        console.log("📱 Firebase認証なしのためローカルデータのみ");
-        return;
-    }
+    if (!ULTRA_STABLE_USER_ID || !window.DataManager) return;
     
     console.log("📥 即座Firebase読み込み開始");
     
@@ -854,73 +796,6 @@ async function loadFromFirebaseInstantly() {
     } catch (error) {
         console.error("❌ 即座読み込みエラー:", error);
     }
-}
-
-// 🔔 通知機能
-function showSaveNotification() {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #4caf50, #66bb6a);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-        z-index: 9999;
-        font-weight: 600;
-        font-size: 14px;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `✅ Firebase保存完了！`;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-function showRestoreNotification() {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: linear-gradient(135deg, #2196f3, #42a5f5);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-        z-index: 9999;
-        font-weight: 600;
-        font-size: 14px;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `🔄 Firebase復元完了！`;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 4000);
-}
-
-function showErrorNotification(message) {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 140px;
-        right: 20px;
-        background: linear-gradient(135deg, #f44336, #e57373);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
-        z-index: 9999;
-        font-weight: 600;
-        font-size: 14px;
-        animation: slideInRight 0.3s ease;
-    `;
-    notification.innerHTML = `⚠️ Firebase接続エラー<br><span style="font-size: 12px;">ローカル保存のみ</span>`;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 5000);
 }
 
 // 全モジュール拡張（DOMContentLoaded時）
@@ -973,7 +848,7 @@ function extendModuleSaveMethods() {
     }
 }
 
-console.log("✅ Firebase統合コード読み込み完了（CORS対応版）");
+console.log("✅ Firebase統合コード読み込み完了（カテゴリー分割対応版）");
     </script>
 </body>
 </html>
