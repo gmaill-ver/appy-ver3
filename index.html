@@ -437,11 +437,11 @@
     <script>
     console.log("🚀 Firebase統合開始（カテゴリー分割対応・完全修正版）");
 
-// 🔧 Firebase設定とオフライン永続化
+// 🔧 Firebase設定とオフライン永続化（修正版）
 try {
+    // Firestoreのオフライン永続化（エラー修正版）
     firebase.firestore().enablePersistence({ 
-        synchronizeTabs: true,
-        experimentalForceOwningTab: true 
+        synchronizeTabs: true  // ★修正: experimentalForceOwningTabを削除
     }).then(() => {
         console.log("✅ Firebase オフライン永続化有効");
     }).catch((err) => {
