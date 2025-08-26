@@ -27,82 +27,29 @@ class DataManagerClass {
      * 初期化処理（Firebase統合強化版）
      */
     async initialize() {
-    if (this.initialized) {
-        console.log('DataManager already initialized');
-        return true;
-    }
-
-    try {
-        console.log('🚀 DataManager初期化開始...');
-        
-        // ★修正: 固定IDの取得を最初に実行
-        await this.waitForStableUserId();
-        
-        // ★修正: Firebase初期化を先に実行（復元のため）
-        await this.initializeFirebase();
-        
-        // ★修正: Firebaseから復元できなかった場合のみローカルを読み込み
-        if (!this.firebaseEnabled || Object.keys(this.books).length === 0) {
-            this.loadAllData();
-        }
-        
-        // サンプルデータの初期化（必要な場合）
-        if (Object.keys(this.books).length === 0) {
-            this.initializeSampleData();
+        if (this.initialized) {
+            console.log('DataManager already initialized');
+            return true;
         }
 
-// ★追加: saveToFirebaseメソッドを強化
-async saveToFirebase() {
-    if (!this.firebaseEnabled || !this.currentUser || this.syncInProgress) {
-        console.warn('Firebase保存スキップ（未準備）');
-        return false;
-    }
-    
-    // 重複保存防止
-    if (this.lastSaveTime && Date.now() - this.lastSaveTime < 1000) {
-        console.log('⏳ 保存間隔が短いためスキップ');
-        return false;
-    }
-    
-    this.lastSaveTime = Date.now();
-    
-    try {
-        const db = firebase.firestore();
-        const userId = this.currentUser.uid;
-        const userRef = db.collection('users').doc(userId);
-        
-        // 全データをFirebaseに保存
-        const userData = {
-            userId: userId,
-            books: this.books || {},
-            bookOrder: this.bookOrder || [],
-            allRecords: this.allRecords || [],
-            savedQuestionStates: this.savedQuestionStates || {},
-            studyPlans: this.studyPlans || [],
-            csvTemplates: this.csvTemplates || {},
-            qaQuestions: this.qaQuestions || {},
-            examDate: this.examDate ? this.examDate.toISOString() : null,
-            deletedItems: this.deletedItems || [],
-            heatmapPinnedBook: this.heatmapPinnedBook,
-            radarPinnedBook: this.radarPinnedBook,
-            analysisCardOrder: this.analysisCardOrder || [],
-            lastSyncTime: firebase.firestore.FieldValue.serverTimestamp(),
-            syncCount: firebase.firestore.FieldValue.increment(1),
-            lastUpdated: new Date().toISOString()
-        };
-        
-        await userRef.set(userData, { merge: true });
-        console.log('✅ Firebase全データ保存完了');
-        
-        // 保存成功通知
-        this.showSaveNotification();
-        return true;
-        
-    } catch (error) {
-        console.error('❌ Firebase保存エラー:', error);
-        return false;
-    }
-}
+        try {
+            console.log('🚀 DataManager初期化開始...');
+            
+            // ★修正: 固定IDの取得を最初に実行
+            await this.waitForStableUserId();
+            
+            // ★修正: Firebase初期化を先に実行（復元のため）
+            await this.initializeFirebase();
+            
+            // ★修正: Firebaseから復元できなかった場合のみローカルを読み込み
+            if (!this.firebaseEnabled || Object.keys(this.books).length === 0) {
+                this.loadAllData();
+            }
+            
+            // サンプルデータの初期化（必要な場合）
+            if (Object.keys(this.books).length === 0) {
+                this.initializeSampleData();
+            }
             
             this.initialized = true;
             console.log('✅ DataManager初期化完了');
