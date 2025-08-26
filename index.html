@@ -674,12 +674,25 @@ function extendDataManager() {
     
     // ★完全修正版: カテゴリー分割読み込み（削除済み対応強化）
     DataManager.loadFromFirestore = async function() {
-        if (!ULTRA_STABLE_USER_ID) return;
+    if (!ULTRA_STABLE_USER_ID) return;
+    
+    console.log("📥 Firebase読み込み開始（削除済み対応）");
+    
+    try {
+        const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
         
-        console.log("📥 Firebase読み込み開始（削除済み対応）");
-        
+        // メインドキュメント読み込み（エラーハンドリング追加）
+        let mainDoc;
         try {
-            const userRef = db.collection('users').doc(ULTRA_STABLE_USER_ID);
+            mainDoc = await userRef.get();
+        } catch (permissionError) {
+            if (permissionError.code === 'permission-denied') {
+                console.warn('⚠️ Firebaseアクセス権限エラー。ローカルデータのみで動作します。');
+                console.log('Firestoreのセキュリティルールを確認してください。');
+                return; // Firebaseを使用せず、ローカルのみで動作
+            }
+            throw permissionError;
+        }
             
             // メインドキュメント読み込み
             const mainDoc = await userRef.get();
@@ -888,8 +901,17 @@ async function loadFromFirebaseInstantly() {
             await DataManager.initialize();
         }
         
-        // Firebaseから読み込み
-        await DataManager.loadFromFirestore();
+        // Firebaseから読み込み（エラーをキャッチ）
+        try {
+            await DataManager.loadFromFirestore();
+        } catch (error) {
+            if (error.code === 'permission-denied') {
+                console.warn('⚠️ Firebase権限エラーのためローカルデータのみで動作');
+                return;
+            }
+            throw error;
+        }
+        
         console.log("✅ 即座Firebase読み込み完了");
         
         // UI更新を遅延実行
