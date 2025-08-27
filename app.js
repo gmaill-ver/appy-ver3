@@ -1439,8 +1439,25 @@ if (window.Analytics) {
         return aParts.length - bParts.length;
     };
     
-    // ★修正: 自然ソートでエントリーを並べ替え
-    const sortedEntries = Object.entries(structure).sort(([a], [b]) => naturalSort(a, b));
+    // ★修正: 保存された順序情報を優先、なければ自然ソート
+    const book = DataManager.books[bookId];
+    let sortedEntries;
+    
+    if (book && book.hierarchyOrder && book.hierarchyOrder.subjects && path.length === 0) {
+        // 科目レベルの場合は保存された順序を使用
+        const order = book.hierarchyOrder.subjects;
+        sortedEntries = Object.entries(structure).sort(([a], [b]) => {
+            const indexA = order.indexOf(a);
+            const indexB = order.indexOf(b);
+            if (indexA === -1 && indexB === -1) return naturalSort(a, b);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+    } else {
+        // デフォルトは自然ソート
+        sortedEntries = Object.entries(structure).sort(([a], [b]) => naturalSort(a, b));
+    }
     
     sortedEntries.forEach(([name, item]) => {
         const currentPath = [...path, name];
