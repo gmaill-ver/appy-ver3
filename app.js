@@ -620,16 +620,40 @@ class Application {
             return aParts.length - bParts.length;
         };
         
-        // ★修正: orderプロパティがある場合はそれを使用、なければ自然順ソート
-        const sortedEntries = Object.entries(structure).sort((a, b) => {
-            // orderプロパティを優先
-            const orderA = a[1].order !== undefined ? a[1].order : Infinity;
-            const orderB = b[1].order !== undefined ? b[1].order : Infinity;
-            if (orderA !== orderB) return orderA - orderB;
-            
-            // orderがない場合は自然順ソート
-            return naturalSort(a[0], b[0]);
+        // ★修正: 保存された階層順序を使用
+const book = this.currentBook;
+let sortedEntries;
+
+if (book && book.hierarchyOrder) {
+    const depthFromBase = basePath.length;
+    let orderKey = null;
+    
+    if (depthFromBase === 0) {
+        orderKey = 'subjects';
+    } else if (depthFromBase === 1) {
+        orderKey = `chapters_${basePath[0]}`;
+    } else if (depthFromBase === 2) {
+        orderKey = `sections_${basePath.join('_')}`;
+    }
+    
+    if (orderKey && book.hierarchyOrder[orderKey]) {
+        const order = book.hierarchyOrder[orderKey];
+        sortedEntries = Object.entries(structure).sort((a, b) => {
+            const indexA = order.indexOf(a[0]);
+            const indexB = order.indexOf(b[0]);
+            if (indexA === -1 && indexB === -1) return naturalSort(a[0], b[0]);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
         });
+    } else {
+        // デフォルトの自然ソート  
+        sortedEntries = Object.entries(structure).sort((a, b) => naturalSort(a[0], b[0]));
+    }
+} else {
+    // デフォルトの自然ソート
+    sortedEntries = Object.entries(structure).sort((a, b) => naturalSort(a[0], b[0]));
+}
         
         sortedEntries.forEach(([name, item]) => {
             const currentPath = [...basePath, name];
