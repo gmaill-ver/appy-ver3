@@ -734,15 +734,14 @@ class AnalyticsClass {
         }
     }
 
-　　// analytics.js のAnalyticsClassクラス内に追加
-arraysEqual(a, b) {
-    if (!a || !b) return false;
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) return false;
+　　arraysEqual(a, b) {
+        if (!a || !b) return false;
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
     }
-    return true;
-}
 
     calculateBookSubjectStats(bookId) {
         const subjectStats = {};
