@@ -370,23 +370,40 @@ class AnalyticsClass {
     }
 
     getQuestionStateFromRecords(bookId, question) {
-        let state = { correct: false, wrong: false, bookmarked: false };
+        const states = { correct: false, wrong: false, bookmarked: false };
         
-        if (DataManager && DataManager.allRecords) {
-            DataManager.allRecords.forEach(record => {
-                if (record.bookId === bookId) {
-                    const pathMatch = record.path.join('/') === question.path.join('/');
-                    if (pathMatch && record.questions && record.questions[question.number]) {
-                        const qState = record.questions[question.number];
-                        if (qState.state === 'correct') state.correct = true;
-                        if (qState.state === 'wrong') state.wrong = true;
-                        if (qState.bookmarked) state.bookmarked = true;
+        // 最新の記録を確認
+        for (let i = DataManager.allRecords.length - 1; i >= 0; i--) {
+            const record = DataManager.allRecords[i];
+            if (record.bookId === bookId) {
+                // pathが完全に一致する記録を探す
+                if (this.arraysEqual(record.path, question.path)) {
+                    const qState = record.questions[question.number];
+                    if (qState) {
+                        if (qState === '○') states.correct = true;
+                        if (qState === '×') states.wrong = true;
+                        if (qState === '☆') states.bookmarked = true; // ★追加
+                        // ★修正: 複合状態の処理（○☆、×☆など）
+                        if (typeof qState === 'string') {
+                            if (qState.includes('○')) states.correct = true;
+                            if (qState.includes('×')) states.wrong = true;
+                            if (qState.includes('☆')) states.bookmarked = true;
+                        }
                     }
                 }
-            });
+            }
         }
         
-        return state;
+        // ★追加: savedQuestionStatesからもブックマーク情報を取得
+        const savedKey = `${bookId}_${question.path.join('_')}`;
+        if (DataManager.savedQuestionStates && DataManager.savedQuestionStates[savedKey]) {
+            const savedState = DataManager.savedQuestionStates[savedKey][question.number];
+            if (savedState && savedState.includes('☆')) {
+                states.bookmarked = true;
+            }
+        }
+        
+        return states;
     }
 
     updateRadarBookSelect() {
