@@ -734,7 +734,7 @@ class AnalyticsClass {
         }
     }
 
-　　arraysEqual(a, b) {
+    arraysEqual(a, b) {
         if (!a || !b) return false;
         if (a.length !== b.length) return false;
         for (let i = 0; i < a.length; i++) {
