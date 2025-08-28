@@ -901,43 +901,46 @@ class AnalyticsClass {
     }
 
     calculateOverallProgress() {
-    let totalQuestions = 0;
-    let uniqueAnswered = new Set();
-    let totalAnswered = 0;
-    let totalCorrect = 0;
-    
-    // ★修正: 削除済み問題集を除外して全問題数をカウント
-    if (DataManager && DataManager.books) {
-        Object.values(DataManager.books).forEach(book => {
-            // ★追加: 削除済みチェック
-            if (DataManager.isDeleted('books', book.id)) {
-                return; // 削除済みはスキップ
-            }
-            totalQuestions += DataManager.countQuestionsInBook(book);
-        });
-    }
-    
-    // ★修正: 削除済み問題集のレコードを除外して解答済み問題を集計
-    if (DataManager && DataManager.allRecords) {
-        DataManager.allRecords.forEach(record => {
-            // ★追加: 削除済み問題集のレコードをスキップ
-            if (DataManager.isDeleted('books', record.bookId)) {
-                return;
-            }
-            
-            totalAnswered += record.stats?.total || 0;
-            totalCorrect += record.stats?.correct || 0;
-            
-            if (record.questions) {
-                Object.entries(record.questions).forEach(([num, state]) => {
-                    if (state.state !== null) {
-                        const key = `${record.bookId}_${record.path.join('/')}_${num}`;
-                        uniqueAnswered.add(key);
-                    }
-                });
-            }
-        });
-    }
+        let totalQuestions = 0;
+        let uniqueAnswered = new Set();
+        let totalAnswered = 0;
+        let totalCorrect = 0;
+        
+        // ★修正: 削除済み問題集を除外して全問題数をカウント
+        if (DataManager && DataManager.books) {
+            Object.values(DataManager.books).forEach(book => {
+                // ★追加: 削除済みチェック
+                if (DataManager.isDeleted && DataManager.isDeleted('books', book.id)) {
+                    return; // 削除済みはスキップ
+                }
+                totalQuestions += DataManager.countQuestionsInBook(book);
+            });
+        }
+        
+        // ★修正: 削除済み問題集のレコードを除外して解答済み問題を集計
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                // ★追加: 削除済み問題集のレコードをスキップ
+                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
+                    return;
+                }
+                
+                totalAnswered += record.stats?.total || 0;
+                totalCorrect += record.stats?.correct || 0;
+                
+                if (record.questions) {
+                    Object.entries(record.questions).forEach(([num, state]) => {
+                        // ★修正: stateがオブジェクトの場合とそうでない場合を考慮
+                        const hasState = (typeof state === 'object' && state !== null && state.state !== null) ||
+                                       (typeof state === 'string' && state !== null);
+                        if (hasState) {
+                            const key = `${record.bookId}_${record.path.join('/')}_${num}`;
+                            uniqueAnswered.add(key);
+                        }
+                    });
+                }
+            });
+        }
     
     const uniqueAnsweredCount = uniqueAnswered.size;
     const overallRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
@@ -1144,144 +1147,177 @@ drawRadarChart() {
 
 // ★修正: 全問題集比較チャート（削除済み問題集のレコードを除外）
 drawRadarChartCompare() {
-    const canvas = document.getElementById('radarChart');
-    if (!canvas) return;
+        const canvas = document.getElementById('radarChart');
+        if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    const centerX = 150;
-    const centerY = 150;
-    const radius = 100;
-    
-    const mainSubjects = ['基礎法学', '憲法', '行政法', '民法', '商法', '一般知識'];
-    
-    const allSubjectStats = {};
-    mainSubjects.forEach(subject => {
-        allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
-    });
-    
-    if (DataManager && DataManager.allRecords) {
-        DataManager.allRecords.forEach(record => {
-            // ★追加: 削除済み問題集のレコードをスキップ
-            if (DataManager.isDeleted('books', record.bookId)) {
-                return;
-            }
-            
-            if (record.path && record.path.length > 0) {
-                const subject = record.path[0];
-                if (mainSubjects.includes(subject)) {
-                    if (record.questions) {
-                        Object.values(record.questions).forEach(q => {
-                            if (q.state === 'correct') {
-                                allSubjectStats[subject].correct++;
-                                allSubjectStats[subject].total++;
-                            } else if (q.state === 'wrong') {
-                                allSubjectStats[subject].wrong++;
-                                allSubjectStats[subject].total++;
-                            }
-                        });
+        const ctx = canvas.getContext('2d');
+        const centerX = 150;
+        const centerY = 150;
+        const radius = 100;
+        
+        // ★修正: 実際のデータから科目を動的に取得
+        const subjectSet = new Set();
+        
+        // 全レコードから科目を収集
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                // ★追加: 削除済み問題集のレコードをスキップ
+                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
+                    return;
+                }
+                
+                if (record.path && record.path.length > 0 && record.path[0]) {
+                    subjectSet.add(record.path[0]);
+                }
+            });
+        }
+        
+        // 全問題集から科目を収集
+        if (DataManager && DataManager.books) {
+            Object.values(DataManager.books).forEach(book => {
+                // ★追加: 削除済みチェック
+                if (DataManager.isDeleted && DataManager.isDeleted('books', book.id)) {
+                    return;
+                }
+                
+                if (book.structure) {
+                    Object.keys(book.structure).forEach(subject => {
+                        if (subject) subjectSet.add(subject);
+                    });
+                }
+            });
+        }
+        
+        // ★修正: 収集した科目を配列化（最大8科目まで表示）
+        const mainSubjects = Array.from(subjectSet).slice(0, 8);
+        
+        // 科目がない場合のエラーハンドリング
+        if (mainSubjects.length === 0) {
+            ctx.clearRect(0, 0, 300, 300);
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '14px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('データがありません', centerX, centerY);
+            return;
+        }
+        
+        const allSubjectStats = {};
+        mainSubjects.forEach(subject => {
+            allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
+        });
+        
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                // ★追加: 削除済み問題集のレコードをスキップ
+                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
+                    return;
+                }
+                
+                if (record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (allSubjectStats[subject]) {
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    allSubjectStats[subject].correct++;
+                                    allSubjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    allSubjectStats[subject].wrong++;
+                                    allSubjectStats[subject].total++;
+                                }
+                            });
+                        }
                     }
                 }
+            });
+        }
+        
+        const angleStep = (Math.PI * 2) / mainSubjects.length;
+        
+        ctx.clearRect(0, 0, 300, 300);
+        
+        // 背景グリッドを描画
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        
+        for (let i = 1; i <= 5; i++) {
+            ctx.beginPath();
+            for (let j = 0; j < mainSubjects.length; j++) {
+                const angle = j * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius * i / 5);
+                const y = centerY + Math.sin(angle) * (radius * i / 5);
+                if (j === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
             }
-        });
-    }
-    
-    const angleStep = (Math.PI * 2) / mainSubjects.length;
-    
-    ctx.clearRect(0, 0, 300, 300);
-    
-    // 背景グリッドを描画
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
-    
-    for (let i = 1; i <= 5; i++) {
+            ctx.closePath();
+            ctx.stroke();
+        }
+        
+        // 軸線を描画
+        for (let i = 0; i < mainSubjects.length; i++) {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        
+        // データをプロット
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 2;
+        
         ctx.beginPath();
-        for (let j = 0; j < mainSubjects.length; j++) {
-            const angle = j * angleStep - Math.PI / 2;
-            const x = centerX + Math.cos(angle) * (radius * i / 5);
-            const y = centerY + Math.sin(angle) * (radius * i / 5);
-            if (j === 0) {
+        mainSubjects.forEach((subject, i) => {
+            const stats = allSubjectStats[subject];
+            const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius * percentage);
+            const y = centerY + Math.sin(angle) * (radius * percentage);
+            
+            if (i === 0) {
                 ctx.moveTo(x, y);
             } else {
                 ctx.lineTo(x, y);
             }
-        }
+        });
         ctx.closePath();
-        ctx.stroke();
-    }
-
-    // 軸線を描画
-    mainSubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const endX = centerX + Math.cos(angle) * radius;
-        const endY = centerY + Math.sin(angle) * radius;
-        
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-    });
-
-    // データをプロット
-    ctx.strokeStyle = '#10b981';
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    mainSubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const stats = allSubjectStats[subject];
-        const rate = stats.total > 0 ? stats.correct / stats.total : 0;
-        const distance = rate * radius;
-        
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-        
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-        
-        // データポイントを描画
-        ctx.fillStyle = '#10b981';
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fill();
-    });
-    
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.2)';
-    ctx.fill();
-
-    // ラベルを描画
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    
-    mainSubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const labelDistance = radius + 20;
-        const x = centerX + Math.cos(angle) * labelDistance;
-        const y = centerY + Math.sin(angle) * labelDistance;
+        ctx.stroke();
         
-        const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
-        ctx.fillText(shortName, x, y);
-        
-        const stats = allSubjectStats[subject];
-        const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText(`${rate}%`, x, y + 12);
-        ctx.font = '12px sans-serif';
+        // ラベルを描画
         ctx.fillStyle = '#1f2937';
-    });
-    
-    ctx.fillStyle = '#6b7280';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('全問題集の統合データ', centerX, 20);
-}
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        
+        mainSubjects.forEach((subject, i) => {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius + 20);
+            const y = centerY + Math.sin(angle) * (radius + 20);
+            
+            const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
+            ctx.fillText(shortName, x, y);
+            
+            const stats = allSubjectStats[subject];
+            const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText(`${rate}%`, x, y + 12);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#1f2937';
+        });
+        
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('全問題集の統合データ', centerX, 20);
+    }
 
 // ★追加: 進捗コンテンツ更新の強化
 updateProgressContent() {
