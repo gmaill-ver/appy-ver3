@@ -271,14 +271,16 @@ class AnalyticsClass {
                 }
                 
                 const state = this.getQuestionStateFromRecords(book.id, q);
-                let cellClass = '';
-                
-                if (state.wrong) cellClass = 'wrong';
-                else if (state.correct) cellClass = 'correct';
-                
-                if (state.bookmarked) {
-                    cellClass += ' bookmarked';
-                }
+let cellClass = '';
+
+// ★修正: 複合状態に対応
+if (state.wrong) cellClass = 'wrong';
+else if (state.correct) cellClass = 'correct';
+
+// ★重要: ブックマークは独立して追加（スペースを付けて）
+if (state.bookmarked) {
+    cellClass = cellClass ? cellClass + ' bookmarked' : 'bookmarked';
+}
                 
                 html += `<div class="heatmap-cell ${cellClass}" 
                          onclick="Analytics.toggleHeatmapQuestion('${book.id}', '${q.path.join('/')}', '${q.number}')">${q.number}</div>`;
