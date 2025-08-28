@@ -175,37 +175,33 @@
         </div>
         
         <!-- 進捗タブ -->
-        <div id="progress-tab" class="tab-content">
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📊</span>
-                    <span class="card-title">全体進捗状況</span>
-                </div>
-                <div id="overallProgress"></div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📈</span>
-                    <span class="card-title">科目別進捗</span>
-                </div>
-                <div class="radar-chart-container">
-                    <div class="radar-chart-controls">
-                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
-    <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1; min-width: 0;">
-        <option value="">問題集を選択</option>
-    </select>
-    <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
-</div>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="chart-btn active" id="radarModeSubject" onclick="Analytics.setRadarMode('subject', this)">科目別</button>
-                            <button class="chart-btn" id="radarModeCompare" onclick="Analytics.setRadarMode('compare', this)">問題集比較</button>
-                        </div>
-                    </div>
-                    <canvas id="radarChart" width="300" height="300"></canvas>
-                </div>
-            </div>
+<div id="progress-tab" class="tab-content">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-icon">📊</span>
+            <span class="card-title">全体進捗状況</span>
         </div>
+        <div id="overallProgress"></div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <span class="card-icon">📈</span>
+            <span class="card-title">科目別進捗</span>
+        </div>
+        <div class="radar-chart-container">
+            <div class="radar-chart-controls">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <select class="radar-chart-select" id="radarBookSelect" onchange="Analytics.drawRadarChart()" style="flex: 1; min-width: 0;">
+                        <option value="">問題集を選択</option>
+                    </select>
+                    <button class="radar-toggle-btn" id="radarToggleBtn" onclick="Analytics.toggleRadarPinned()" style="flex-shrink: 0; width: 60px; padding: 8px 10px;">📌</button>
+                </div>
+            </div>
+            <canvas id="radarChart" width="300" height="300"></canvas>
+        </div>
+    </div>
+</div>
     </div>
     
     <!-- フッタータブ -->
