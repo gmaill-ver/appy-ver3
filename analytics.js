@@ -57,6 +57,22 @@ class AnalyticsClass {
                 console.error('❌ 履歴更新エラー:', e);
             }
             
+            // ★追加: 弱点分析の初期化
+            try {
+                this.updateWeaknessAnalysis();
+                console.log('✅ 弱点分析更新完了');
+            } catch (e) {
+                console.error('❌ 弱点分析更新エラー:', e);
+            }
+            
+            // ★追加: 進捗コンテンツの初期化
+            try {
+                this.updateProgressContent();
+                console.log('✅ 進捗コンテンツ更新完了');
+            } catch (e) {
+                console.error('❌ 進捗コンテンツ更新エラー:', e);
+            }
+            
             // ★追加: ピン固定設定を適用（タイミングを遅らせて確実に復元）
             setTimeout(() => {
                 this.restorePinnedSettings();
@@ -371,7 +387,7 @@ class AnalyticsClass {
             total,
             correct,
             wrong,
-            rate: total > 0 ? Math.round((correct / total) * 100) + '%' : '0%' // ★修正: 三項演算子を完成
+            rate: total > 0 ? Math.round((correct / total) * 100) + '%' : '0%'
         };
         
         localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
@@ -446,18 +462,6 @@ class AnalyticsClass {
     
     return states;
 }
-        
-        // ★追加: savedQuestionStatesからもブックマーク情報を取得
-        const savedKey = `${bookId}_${question.path.join('_')}`;
-        if (DataManager.savedQuestionStates && DataManager.savedQuestionStates[savedKey]) {
-            const savedState = DataManager.savedQuestionStates[savedKey][question.number];
-            if (savedState && savedState.includes('☆')) {
-                states.bookmarked = true;
-            }
-        }
-        
-        return states;
-    }
 
     updateRadarBookSelect() {
         const select = document.getElementById('radarBookSelect');
