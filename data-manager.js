@@ -186,25 +186,29 @@ class DataManagerClass {
         }
         
         // 3. 問題集データの復元（削除済み除外）
-        if (userData.books && typeof userData.books === 'object') {
-            const filteredBooks = {};
-            Object.keys(userData.books).forEach(bookId => {
-                if (!this.isDeleted('books', bookId)) {
-                    const book = userData.books[bookId];
-                    if (book.structure) {
-                        book.structure = this.filterDeletedHierarchy(book.structure, bookId, []);
-                    }
-                    filteredBooks[bookId] = book;
-                }
-            });
-            
-            if (Object.keys(filteredBooks).length > 0) {
-                this.books = filteredBooks;
-                this.saveBooksToStorage();
-                restoredCount++;
-                console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件`);
+if (userData.books && typeof userData.books === 'object') {
+    const filteredBooks = {};
+    Object.keys(userData.books).forEach(bookId => {
+        if (!this.isDeleted('books', bookId)) {
+            const book = userData.books[bookId];
+            // ★追加: hierarchyOrderも復元
+            if (book.hierarchyOrder) {
+                book.hierarchyOrder = { ...book.hierarchyOrder };
             }
+            if (book.structure) {
+                book.structure = this.filterDeletedHierarchy(book.structure, bookId, []);
+            }
+            filteredBooks[bookId] = book;
         }
+    });
+    
+    if (Object.keys(filteredBooks).length > 0) {
+        this.books = filteredBooks;
+        this.saveBooksToStorage();
+        restoredCount++;
+        console.log(`📚 問題集復元: ${Object.keys(filteredBooks).length}件`);
+    }
+}
         
         // 4. 問題集順序の復元（削除済み除外）
         if (userData.bookOrder && Array.isArray(userData.bookOrder)) {
