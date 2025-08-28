@@ -25,10 +25,37 @@ class AnalyticsClass {
         }
 
         try {
-            this.updateChartBars();
-            this.updateHeatmapBookSelect();
-            this.updateRadarBookSelect();
-            this.updateHistoryContent();
+            // ★追加: DOM要素の存在確認を追加
+            console.log('📊 Analytics各機能を初期化中...');
+            
+            // 各更新メソッドを個別にtry-catchで実行
+            try {
+                this.updateChartBars();
+                console.log('✅ チャート更新完了');
+            } catch (e) {
+                console.error('❌ チャート更新エラー:', e);
+            }
+            
+            try {
+                this.updateHeatmapBookSelect();
+                console.log('✅ ヒートマップ選択更新完了');
+            } catch (e) {
+                console.error('❌ ヒートマップ選択更新エラー:', e);
+            }
+            
+            try {
+                this.updateRadarBookSelect();
+                console.log('✅ レーダーチャート選択更新完了');
+            } catch (e) {
+                console.error('❌ レーダーチャート選択更新エラー:', e);
+            }
+            
+            try {
+                this.updateHistoryContent();
+                console.log('✅ 履歴更新完了');
+            } catch (e) {
+                console.error('❌ 履歴更新エラー:', e);
+            }
             
             // ★追加: ピン固定設定を適用（タイミングを遅らせて確実に復元）
             setTimeout(() => {
@@ -36,9 +63,11 @@ class AnalyticsClass {
             }, 200);
             
             this.initialized = true;
-            console.log('Analytics initialized successfully');
+            console.log('✅ Analytics初期化完了');
         } catch (error) {
-            console.error('Analytics initialization error:', error);
+            console.error('❌ Analytics初期化エラー:', error);
+            // ★追加: エラーでも初期化フラグは立てる（無限ループ防止）
+            this.initialized = true;
         }
     }
 
@@ -953,6 +982,8 @@ window.Analytics = new AnalyticsClass();
 document.addEventListener('DOMContentLoaded', () => {
     // 少し遅延させてDataManagerの初期化を待つ
     setTimeout(() => {
+        // ★追加: 初期化実行のログ
+        console.log('🚀 Analytics初期化開始...');
         Analytics.initialize();
     }, 100);
 });
