@@ -120,19 +120,24 @@ class Application {
         if (window.Analytics) {
             setTimeout(() => {
                 if (tabName === 'analysis') {
+                    // ★追加: Analytics初期化確認
+                    if (!Analytics.initialized) {
+                        console.log('⚠️ Analytics未初期化のため初期化実行');
+                        Analytics.initialize();
+                    }
+                    
                     // 分析タブ:最新データで更新
-                    Analytics.updateChartBars();
-                    Analytics.updateHeatmap();
-                    Analytics.updateWeaknessAnalysis();
-                    Analytics.updateHistoryContent();
-                    Analytics.updateHeatmapBookSelect();
-                    Analytics.updateRadarBookSelect();
-                } else if (tabName === 'progress') {
-                    // 進捗タブ:最新データで強制更新
-                    Analytics.updateProgressContent();
-                    Analytics.drawRadarChart();
-                    Analytics.updateRadarBookSelect();
-                    Analytics.updateHeatmapBookSelect();
+                    console.log('📊 分析タブデータ更新開始...');
+                    
+                    // ★追加: 各更新を個別にtry-catchで実行
+                    try { Analytics.updateChartBars(); } catch(e) { console.error('チャート更新エラー:', e); }
+                    try { Analytics.updateHeatmap(); } catch(e) { console.error('ヒートマップ更新エラー:', e); }
+                    try { Analytics.updateWeaknessAnalysis(); } catch(e) { console.error('弱点分析更新エラー:', e); }
+                    try { Analytics.updateHistoryContent(); } catch(e) { console.error('履歴更新エラー:', e); }
+                    try { Analytics.updateHeatmapBookSelect(); } catch(e) { console.error('ヒートマップ選択更新エラー:', e); }
+                    try { Analytics.updateRadarBookSelect(); } catch(e) { console.error('レーダー選択更新エラー:', e); }
+                    
+                    console.log('✅ 分析タブデータ更新完了');
                 }
                 
                 // ★統合: 両タブ共通のピン留め設定復元
