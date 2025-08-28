@@ -120,24 +120,19 @@ class Application {
         if (window.Analytics) {
             setTimeout(() => {
                 if (tabName === 'analysis') {
-                    // ★追加: Analytics初期化確認
-                    if (!Analytics.initialized) {
-                        console.log('⚠️ Analytics未初期化のため初期化実行');
-                        Analytics.initialize();
-                    }
-                    
                     // 分析タブ:最新データで更新
-                    console.log('📊 分析タブデータ更新開始...');
-                    
-                    // ★追加: 各更新を個別にtry-catchで実行
-                    try { Analytics.updateChartBars(); } catch(e) { console.error('チャート更新エラー:', e); }
-                    try { Analytics.updateHeatmap(); } catch(e) { console.error('ヒートマップ更新エラー:', e); }
-                    try { Analytics.updateWeaknessAnalysis(); } catch(e) { console.error('弱点分析更新エラー:', e); }
-                    try { Analytics.updateHistoryContent(); } catch(e) { console.error('履歴更新エラー:', e); }
-                    try { Analytics.updateHeatmapBookSelect(); } catch(e) { console.error('ヒートマップ選択更新エラー:', e); }
-                    try { Analytics.updateRadarBookSelect(); } catch(e) { console.error('レーダー選択更新エラー:', e); }
-                    
-                    console.log('✅ 分析タブデータ更新完了');
+                    Analytics.updateChartBars();
+                    Analytics.updateHeatmap();
+                    Analytics.updateWeaknessAnalysis();
+                    Analytics.updateHistoryContent();
+                    Analytics.updateHeatmapBookSelect();
+                    Analytics.updateRadarBookSelect();
+                } else if (tabName === 'progress') {
+                    // 進捗タブ:最新データで強制更新
+                    Analytics.updateProgressContent();
+                    Analytics.drawRadarChart();
+                    Analytics.updateRadarBookSelect();
+                    Analytics.updateHeatmapBookSelect();
                 }
                 
                 // ★統合: 両タブ共通のピン留め設定復元
@@ -625,40 +620,16 @@ class Application {
             return aParts.length - bParts.length;
         };
         
-        // ★修正: 保存された階層順序を使用
-const book = this.currentBook;
-let sortedEntries;
-
-if (book && book.hierarchyOrder) {
-    const depthFromBase = basePath.length;
-    let orderKey = null;
-    
-    if (depthFromBase === 0) {
-        orderKey = 'subjects';
-    } else if (depthFromBase === 1) {
-        orderKey = `chapters_${basePath[0]}`;
-    } else if (depthFromBase === 2) {
-        orderKey = `sections_${basePath.join('_')}`;
-    }
-    
-    if (orderKey && book.hierarchyOrder[orderKey]) {
-        const order = book.hierarchyOrder[orderKey];
-        sortedEntries = Object.entries(structure).sort((a, b) => {
-            const indexA = order.indexOf(a[0]);
-            const indexB = order.indexOf(b[0]);
-            if (indexA === -1 && indexB === -1) return naturalSort(a[0], b[0]);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
+        // ★修正: orderプロパティがある場合はそれを使用、なければ自然順ソート
+        const sortedEntries = Object.entries(structure).sort((a, b) => {
+            // orderプロパティを優先
+            const orderA = a[1].order !== undefined ? a[1].order : Infinity;
+            const orderB = b[1].order !== undefined ? b[1].order : Infinity;
+            if (orderA !== orderB) return orderA - orderB;
+            
+            // orderがない場合は自然順ソート
+            return naturalSort(a[0], b[0]);
         });
-    } else {
-        // デフォルトの自然ソート  
-        sortedEntries = Object.entries(structure).sort((a, b) => naturalSort(a[0], b[0]));
-    }
-} else {
-    // デフォルトの自然ソート
-    sortedEntries = Object.entries(structure).sort((a, b) => naturalSort(a[0], b[0]));
-}
         
         sortedEntries.forEach(([name, item]) => {
             const currentPath = [...basePath, name];
@@ -1468,25 +1439,8 @@ if (window.Analytics) {
         return aParts.length - bParts.length;
     };
     
-    // ★修正: 保存された順序情報を優先、なければ自然ソート
-    const book = DataManager.books[bookId];
-    let sortedEntries;
-    
-    if (book && book.hierarchyOrder && book.hierarchyOrder.subjects && path.length === 0) {
-        // 科目レベルの場合は保存された順序を使用
-        const order = book.hierarchyOrder.subjects;
-        sortedEntries = Object.entries(structure).sort(([a], [b]) => {
-            const indexA = order.indexOf(a);
-            const indexB = order.indexOf(b);
-            if (indexA === -1 && indexB === -1) return naturalSort(a, b);
-            if (indexA === -1) return 1;
-            if (indexB === -1) return -1;
-            return indexA - indexB;
-        });
-    } else {
-        // デフォルトは自然ソート
-        sortedEntries = Object.entries(structure).sort(([a], [b]) => naturalSort(a, b));
-    }
+    // ★修正: 自然ソートでエントリーを並べ替え
+    const sortedEntries = Object.entries(structure).sort(([a], [b]) => naturalSort(a, b));
     
     sortedEntries.forEach(([name, item]) => {
         const currentPath = [...path, name];
@@ -2126,80 +2080,50 @@ if (window.Analytics) {
     }
 
     /**
- * DOM順序に基づいて構造を更新（新規追加）
- */
-updateBookStructureOrder(bookId) {
-    const book = DataManager.books[bookId];
-    if (!book || !book.structure) return;
-    
-    const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
-    if (!container) return;
-    
-    const childrenContainer = container.querySelector('.hierarchy-children');
-    if (!childrenContainer) return;
-    
-    // 新しい順序を取得
-    const newOrder = [];
-    const subjectElements = childrenContainer.querySelectorAll(':scope > .hierarchy-item');
-    
-    subjectElements.forEach(elem => {
-        const label = elem.querySelector('.hierarchy-label');
-        if (label) {
-            const subjectName = label.textContent.trim();
-            newOrder.push(subjectName);
-        }
-    });
-    
-    // ★追加: 階層順序を保存（重要）
-    if (!book.hierarchyOrder) {
-        book.hierarchyOrder = {};
+     * DOM順序に基づいて構造を更新（新規追加）
+     */
+    updateBookStructureOrder(bookId) {
+        const book = DataManager.books[bookId];
+        if (!book) return;
+        
+        const container = document.querySelector(`#book_${bookId}`).closest('.hierarchy-item');
+        if (!container) return;
+        
+        const childrenContainer = container.querySelector('.hierarchy-children');
+        if (!childrenContainer) return;
+        
+        const newStructure = {};
+        const subjectElements = childrenContainer.querySelectorAll(':scope > .hierarchy-item');
+        
+        // ★追加: 順序情報を付与
+        subjectElements.forEach((elem, index) => {
+            const label = elem.querySelector('.hierarchy-label');
+            if (label) {
+                const subjectName = label.textContent.trim();
+                if (book.structure[subjectName]) {
+                    newStructure[subjectName] = {
+                        ...book.structure[subjectName],
+                        order: index  // ★追加: 順序情報を保存
+                    };
+                }
+            }
+        });
+        
+        book.structure = newStructure;
+        
+        // ★追加: 即座に保存して記録入力タブに反映
+        DataManager.saveBooksToStorage();
     }
-    book.hierarchyOrder.subjects = newOrder;
-    
-    // structure内の順序も更新（順序を保持したまま）
-    const newStructure = {};
-    newOrder.forEach(subjectName => {
-        if (book.structure[subjectName]) {
-            newStructure[subjectName] = book.structure[subjectName];
-        }
-    });
-    
-    // 順序にない科目も追加（念のため）
-    Object.keys(book.structure).forEach(key => {
-        if (!newStructure[key]) {
-            newStructure[key] = book.structure[key];
-        }
-    });
-    
-    book.structure = newStructure;
-    
-    // ★追加: DataManagerとFirebaseに即座に保存
-    DataManager.saveBooksToStorage();
-    
-    // ★追加: Firebaseに即座に同期
-    if (DataManager.saveToFirestore) {
-        DataManager.saveToFirestore({ type: 'hierarchyOrder', action: 'update' });
-    }
-    
-    // ★追加: 記録入力タブを即座に更新
-    this.renderBookCards();
-    
-    console.log('✅ 階層順序を保存:', {
-        bookId: bookId,
-        bookName: book.name,
-        newOrder: newOrder
-    });
-}
 
-getTypeLabel(type) {
-    const labels = {
-        'subject': '科目',
-        'chapter': '章',
-        'section': '節',
-        'subsection': '項'
-    };
-    return labels[type] || type;
-}
+    getTypeLabel(type) {
+        const labels = {
+            'subject': '科目',
+            'chapter': '章',
+            'section': '節',
+            'subsection': '項'
+        };
+        return labels[type] || type;
+    }
 
     getSettingsContent() {
         const currentExamDate = DataManager.examDate 
