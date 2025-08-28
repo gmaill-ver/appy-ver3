@@ -371,7 +371,7 @@ class AnalyticsClass {
             total,
             correct,
             wrong,
-            rate: total > 0 ? Math.round((correct / total) * 100) + '%' : '0%'
+            rate: total > 0 ? Math.round((correct / total) * 100) + '%' : '0%' // ★修正: 三項演算子を完成
         };
         
         localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
