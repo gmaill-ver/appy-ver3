@@ -372,24 +372,53 @@ if (state.bookmarked) {
     }
 
     getQuestionStateFromRecords(bookId, question) {
-        let state = { correct: false, wrong: false, bookmarked: false };
-        
-        if (DataManager && DataManager.allRecords) {
-            DataManager.allRecords.forEach(record => {
-                if (record.bookId === bookId) {
-                    const pathMatch = record.path.join('/') === question.path.join('/');
-                    if (pathMatch && record.questions && record.questions[question.number]) {
-                        const qState = record.questions[question.number];
-                        if (qState.state === 'correct') state.correct = true;
-                        if (qState.state === 'wrong') state.wrong = true;
-                        if (qState.bookmarked) state.bookmarked = true;
+    const states = { correct: false, wrong: false, bookmarked: false };
+    
+    // 最新の記録を確認
+    for (let i = DataManager.allRecords.length - 1; i >= 0; i--) {
+        const record = DataManager.allRecords[i];
+        if (record.bookId === bookId) {
+            // pathが完全に一致する記録を探す
+            if (this.arraysEqual(record.path, question.path)) {
+                const qState = record.questions[question.number];
+                if (qState) {
+                    // ★修正: オブジェクト形式の場合（新形式）
+                    if (typeof qState === 'object' && qState !== null) {
+                        if (qState.state === 'correct') states.correct = true;
+                        if (qState.state === 'wrong') states.wrong = true;
+                        if (qState.bookmarked) states.bookmarked = true;
+                    }
+                    // ★修正: 文字列形式の場合（旧形式との互換性）
+                    else if (typeof qState === 'string') {
+                        if (qState === '○' || qState.includes('○')) states.correct = true;
+                        if (qState === '×' || qState.includes('×')) states.wrong = true;
+                        if (qState === '☆' || qState.includes('☆')) states.bookmarked = true;
                     }
                 }
-            });
+            }
         }
-        
-        return state;
     }
+    
+    // ★追加: savedQuestionStatesからもデータを取得
+    const savedKey = `${bookId}_${question.path.join('_')}`;
+    if (DataManager.savedQuestionStates && DataManager.savedQuestionStates[savedKey]) {
+        const savedState = DataManager.savedQuestionStates[savedKey][question.number];
+        if (savedState) {
+            // オブジェクト形式の場合
+            if (typeof savedState === 'object' && savedState !== null) {
+                if (savedState.state === 'correct') states.correct = true;
+                if (savedState.state === 'wrong') states.wrong = true;
+                if (savedState.bookmarked) states.bookmarked = true;
+            }
+            // 文字列形式の場合
+            else if (typeof savedState === 'string' && savedState.includes('☆')) {
+                states.bookmarked = true;
+            }
+        }
+    }
+    
+    return states;
+}
 
     updateRadarBookSelect() {
         const select = document.getElementById('radarBookSelect');
@@ -694,6 +723,18 @@ if (state.bookmarked) {
             }
         }
     }
+
+    arraysEqual(a, b) {
+        if (!a || !b) return false;
+        if (a.length !== b.length) return false;
+        for (let i = 0; i < a.length; i++) {
+            if (a[i] !== b[i]) return false;
+        }
+        return true;
+    }
+
+    getQuestionStateFromRecords(bookId, question) {
+        const states = { correct: false, wrong: false, bookmarked: false };
 
     calculateBookSubjectStats(bookId) {
         const subjectStats = {};
