@@ -25,53 +25,10 @@ class AnalyticsClass {
         }
 
         try {
-            // ★追加: DOM要素の存在確認を追加
-            console.log('📊 Analytics各機能を初期化中...');
-            
-            // 各更新メソッドを個別にtry-catchで実行
-            try {
-                this.updateChartBars();
-                console.log('✅ チャート更新完了');
-            } catch (e) {
-                console.error('❌ チャート更新エラー:', e);
-            }
-            
-            try {
-                this.updateHeatmapBookSelect();
-                console.log('✅ ヒートマップ選択更新完了');
-            } catch (e) {
-                console.error('❌ ヒートマップ選択更新エラー:', e);
-            }
-            
-            try {
-                this.updateRadarBookSelect();
-                console.log('✅ レーダーチャート選択更新完了');
-            } catch (e) {
-                console.error('❌ レーダーチャート選択更新エラー:', e);
-            }
-            
-            try {
-                this.updateHistoryContent();
-                console.log('✅ 履歴更新完了');
-            } catch (e) {
-                console.error('❌ 履歴更新エラー:', e);
-            }
-            
-            // ★追加: 弱点分析の初期化
-            try {
-                this.updateWeaknessAnalysis();
-                console.log('✅ 弱点分析更新完了');
-            } catch (e) {
-                console.error('❌ 弱点分析更新エラー:', e);
-            }
-            
-            // ★追加: 進捗コンテンツの初期化
-            try {
-                this.updateProgressContent();
-                console.log('✅ 進捗コンテンツ更新完了');
-            } catch (e) {
-                console.error('❌ 進捗コンテンツ更新エラー:', e);
-            }
+            this.updateChartBars();
+            this.updateHeatmapBookSelect();
+            this.updateRadarBookSelect();
+            this.updateHistoryContent();
             
             // ★追加: ピン固定設定を適用（タイミングを遅らせて確実に復元）
             setTimeout(() => {
@@ -79,11 +36,9 @@ class AnalyticsClass {
             }, 200);
             
             this.initialized = true;
-            console.log('✅ Analytics初期化完了');
+            console.log('Analytics initialized successfully');
         } catch (error) {
-            console.error('❌ Analytics初期化エラー:', error);
-            // ★追加: エラーでも初期化フラグは立てる（無限ループ防止）
-            this.initialized = true;
+            console.error('Analytics initialization error:', error);
         }
     }
 
@@ -415,53 +370,24 @@ class AnalyticsClass {
     }
 
     getQuestionStateFromRecords(bookId, question) {
-    const states = { correct: false, wrong: false, bookmarked: false };
-    
-    // 最新の記録を確認
-    for (let i = DataManager.allRecords.length - 1; i >= 0; i--) {
-        const record = DataManager.allRecords[i];
-        if (record.bookId === bookId) {
-            // pathが完全に一致する記録を探す
-            if (this.arraysEqual(record.path, question.path)) {
-                const qState = record.questions[question.number];
-                if (qState) {
-                    // ★修正: オブジェクト形式の場合（新形式）
-                    if (typeof qState === 'object' && qState !== null) {
-                        if (qState.state === 'correct') states.correct = true;
-                        if (qState.state === 'wrong') states.wrong = true;
-                        if (qState.bookmarked) states.bookmarked = true;
-                    }
-                    // ★修正: 文字列形式の場合（旧形式との互換性）
-                    else if (typeof qState === 'string') {
-                        if (qState === '○' || qState.includes('○')) states.correct = true;
-                        if (qState === '×' || qState.includes('×')) states.wrong = true;
-                        if (qState === '☆' || qState.includes('☆')) states.bookmarked = true;
+        let state = { correct: false, wrong: false, bookmarked: false };
+        
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.bookId === bookId) {
+                    const pathMatch = record.path.join('/') === question.path.join('/');
+                    if (pathMatch && record.questions && record.questions[question.number]) {
+                        const qState = record.questions[question.number];
+                        if (qState.state === 'correct') state.correct = true;
+                        if (qState.state === 'wrong') state.wrong = true;
+                        if (qState.bookmarked) state.bookmarked = true;
                     }
                 }
-            }
+            });
         }
+        
+        return state;
     }
-    
-    // ★追加: savedQuestionStatesからもデータを取得
-    const savedKey = `${bookId}_${question.path.join('_')}`;
-    if (DataManager.savedQuestionStates && DataManager.savedQuestionStates[savedKey]) {
-        const savedState = DataManager.savedQuestionStates[savedKey][question.number];
-        if (savedState) {
-            // オブジェクト形式の場合
-            if (typeof savedState === 'object' && savedState !== null) {
-                if (savedState.state === 'correct') states.correct = true;
-                if (savedState.state === 'wrong') states.wrong = true;
-                if (savedState.bookmarked) states.bookmarked = true;
-            }
-            // 文字列形式の場合
-            else if (typeof savedState === 'string' && savedState.includes('☆')) {
-                states.bookmarked = true;
-            }
-        }
-    }
-    
-    return states;
-}
 
     updateRadarBookSelect() {
         const select = document.getElementById('radarBookSelect');
@@ -767,15 +693,6 @@ class AnalyticsClass {
         }
     }
 
-    arraysEqual(a, b) {
-        if (!a || !b) return false;
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (a[i] !== b[i]) return false;
-        }
-        return true;
-    }
-
     calculateBookSubjectStats(bookId) {
         const subjectStats = {};
         const book = DataManager.books[bookId];
@@ -906,34 +823,22 @@ class AnalyticsClass {
         let totalAnswered = 0;
         let totalCorrect = 0;
         
-        // ★修正: 削除済み問題集を除外して全問題数をカウント
+        // 全問題数をカウント（DataManagerが存在するか確認）
         if (DataManager && DataManager.books) {
             Object.values(DataManager.books).forEach(book => {
-                // ★追加: 削除済みチェック
-                if (DataManager.isDeleted && DataManager.isDeleted('books', book.id)) {
-                    return; // 削除済みはスキップ
-                }
                 totalQuestions += DataManager.countQuestionsInBook(book);
             });
         }
         
-        // ★修正: 削除済み問題集のレコードを除外して解答済み問題を集計
+        // 解答済み問題を集計
         if (DataManager && DataManager.allRecords) {
             DataManager.allRecords.forEach(record => {
-                // ★追加: 削除済み問題集のレコードをスキップ
-                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
-                    return;
-                }
-                
                 totalAnswered += record.stats?.total || 0;
                 totalCorrect += record.stats?.correct || 0;
                 
                 if (record.questions) {
                     Object.entries(record.questions).forEach(([num, state]) => {
-                        // ★修正: stateがオブジェクトの場合とそうでない場合を考慮
-                        const hasState = (typeof state === 'object' && state !== null && state.state !== null) ||
-                                       (typeof state === 'string' && state !== null);
-                        if (hasState) {
+                        if (state.state !== null) {
                             const key = `${record.bookId}_${record.path.join('/')}_${num}`;
                             uniqueAnswered.add(key);
                         }
@@ -941,420 +846,54 @@ class AnalyticsClass {
                 }
             });
         }
-    
-    const uniqueAnsweredCount = uniqueAnswered.size;
-    const overallRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
-    const progressPercentage = totalQuestions > 0 
-        ? Math.min(100, Math.round((uniqueAnsweredCount / totalQuestions) * 100)) 
-        : 0;
-    
-    return {
-        totalQuestions,
-        totalAnswered,
-        totalCorrect,
-        uniqueAnsweredCount,
-        overallRate,
-        progressPercentage
-    };
-}
-
-// ★修正: 科目別統計計算（削除済み問題集を除外）
-calculateBookSubjectStats(bookId) {
-    const subjectStats = {};
-    const book = DataManager.books[bookId];
-    
-    // ★追加: 削除済み問題集のチェック
-    if (!book || DataManager.isDeleted('books', bookId)) return subjectStats;
-
-    Object.keys(book.structure).forEach(subject => {
-        subjectStats[subject] = {
-            total: 0,
-            correct: 0,
-            wrong: 0
+        
+        const uniqueAnsweredCount = uniqueAnswered.size;
+        const overallRate = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+        const progressPercentage = totalQuestions > 0 
+            ? Math.min(100, Math.round((uniqueAnsweredCount / totalQuestions) * 100)) 
+            : 0;
+        
+        return {
+            totalQuestions,
+            totalAnswered,
+            totalCorrect,
+            uniqueAnsweredCount,
+            overallRate,
+            progressPercentage
         };
-    });
-    
-    if (DataManager && DataManager.allRecords) {
-        DataManager.allRecords.forEach(record => {
-            // ★追加: 削除済み問題集のレコードをスキップ
-            if (DataManager.isDeleted('books', record.bookId)) {
-                return;
-            }
-            
-            if (record.bookId === bookId && record.path && record.path.length > 0) {
-                const subject = record.path[0];
-                if (subject && subjectStats[subject]) {
-                    if (record.questions) {
-                        Object.values(record.questions).forEach(q => {
-                            if (q.state === 'correct') {
-                                subjectStats[subject].correct++;
-                                subjectStats[subject].total++;
-                            } else if (q.state === 'wrong') {
-                                subjectStats[subject].wrong++;
-                                subjectStats[subject].total++;
-                            }
-                        });
-                    }
-                }
-            }
-        });
-    }
-    
-    return subjectStats;
-}
-
-// ★修正: レーダーチャート描画（削除済み問題集のチェック追加）
-drawRadarChart() {
-    if (this.radarChartMode === 'compare') {
-        this.drawRadarChartCompare();
-        return;
     }
 
-    const canvas = document.getElementById('radarChart');
-    const select = document.getElementById('radarBookSelect');
-    if (!canvas || !select) return;
+    updateProgressContent() {
+        const overallContainer = document.getElementById('overallProgress');
+        if (!overallContainer) return;
 
-    const ctx = canvas.getContext('2d');
-    const centerX = 150;
-    const centerY = 150;
-    const radius = 100;
-    
-    const bookId = select.value;
-    if (!bookId) {
-        ctx.clearRect(0, 0, 300, 300);
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('問題集を選択してください', centerX, centerY);
-        return;
-    }
-
-    const book = DataManager.books[bookId];
-    // ★修正: 削除済み問題集のチェックを追加
-    if (!book || DataManager.isDeleted('books', bookId)) {
-        ctx.clearRect(0, 0, 300, 300);
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('選択された問題集は削除されています', centerX, centerY);
-        return;
-    }
-
-    const subjectStats = this.calculateBookSubjectStats(bookId);
-    const subjects = Object.keys(book.structure);
-    const displaySubjects = subjects.slice(0, 8);
-
-    if (displaySubjects.length === 0) {
-        ctx.clearRect(0, 0, 300, 300);
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('科目データがありません', centerX, centerY);
-        return;
-    }
-
-    const angleStep = (Math.PI * 2) / displaySubjects.length;
-    
-    // 背景グリッドを描画
-    ctx.clearRect(0, 0, 300, 300);
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 1;
-    
-    for (let i = 1; i <= 5; i++) {
-        ctx.beginPath();
-        for (let j = 0; j < displaySubjects.length; j++) {
-            const angle = j * angleStep - Math.PI / 2;
-            const x = centerX + Math.cos(angle) * (radius * i / 5);
-            const y = centerY + Math.sin(angle) * (radius * i / 5);
-            if (j === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.closePath();
-        ctx.stroke();
-    }
-
-    // 軸線を描画
-    displaySubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const endX = centerX + Math.cos(angle) * radius;
-        const endY = centerY + Math.sin(angle) * radius;
+        const stats = this.calculateOverallProgress();
         
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-    });
-
-    // データをプロット
-    ctx.strokeStyle = '#3b82f6';
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    
-    displaySubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
-        const rate = stats.total > 0 ? stats.correct / stats.total : 0;
-        const distance = rate * radius;
-        
-        const x = centerX + Math.cos(angle) * distance;
-        const y = centerY + Math.sin(angle) * distance;
-        
-        if (index === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
-        }
-        
-        // データポイントを描画
-        ctx.fillStyle = '#3b82f6';
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-    });
-    
-    ctx.closePath();
-    ctx.stroke();
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
-    ctx.fill();
-
-    // ラベルを描画
-    ctx.fillStyle = '#1f2937';
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    
-    displaySubjects.forEach((subject, index) => {
-        const angle = index * angleStep - Math.PI / 2;
-        const labelDistance = radius + 20;
-        const x = centerX + Math.cos(angle) * labelDistance;
-        const y = centerY + Math.sin(angle) * labelDistance;
-        
-        const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : (subject || '');
-        ctx.fillText(shortName, x, y);
-        
-        const stats = subjectStats[subject] || { total: 0, correct: 0, wrong: 0 };
-        const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-        ctx.font = '10px sans-serif';
-        ctx.fillStyle = '#6b7280';
-        ctx.fillText(`${rate}%`, x, y + 12);
-        ctx.font = '12px sans-serif';
-        ctx.fillStyle = '#1f2937';
-    });
-}
-
-// ★修正: 全問題集比較チャート（削除済み問題集のレコードを除外）
-drawRadarChartCompare() {
-        const canvas = document.getElementById('radarChart');
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        const centerX = 150;
-        const centerY = 150;
-        const radius = 100;
-        
-        // ★修正: 実際のデータから科目を動的に取得
-        const subjectSet = new Set();
-        
-        // 全レコードから科目を収集
-        if (DataManager && DataManager.allRecords) {
-            DataManager.allRecords.forEach(record => {
-                // ★追加: 削除済み問題集のレコードをスキップ
-                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
-                    return;
-                }
-                
-                if (record.path && record.path.length > 0 && record.path[0]) {
-                    subjectSet.add(record.path[0]);
-                }
-            });
-        }
-        
-        // 全問題集から科目を収集
-        if (DataManager && DataManager.books) {
-            Object.values(DataManager.books).forEach(book => {
-                // ★追加: 削除済みチェック
-                if (DataManager.isDeleted && DataManager.isDeleted('books', book.id)) {
-                    return;
-                }
-                
-                if (book.structure) {
-                    Object.keys(book.structure).forEach(subject => {
-                        if (subject) subjectSet.add(subject);
-                    });
-                }
-            });
-        }
-        
-        // ★修正: 収集した科目を配列化（最大8科目まで表示）
-        const mainSubjects = Array.from(subjectSet).slice(0, 8);
-        
-        // 科目がない場合のエラーハンドリング
-        if (mainSubjects.length === 0) {
-            ctx.clearRect(0, 0, 300, 300);
-            ctx.fillStyle = '#6b7280';
-            ctx.font = '14px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('データがありません', centerX, centerY);
-            return;
-        }
-        
-        const allSubjectStats = {};
-        mainSubjects.forEach(subject => {
-            allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
-        });
-        
-        if (DataManager && DataManager.allRecords) {
-            DataManager.allRecords.forEach(record => {
-                // ★追加: 削除済み問題集のレコードをスキップ
-                if (DataManager.isDeleted && DataManager.isDeleted('books', record.bookId)) {
-                    return;
-                }
-                
-                if (record.path && record.path.length > 0) {
-                    const subject = record.path[0];
-                    if (allSubjectStats[subject]) {
-                        if (record.questions) {
-                            Object.values(record.questions).forEach(q => {
-                                if (q.state === 'correct') {
-                                    allSubjectStats[subject].correct++;
-                                    allSubjectStats[subject].total++;
-                                } else if (q.state === 'wrong') {
-                                    allSubjectStats[subject].wrong++;
-                                    allSubjectStats[subject].total++;
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        }
-        
-        const angleStep = (Math.PI * 2) / mainSubjects.length;
-        
-        ctx.clearRect(0, 0, 300, 300);
-        
-        // 背景グリッドを描画
-        ctx.strokeStyle = '#e5e7eb';
-        ctx.lineWidth = 1;
-        
-        for (let i = 1; i <= 5; i++) {
-            ctx.beginPath();
-            for (let j = 0; j < mainSubjects.length; j++) {
-                const angle = j * angleStep - Math.PI / 2;
-                const x = centerX + Math.cos(angle) * (radius * i / 5);
-                const y = centerY + Math.sin(angle) * (radius * i / 5);
-                if (j === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            ctx.closePath();
-            ctx.stroke();
-        }
-        
-        // 軸線を描画
-        for (let i = 0; i < mainSubjects.length; i++) {
-            const angle = i * angleStep - Math.PI / 2;
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
-            
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
-        }
-        
-        // データをプロット
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
-        ctx.strokeStyle = '#8b5cf6';
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        mainSubjects.forEach((subject, i) => {
-            const stats = allSubjectStats[subject];
-            const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
-            const angle = i * angleStep - Math.PI / 2;
-            const x = centerX + Math.cos(angle) * (radius * percentage);
-            const y = centerY + Math.sin(angle) * (radius * percentage);
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        // ラベルを描画
-        ctx.fillStyle = '#1f2937';
-        ctx.font = '12px sans-serif';
-        ctx.textAlign = 'center';
-        
-        mainSubjects.forEach((subject, i) => {
-            const angle = i * angleStep - Math.PI / 2;
-            const x = centerX + Math.cos(angle) * (radius + 20);
-            const y = centerY + Math.sin(angle) * (radius + 20);
-            
-            const shortName = subject.length > 6 ? subject.substring(0, 6) + '...' : subject;
-            ctx.fillText(shortName, x, y);
-            
-            const stats = allSubjectStats[subject];
-            const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-            ctx.font = '10px sans-serif';
-            ctx.fillStyle = '#6b7280';
-            ctx.fillText(`${rate}%`, x, y + 12);
-            ctx.font = '12px sans-serif';
-            ctx.fillStyle = '#1f2937';
-        });
-        
-        ctx.fillStyle = '#6b7280';
-        ctx.font = '11px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('全問題集の統合データ', centerX, 20);
-    }
-
-// ★追加: 進捗コンテンツ更新の強化
-updateProgressContent() {
-    const overallContainer = document.getElementById('overallProgress');
-    if (!overallContainer) return;
-
-    // ★追加: 最新データで統計を計算
-    const stats = this.calculateOverallProgress();
-    
-    // ★追加: デバッグログ
-    console.log('📊 進捗統計更新:', stats);
-    
-    overallContainer.innerHTML = `
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">${stats.totalQuestions}</div>
-                <div class="stat-label">総問題数</div>
+        overallContainer.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${stats.totalQuestions}</div>
+                    <div class="stat-label">総問題数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.totalAnswered}</div>
+                    <div class="stat-label">解答済み</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.totalCorrect}</div>
+                    <div class="stat-label">正解数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.overallRate}%</div>
+                    <div class="stat-label">正答率</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">${stats.totalAnswered}</div>
-                <div class="stat-label">解答済み</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width: ${stats.progressPercentage}%;"></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">${stats.totalCorrect}</div>
-                <div class="stat-label">正解数</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value">${stats.overallRate}%</div>
-                <div class="stat-label">正答率</div>
-            </div>
-        </div>
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${stats.progressPercentage}%;"></div>
-        </div>
-        <p style="text-align: center; margin-top: 10px;">進捗率: ${stats.progressPercentage}%</p>
-    `;
-}
+            <p style="text-align: center; margin-top: 10px;">進捗率: ${stats.progressPercentage}%</p>
+        `;
+    }
 }
 
 // グローバルに公開
@@ -1364,8 +903,6 @@ window.Analytics = new AnalyticsClass();
 document.addEventListener('DOMContentLoaded', () => {
     // 少し遅延させてDataManagerの初期化を待つ
     setTimeout(() => {
-        // ★追加: 初期化実行のログ
-        console.log('🚀 Analytics初期化開始...');
         Analytics.initialize();
     }, 100);
 });
