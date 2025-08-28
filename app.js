@@ -1121,7 +1121,7 @@ if (window.Analytics) {
 
         let draggedElement = null;
         
-        const cards = container.querySelectorAll('.book-card');
+        const cards = container.querySelectorAll('.book-card.sortable');  // ★修正: sortableクラスのみ選択
         cards.forEach(card => {
             card.draggable = true;
             
