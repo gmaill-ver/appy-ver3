@@ -824,7 +824,20 @@ resetAllQuestions() {
     // 状態を保存して統計を更新
     this.saveQuestionStatesForPath();
     this.updateStats();
-    this.autoSaveRecord();
+    
+    // ★追加: allRecordsから現在のパスの記録を削除（ヒートマップ連動）
+    if (this.currentBook && this.currentPath.length > 0) {
+        const pathKey = this.currentPath.join('/');
+        DataManager.allRecords = DataManager.allRecords.filter(record => 
+            !(record.bookId === this.currentBook.id && record.path.join('/') === pathKey)
+        );
+        localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
+        
+        // ヒートマップを即座に更新
+        if (window.Analytics) {
+            Analytics.updateHeatmap();
+        }
+    }
     
     console.log('✅ 全問題リセット完了');
     
@@ -1675,80 +1688,93 @@ if (window.Analytics) {
 
     /**
     /**
-     * 問題集の全チェックを外す（★新規追加）
-     */
-    resetBookAllChecks(bookId) {
-        if (!confirm('この問題集のすべてのチェック（正解・不正解・ブックマーク）をリセットしますか？')) {
-            return;
+ * 問題集の全チェックを外す（★新規追加）
+ */
+resetBookAllChecks(bookId) {
+    if (!confirm('この問題集のすべてのチェック（正解・不正解・ブックマーク）をリセットしますか？')) {
+        return;
+    }
+    
+    const book = DataManager.books[bookId];
+    if (!book) {
+        alert('問題集が見つかりません');
+        return;
+    }
+    
+    console.log(`🔄 問題集「${book.name}」の全チェックリセット開始`);
+    
+    // この問題集に関連するすべての保存済み問題状態を削除
+const keysToDelete = [];
+Object.keys(DataManager.savedQuestionStates).forEach(key => {
+    if (key.startsWith(bookId + '_')) {
+        keysToDelete.push(key);
+    }
+});
+
+// 削除実行
+keysToDelete.forEach(key => {
+    delete DataManager.savedQuestionStates[key];
+});
+
+// 保存
+localStorage.setItem('savedQuestionStates', JSON.stringify(DataManager.savedQuestionStates));
+
+// ★追加: allRecordsからも該当する記録を削除（ヒートマップ連動）
+DataManager.allRecords = DataManager.allRecords.filter(record => 
+    record.bookId !== bookId
+);
+localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
+
+// Firebase同期
+if (window.ULTRA_STABLE_USER_ID && typeof DataManager.saveToFirestore === 'function') {
+    DataManager.saveToFirestore({
+        type: 'resetChecks',
+        action: 'resetAll',
+        bookId: bookId,
+        bookName: book.name,
+        resetCount: keysToDelete.length,
+        message: `「${book.name}」のチェックをリセットしました`
+    });
+}
+
+console.log(`✅ ${keysToDelete.length}件の問題状態をリセット`);
+
+// 現在表示中の問題集の場合は画面を更新
+if (this.currentBook && this.currentBook.id === bookId) {
+    // 問題状態をクリア
+    this.questionStates = {};
+    
+    // UIからもクラスを削除
+    const cells = document.querySelectorAll('.question-cell');
+    cells.forEach(cell => {
+        cell.classList.remove('correct', 'wrong', 'bookmarked');
+    });
+    
+    // 統計を更新
+    this.updateStats();
+}
+
+// ★追加: ヒートマップと分析データを即座に更新
+setTimeout(() => {
+    // ヒートマップで選択されている問題集が同じ場合は更新
+    const heatmapSelect = document.getElementById('heatmapBookSelect');
+    if (heatmapSelect && heatmapSelect.value === bookId) {
+        console.log('🔄 ヒートマップを更新中...');
+        if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
+            Analytics.updateHeatmap();
+            console.log('✅ ヒートマップ更新完了');
         }
-        
-        const book = DataManager.books[bookId];
-        if (!book) {
-            alert('問題集が見つかりません');
-            return;
-        }
-        
-        console.log(`🔄 問題集「${book.name}」の全チェックリセット開始`);
-        
-        // この問題集に関連するすべての保存済み問題状態を削除
-        const keysToDelete = [];
-        Object.keys(DataManager.savedQuestionStates).forEach(key => {
-            if (key.startsWith(bookId + '_')) {
-                keysToDelete.push(key);
-            }
-        });
-        
-        // 削除実行
-        keysToDelete.forEach(key => {
-            delete DataManager.savedQuestionStates[key];
-        });
-        
-        // 保存
-        localStorage.setItem('savedQuestionStates', JSON.stringify(DataManager.savedQuestionStates));
-        
-        // Firebase同期
-        if (window.ULTRA_STABLE_USER_ID && typeof DataManager.saveToFirestore === 'function') {
-            DataManager.saveToFirestore({
-                type: 'resetChecks',
-                action: 'resetAll',
-                bookId: bookId,
-                bookName: book.name,
-                resetCount: keysToDelete.length,
-                message: `「${book.name}」のチェックをリセットしました`
-            });
-        }
-        
-        console.log(`✅ ${keysToDelete.length}件の問題状態をリセット`);
-        
-        // 現在表示中の問題集の場合は画面を更新
-        if (this.currentBook && this.currentBook.id === bookId) {
-            // 問題状態をクリア
-            this.questionStates = {};
-            
-            // UIからもクラスを削除
-            const cells = document.querySelectorAll('.question-cell');
-            cells.forEach(cell => {
-                cell.classList.remove('correct', 'wrong', 'bookmarked');
-            });
-            
-            // 統計を更新
-            this.updateStats();
-        }
-        
-        // ★追加: ヒートマップを即座に更新
-        setTimeout(() => {
-            // ヒートマップで選択されている問題集が同じ場合は更新
-            const heatmapSelect = document.getElementById('heatmapBookSelect');
-            if (heatmapSelect && heatmapSelect.value === bookId) {
-                console.log('🔄 ヒートマップを更新中...');
-                if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
-                    Analytics.updateHeatmap();
-                    console.log('✅ ヒートマップ更新完了');
-                }
-            }
-        }, 100);
-        
-        // 通知表示
+    }
+    // ★追加: その他の分析データも更新
+    if (window.Analytics) {
+        Analytics.updateChartBars();
+        Analytics.updateWeaknessAnalysis();
+        Analytics.updateHistoryContent();
+        Analytics.drawRadarChart();
+    }
+}, 100);
+
+// 通知表示
         const notification = document.createElement('div');
         notification.style.cssText = `
             position: fixed;
