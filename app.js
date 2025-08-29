@@ -907,8 +907,6 @@ syncQuestionStateFromHeatmap(bookId, pathStr, questionNum, questionState) {
 }
 
     saveQuestionStatesForPath() {
-
-    saveQuestionStatesForPath() {
         if (this.currentBook && this.currentPath.length > 0) {
             DataManager.saveQuestionStates(this.currentBook.id, this.currentPath, this.questionStates);
         }
