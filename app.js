@@ -565,27 +565,191 @@ class Application {
         this.updateBreadcrumb();
     }
 
-    renderRecordHierarchy() {
-        const container = document.getElementById('recordHierarchyContainer');
-        if (!container || !this.currentBook) return;
+    // renderRecordHierarchy()メソッド内
+renderRecordHierarchy() {
+    const container = document.getElementById('recordHierarchyContainer');
+    if (!container || !this.currentBook) return;
 
-        container.style.display = 'block';
+    container.style.display = 'block';
+    
+    let structure = this.currentBook.structure;
+    if (this.currentPath.length > 0) {
+        for (let i = 0; i < this.currentPath.length; i++) {
+            if (structure[this.currentPath[i]]) {
+                structure = structure[this.currentPath[i]].children || {};
+            }
+        }
+    }
+    
+    // ★最適化: DocumentFragmentを使用
+    const fragment = document.createDocumentFragment();
+    const hierarchyList = document.createElement('div');
+    hierarchyList.className = 'hierarchy-list';
+    
+    // DOM要素を直接作成（文字列連結を避ける）
+    this.renderRecordLevelOptimized(structure, this.currentPath, hierarchyList);
+    
+    fragment.appendChild(hierarchyList);
+    
+    // 一度だけDOM更新
+    container.innerHTML = '';
+    container.appendChild(fragment);
+}
+
+// ★追加: 最適化された階層レンダリングメソッド
+renderRecordLevelOptimized(structure, basePath, parentElement) {
+    // naturalSortをキャッシュ化
+    const sortedEntries = this.getSortedEntries(structure);
+    
+    sortedEntries.forEach(([name, item]) => {
+        const currentPath = [...basePath, name];
+        const pathStr = currentPath.join('/');
+        const hasChildren = item.children && Object.keys(item.children).length > 0;
+        const isExpanded = this.expandedNodes.has(pathStr);
         
-        let structure = this.currentBook.structure;
-        if (this.currentPath.length > 0) {
-            for (let i = 0; i < this.currentPath.length; i++) {
-                if (structure[this.currentPath[i]]) {
-                    structure = structure[this.currentPath[i]].children || {};
+        const hierarchyItem = document.createElement('div');
+        hierarchyItem.className = 'hierarchy-item';
+        
+        const hierarchyRow = document.createElement('div');
+        hierarchyRow.className = 'hierarchy-row';
+        
+        if (item.questions) {
+            hierarchyRow.onclick = () => this.showQuestions(pathStr);
+            
+            const spacer = document.createElement('span');
+            spacer.style.width = '28px';
+            
+            const icon = document.createElement('span');
+            icon.className = 'hierarchy-icon';
+            icon.textContent = this.getHierarchyIcon(item.type);
+            
+            const label = document.createElement('span');
+            label.className = 'hierarchy-label';
+            label.textContent = name;
+            
+            const meta = document.createElement('span');
+            meta.className = 'hierarchy-meta';
+            meta.textContent = `${item.questions.length}問`;
+            
+            hierarchyRow.appendChild(spacer);
+            hierarchyRow.appendChild(icon);
+            hierarchyRow.appendChild(label);
+            hierarchyRow.appendChild(meta);
+            
+            if (hasChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = `hierarchy-children ${isExpanded ? 'expanded' : ''}`;
+                this.renderRecordLevelOptimized(item.children, currentPath, childrenContainer);
+                hierarchyItem.appendChild(childrenContainer);
+            }
+        } else if (hasChildren) {
+            hierarchyRow.onclick = (event) => this.toggleRecordNode(pathStr, event);
+            
+            const toggle = document.createElement('span');
+            toggle.className = `hierarchy-toggle ${isExpanded ? 'expanded' : ''}`;
+            toggle.textContent = '▶';
+            
+            const icon = document.createElement('span');
+            icon.className = 'hierarchy-icon';
+            icon.textContent = this.getHierarchyIcon(item.type);
+            
+            const label = document.createElement('span');
+            label.className = 'hierarchy-label';
+            label.textContent = name;
+            
+            hierarchyRow.appendChild(toggle);
+            hierarchyRow.appendChild(icon);
+            hierarchyRow.appendChild(label);
+            
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = `hierarchy-children ${isExpanded ? 'expanded' : ''}`;
+            this.renderRecordLevelOptimized(item.children, currentPath, childrenContainer);
+            hierarchyItem.appendChild(childrenContainer);
+        }
+        
+        hierarchyItem.appendChild(hierarchyRow);
+        parentElement.appendChild(hierarchyItem);
+    });
+}
+
+// ★追加: ソート結果のキャッシュ
+getSortedEntries(structure) {
+    // キャッシュキーを生成
+    const cacheKey = JSON.stringify(Object.keys(structure).sort());
+    
+    if (!this.sortCache) {
+        this.sortCache = new Map();
+    }
+    
+    if (this.sortCache.has(cacheKey)) {
+        return this.sortCache.get(cacheKey);
+    }
+    
+    const naturalSort = this.getNaturalSortFunction();
+    const sortedEntries = Object.entries(structure).sort((a, b) => {
+        const orderA = a[1].order !== undefined ? a[1].order : Infinity;
+        const orderB = b[1].order !== undefined ? b[1].order : Infinity;
+        if (orderA !== orderB) return orderA - orderB;
+        return naturalSort(a[0], b[0]);
+    });
+    
+    this.sortCache.set(cacheKey, sortedEntries);
+    return sortedEntries;
+}
+
+// ★追加: naturalSort関数のメモ化
+getNaturalSortFunction() {
+    if (!this.naturalSortCache) {
+        this.naturalSortCache = new Map();
+    }
+    
+    return (a, b) => {
+        const cacheKey = `${a}|||${b}`;
+        if (this.naturalSortCache.has(cacheKey)) {
+            return this.naturalSortCache.get(cacheKey);
+        }
+        
+        const extractNumbers = (str) => {
+            const parts = str.split(/(\d+)/);
+            return parts.map(part => {
+                const num = parseInt(part, 10);
+                return isNaN(num) ? part : num;
+            });
+        };
+        
+        const aParts = extractNumbers(a);
+        const bParts = extractNumbers(b);
+        
+        let result = 0;
+        for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+            const aPart = aParts[i];
+            const bPart = bParts[i];
+            
+            if (typeof aPart === 'number' && typeof bPart === 'number') {
+                if (aPart !== bPart) {
+                    result = aPart - bPart;
+                    break;
                 }
+            } else if (typeof aPart === 'string' && typeof bPart === 'string') {
+                const comp = aPart.localeCompare(bPart);
+                if (comp !== 0) {
+                    result = comp;
+                    break;
+                }
+            } else {
+                result = typeof aPart === 'number' ? -1 : 1;
+                break;
             }
         }
         
-        let html = '<div class="hierarchy-list">';
-        html += this.renderRecordLevel(structure, this.currentPath);
-        html += '</div>';
+        if (result === 0) {
+            result = aParts.length - bParts.length;
+        }
         
-        container.innerHTML = html;
-    }
+        this.naturalSortCache.set(cacheKey, result);
+        return result;
+    };
+}
 
     renderRecordLevel(structure, basePath) {
         let html = '';
