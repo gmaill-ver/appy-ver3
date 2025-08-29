@@ -584,7 +584,7 @@ async function openIndexedDB() {
     }
 })();
 
-// 📥 Firebaseからのデータ読み込み（完全修正版）
+// 📥 Firebaseからのデータ読み込み（CORSエラー対策版）
 async function loadFromFirestore() {
     if (!window.ULTRA_STABLE_USER_ID || !window.DataManager) {
         console.warn('⚠️ 固定IDまたはDataManagerが未設定');
@@ -593,8 +593,18 @@ async function loadFromFirestore() {
     
     try {
         const db = firebase.firestore();
+        
+        // ★追加: CORSエラー対策のためリアルタイムリスナーを無効化
+        db.settings({
+            ignoreUndefinedProperties: true,
+            experimentalForceLongPolling: true, // ★追加: CORSエラー回避
+            merge: true
+        });
+        
         const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
-        const userDoc = await userRef.get();
+        
+        // ★修正: リアルタイムリスナーを使わず一回限りの読み込みに変更
+        const userDoc = await userRef.get({ source: 'server' }); // ★追加: サーバーから強制取得
         
         if (userDoc.exists) {
             const userData = userDoc.data();
