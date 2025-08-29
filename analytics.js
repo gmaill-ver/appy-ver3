@@ -30,7 +30,7 @@ class AnalyticsClass {
             this.updateRadarBookSelect();
             this.updateHistoryContent();
             
-            // ピン固定設定を適用（タイミングを遅らせて確実に復元）
+            // ★追加: ピン固定設定を適用（タイミングを遅らせて確実に復元）
             setTimeout(() => {
                 this.restorePinnedSettings();
             }, 200);
@@ -43,7 +43,7 @@ class AnalyticsClass {
     }
 
     /**
-     * ピン留め設定復元メソッド
+     * ★追加: ピン留め設定復元メソッド
      */
     restorePinnedSettings() {
         // ヒートマップのピン留め復元
@@ -87,6 +87,7 @@ class AnalyticsClass {
         }
     }
 
+    // 以降のメソッドは変更なし（元のコードと同じ）
     switchChartView(view, btn) {
         this.currentChartView = view;
         
@@ -158,6 +159,7 @@ class AnalyticsClass {
         let count = 0;
         const dateStr = date.toDateString();
         
+        // DataManagerのrecordsが存在するか確認
         if (DataManager && DataManager.allRecords) {
             DataManager.allRecords.forEach(record => {
                 const recordDate = new Date(record.timestamp);
@@ -217,13 +219,13 @@ class AnalyticsClass {
         
         if (DataManager && DataManager.books) {
             Object.values(DataManager.books || {}).forEach(book => {
-                // 削除済みチェックを追加
-                if (DataManager.isDeleted('books', book.id)) {
-                    return; // 削除済みはスキップ
-                }
-                
-                const option = document.createElement('option');
-                option.value = book.id;
+        // 削除済みチェックを追加
+        if (DataManager.isDeleted('books', book.id)) {
+            return; // 削除済みはスキップ
+        }
+        
+        const option = document.createElement('option');
+        option.value = book.id;
                 option.textContent = book.name;
                 select.appendChild(option);
             });
@@ -270,14 +272,12 @@ class AnalyticsClass {
                 
                 const state = this.getQuestionStateFromRecords(book.id, q);
                 let cellClass = '';
-
-                // 複合状態に対応
+                
                 if (state.wrong) cellClass = 'wrong';
                 else if (state.correct) cellClass = 'correct';
-
-                // ブックマークは独立して追加（スペースを付けて）
+                
                 if (state.bookmarked) {
-                    cellClass = cellClass ? cellClass + ' bookmarked' : 'bookmarked';
+                    cellClass += ' bookmarked';
                 }
                 
                 html += `<div class="heatmap-cell ${cellClass}" 
@@ -369,6 +369,26 @@ class AnalyticsClass {
         }
     }
 
+    getQuestionStateFromRecords(bookId, question) {
+        let state = { correct: false, wrong: false, bookmarked: false };
+        
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.bookId === bookId) {
+                    const pathMatch = record.path.join('/') === question.path.join('/');
+                    if (pathMatch && record.questions && record.questions[question.number]) {
+                        const qState = record.questions[question.number];
+                        if (qState.state === 'correct') state.correct = true;
+                        if (qState.state === 'wrong') state.wrong = true;
+                        if (qState.bookmarked) state.bookmarked = true;
+                    }
+                }
+            });
+        }
+        
+        return state;
+    }
+
     updateRadarBookSelect() {
         const select = document.getElementById('radarBookSelect');
         if (!select) return;
@@ -377,20 +397,49 @@ class AnalyticsClass {
         
         if (DataManager && DataManager.books) {
             Object.values(DataManager.books || {}).forEach(book => {
-                // 削除済みチェックを追加
-                if (DataManager.isDeleted('books', book.id)) {
-                    return; // 削除済みはスキップ
-                }
-                
-                const option = document.createElement('option');
-                option.value = book.id;
+        // 削除済みチェックを追加
+        if (DataManager.isDeleted('books', book.id)) {
+            return; // 削除済みはスキップ
+        }
+        
+        const option = document.createElement('option');
+        option.value = book.id;
                 option.textContent = book.name;
                 select.appendChild(option);
             });
         }
     }
 
+    setRadarMode(mode, btn) {
+        this.radarChartMode = mode;
+        
+        document.querySelectorAll('#radarModeSubject, #radarModeCompare').forEach(b => {
+            b.classList.remove('active');
+        });
+        if (btn) {
+            btn.classList.add('active');
+        }
+        
+        const select = document.getElementById('radarBookSelect');
+        const toggleBtn = document.getElementById('radarToggleBtn');
+        
+        if (mode === 'compare') {
+            if (select) select.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.display = 'none';
+            this.drawRadarChartCompare();
+        } else {
+            if (select) select.style.display = 'block';
+            if (toggleBtn) toggleBtn.style.display = 'block';
+            this.drawRadarChart();
+        }
+    }
+
     drawRadarChart() {
+        if (this.radarChartMode === 'compare') {
+            this.drawRadarChartCompare();
+            return;
+        }
+
         const canvas = document.getElementById('radarChart');
         const select = document.getElementById('radarBookSelect');
         if (!canvas || !select) return;
@@ -505,6 +554,126 @@ class AnalyticsClass {
         });
     }
 
+    drawRadarChartCompare() {
+        const canvas = document.getElementById('radarChart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const centerX = 150;
+        const centerY = 150;
+        const radius = 100;
+        
+        const mainSubjects = ['基礎法学', '憲法', '行政法', '民法', '商法', '一般知識'];
+        
+        const allSubjectStats = {};
+        mainSubjects.forEach(subject => {
+            allSubjectStats[subject] = { total: 0, correct: 0, wrong: 0 };
+        });
+        
+        if (DataManager && DataManager.allRecords) {
+            DataManager.allRecords.forEach(record => {
+                if (record.path && record.path.length > 0) {
+                    const subject = record.path[0];
+                    if (mainSubjects.includes(subject)) {
+                        if (record.questions) {
+                            Object.values(record.questions).forEach(q => {
+                                if (q.state === 'correct') {
+                                    allSubjectStats[subject].correct++;
+                                    allSubjectStats[subject].total++;
+                                } else if (q.state === 'wrong') {
+                                    allSubjectStats[subject].wrong++;
+                                    allSubjectStats[subject].total++;
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
+        
+        const angleStep = (Math.PI * 2) / mainSubjects.length;
+        
+        ctx.clearRect(0, 0, 300, 300);
+        
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1;
+        
+        for (let i = 1; i <= 5; i++) {
+            ctx.beginPath();
+            for (let j = 0; j < mainSubjects.length; j++) {
+                const angle = j * angleStep - Math.PI / 2;
+                const x = centerX + Math.cos(angle) * (radius * i / 5);
+                const y = centerY + Math.sin(angle) * (radius * i / 5);
+                
+                if (j === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+        
+        for (let i = 0; i < mainSubjects.length; i++) {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * radius;
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.3)';
+        ctx.strokeStyle = '#8b5cf6';
+        ctx.lineWidth = 2;
+        
+        ctx.beginPath();
+        mainSubjects.forEach((subject, i) => {
+            const stats = allSubjectStats[subject];
+            const percentage = stats.total > 0 ? (stats.correct / stats.total) : 0;
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius * percentage);
+            const y = centerY + Math.sin(angle) * (radius * percentage);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = '#1f2937';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        
+        mainSubjects.forEach((subject, i) => {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + Math.cos(angle) * (radius + 20);
+            const y = centerY + Math.sin(angle) * (radius + 20);
+            
+            ctx.fillText(subject, x, y);
+            
+            const stats = allSubjectStats[subject];
+            const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+            ctx.font = '10px sans-serif';
+            ctx.fillStyle = '#6b7280';
+            ctx.fillText(`${rate}%`, x, y + 12);
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#1f2937';
+        });
+        
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('全問題集の統合データ', centerX, 20);
+    }
+
     toggleRadarPinned() {
         const select = document.getElementById('radarBookSelect');
         const btn = document.getElementById('radarToggleBtn');
@@ -522,64 +691,6 @@ class AnalyticsClass {
                 alert('固定する問題集を選択してください');
             }
         }
-    }
-
-    arraysEqual(a, b) {
-        if (!a || !b) return false;
-        if (a.length !== b.length) return false;
-        for (let i = 0; i < a.length; i++) {
-            if (a[i] !== b[i]) return false;
-        }
-        return true;
-    }
-
-    getQuestionStateFromRecords(bookId, question) {
-        const states = { correct: false, wrong: false, bookmarked: false };
-        
-        // 最新の記録を確認
-        for (let i = DataManager.allRecords.length - 1; i >= 0; i--) {
-            const record = DataManager.allRecords[i];
-            if (record.bookId === bookId) {
-                // pathが完全に一致する記録を探す
-                if (this.arraysEqual(record.path, question.path)) {
-                    const qState = record.questions[question.number];
-                    if (qState) {
-                        // オブジェクト形式の場合（新形式）
-                        if (typeof qState === 'object' && qState !== null) {
-                            if (qState.state === 'correct') states.correct = true;
-                            if (qState.state === 'wrong') states.wrong = true;
-                            if (qState.bookmarked) states.bookmarked = true;
-                        }
-                        // 文字列形式の場合（旧形式との互換性）
-                        else if (typeof qState === 'string') {
-                            if (qState === '○' || qState.includes('○')) states.correct = true;
-                            if (qState === '×' || qState.includes('×')) states.wrong = true;
-                            if (qState === '☆' || qState.includes('☆')) states.bookmarked = true;
-                        }
-                    }
-                }
-            }
-        }
-        
-        // savedQuestionStatesからもデータを取得
-        const savedKey = `${bookId}_${question.path.join('/')}`;
-        if (DataManager.savedQuestionStates && DataManager.savedQuestionStates[savedKey]) {
-            const savedState = DataManager.savedQuestionStates[savedKey][question.number];
-            if (savedState) {
-                // オブジェクト形式の場合
-                if (typeof savedState === 'object' && savedState !== null) {
-                    if (savedState.state === 'correct') states.correct = true;
-                    if (savedState.state === 'wrong') states.wrong = true;
-                    if (savedState.bookmarked) states.bookmarked = true;
-                }
-                // 文字列形式の場合
-                else if (typeof savedState === 'string' && savedState.includes('☆')) {
-                    states.bookmarked = true;
-                }
-            }
-        }
-        
-        return states;
     }
 
     calculateBookSubjectStats(bookId) {
