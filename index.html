@@ -416,22 +416,8 @@
     };
 
     // Firebase初期化
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-// ★追加: CORS対策のFirestore設定
-try {
-    db.settings({
-        ignoreUndefinedProperties: true,
-        merge: true
-    });
-    
-    // ★追加: 接続テスト
-    console.log('🔥 Firebase接続テスト開始');
-    
-} catch (error) {
-    console.error('Firebase設定エラー:', error);
-}
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
     </script>
 
     <!-- 📱 JavaScript モジュール読み込み（順序重要） -->
@@ -447,21 +433,19 @@ try {
 <script>
 console.log("🚀 Firebase統合開始（完全修正版）");
 
-// 🔧 Firebase設定（CORSエラー対策版）
+// 🔧 Firebase設定とオフライン永続化
 try {
-    // ★修正: オフライン永続化を完全無効化（CORSエラー対策）
-    const db = firebase.firestore();
-    db.settings({
-        ignoreUndefinedProperties: true,
-        experimentalForceLongPolling: true, // ★追加: 長時間ポーリングでCORS回避
-        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+    firebase.firestore().enablePersistence({ 
+        synchronizeTabs: true
+    }).then(() => {
+        console.log("✅ Firebase オフライン永続化有効");
+    }).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.log("⚠️ 複数タブ開いているため永続化無効");
+        } else if (err.code === 'unimplemented') {
+            console.log("⚠️ ブラウザが永続化非対応");
+        }
     });
-    
-    console.log("🔧 Firebase設定完了（CORSエラー対策版）");
-    
-    // 永続化は完全に無効化
-    console.log("⚠️ CORSエラー対策のためオフライン永続化を無効化");
-    
 } catch (error) {
     console.error("Firebase設定エラー:", error);
 }
@@ -586,7 +570,7 @@ async function openIndexedDB() {
     }
 })();
 
-// 📥 Firebaseからのデータ読み込み（CORSエラー対策版）
+// 📥 Firebaseからのデータ読み込み（完全修正版）
 async function loadFromFirestore() {
     if (!window.ULTRA_STABLE_USER_ID || !window.DataManager) {
         console.warn('⚠️ 固定IDまたはDataManagerが未設定');
@@ -595,18 +579,8 @@ async function loadFromFirestore() {
     
     try {
         const db = firebase.firestore();
-        
-        // ★追加: CORSエラー対策のためリアルタイムリスナーを無効化
-        db.settings({
-            ignoreUndefinedProperties: true,
-            experimentalForceLongPolling: true, // ★追加: CORSエラー回避
-            merge: true
-        });
-        
         const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
-        
-        // ★修正: リアルタイムリスナーを使わず一回限りの読み込みに変更
-        const userDoc = await userRef.get({ source: 'server' }); // ★追加: サーバーから強制取得
+        const userDoc = await userRef.get();
         
         if (userDoc.exists) {
             const userData = userDoc.data();
