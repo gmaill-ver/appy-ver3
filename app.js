@@ -1597,6 +1597,7 @@ if (window.Analytics) {
 }
 
     /**
+    /**
      * 問題集の全チェックを外す（★新規追加）
      */
     resetBookAllChecks(bookId) {
@@ -1656,6 +1657,19 @@ if (window.Analytics) {
             // 統計を更新
             this.updateStats();
         }
+        
+        // ★追加: ヒートマップを即座に更新
+        setTimeout(() => {
+            // ヒートマップで選択されている問題集が同じ場合は更新
+            const heatmapSelect = document.getElementById('heatmapBookSelect');
+            if (heatmapSelect && heatmapSelect.value === bookId) {
+                console.log('🔄 ヒートマップを更新中...');
+                if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
+                    Analytics.updateHeatmap();
+                    console.log('✅ ヒートマップ更新完了');
+                }
+            }
+        }, 100);
         
         // 通知表示
         const notification = document.createElement('div');
