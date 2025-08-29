@@ -416,8 +416,22 @@
     };
 
     // Firebase初期化
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ★追加: CORS対策のFirestore設定
+try {
+    db.settings({
+        ignoreUndefinedProperties: true,
+        merge: true
+    });
+    
+    // ★追加: 接続テスト
+    console.log('🔥 Firebase接続テスト開始');
+    
+} catch (error) {
+    console.error('Firebase設定エラー:', error);
+}
     </script>
 
     <!-- 📱 JavaScript モジュール読み込み（順序重要） -->
