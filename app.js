@@ -827,6 +827,21 @@ resetAllQuestions() {
     this.autoSaveRecord();
     
     console.log('✅ 全問題リセット完了');
+    
+    // ★追加: ヒートマップを即座に更新
+    setTimeout(() => {
+        if (this.currentBook) {
+            // ヒートマップで選択されている問題集が現在の問題集と同じ場合は更新
+            const heatmapSelect = document.getElementById('heatmapBookSelect');
+            if (heatmapSelect && heatmapSelect.value === this.currentBook.id) {
+                console.log('🔄 リセット後のヒートマップを更新中...');
+                if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
+                    Analytics.updateHeatmap();
+                    console.log('✅ ヒートマップ更新完了');
+                }
+            }
+        }
+    }, 100);
 }
 
     saveQuestionStatesForPath() {
