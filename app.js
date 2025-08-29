@@ -842,19 +842,27 @@ resetAllQuestions() {
     console.log('✅ 全問題リセット完了');
     
     // ★追加: ヒートマップを即座に更新
-    setTimeout(() => {
-        if (this.currentBook) {
-            // ヒートマップで選択されている問題集が現在の問題集と同じ場合は更新
-            const heatmapSelect = document.getElementById('heatmapBookSelect');
-            if (heatmapSelect && heatmapSelect.value === this.currentBook.id) {
-                console.log('🔄 リセット後のヒートマップを更新中...');
-                if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
-                    Analytics.updateHeatmap();
-                    console.log('✅ ヒートマップ更新完了');
-                }
+setTimeout(() => {
+    if (this.currentBook) {
+        const heatmapSelect = document.getElementById('heatmapBookSelect');
+        
+        // 現在の問題集をヒートマップにも反映
+        if (heatmapSelect) {
+            // ヒートマップの選択を現在の問題集に変更
+            if (heatmapSelect.value !== this.currentBook.id) {
+                heatmapSelect.value = this.currentBook.id;
+                console.log(`📋 ヒートマップを ${this.currentBook.name} に切り替え`);
+            }
+            
+            // ヒートマップを強制更新
+            console.log('🔄 リセット後のヒートマップを更新中...');
+            if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
+                Analytics.updateHeatmap();
+                console.log('✅ ヒートマップ更新完了');
             }
         }
-    }, 100);
+    }
+}, 100);
 }
 
 // ★追加: ヒートマップからの状態同期メソッド
