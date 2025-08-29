@@ -844,6 +844,70 @@ resetAllQuestions() {
     }, 100);
 }
 
+// ★追加: ヒートマップからの状態同期メソッド
+/**
+ * ヒートマップから記録入力タブへの状態同期
+ */
+syncQuestionStateFromHeatmap(bookId, pathStr, questionNum, questionState) {
+    // 現在表示中の問題集と一致するかチェック
+    if (!this.currentBook || this.currentBook.id !== bookId) {
+        return;
+    }
+    
+    // 現在のパスと一致するかチェック
+    if (this.currentPath.join('/') !== pathStr) {
+        return;
+    }
+    
+    // 問題状態を更新
+    if (questionState === undefined || questionState === null) {
+        // 削除された場合
+        if (this.questionStates[questionNum]) {
+            this.questionStates[questionNum] = {
+                state: null,
+                bookmarked: false
+            };
+        }
+    } else {
+        // 更新された場合
+        if (!this.questionStates[questionNum]) {
+            this.questionStates[questionNum] = {
+                state: null,
+                bookmarked: false
+            };
+        }
+        this.questionStates[questionNum].state = questionState.state;
+        this.questionStates[questionNum].bookmarked = questionState.bookmarked || false;
+    }
+    
+    // UIを更新
+    const cell = document.querySelector(`[data-number="${questionNum}"]`);
+    if (cell) {
+        // クラスをリセット
+        cell.classList.remove('correct', 'wrong', 'bookmarked');
+        
+        // 新しい状態を適用
+        if (this.questionStates[questionNum]) {
+            if (this.questionStates[questionNum].state === 'correct') {
+                cell.classList.add('correct');
+            } else if (this.questionStates[questionNum].state === 'wrong') {
+                cell.classList.add('wrong');
+            }
+            if (this.questionStates[questionNum].bookmarked) {
+                cell.classList.add('bookmarked');
+            }
+        }
+    }
+    
+    // 状態を保存して統計を更新
+    this.saveQuestionStatesForPath();
+    this.updateStats();
+    
+    console.log(`✅ ヒートマップから同期: 問題${questionNum} → ${questionState?.state || 'null'}`);
+}
+
+    saveQuestionStatesForPath() {
+
     saveQuestionStatesForPath() {
         if (this.currentBook && this.currentPath.length > 0) {
             DataManager.saveQuestionStates(this.currentBook.id, this.currentPath, this.questionStates);
