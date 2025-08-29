@@ -447,19 +447,21 @@ try {
 <script>
 console.log("🚀 Firebase統合開始（完全修正版）");
 
-// 🔧 Firebase設定とオフライン永続化
+// 🔧 Firebase設定（CORSエラー対策版）
 try {
-    firebase.firestore().enablePersistence({ 
-        synchronizeTabs: true
-    }).then(() => {
-        console.log("✅ Firebase オフライン永続化有効");
-    }).catch((err) => {
-        if (err.code === 'failed-precondition') {
-            console.log("⚠️ 複数タブ開いているため永続化無効");
-        } else if (err.code === 'unimplemented') {
-            console.log("⚠️ ブラウザが永続化非対応");
-        }
+    // ★修正: オフライン永続化を完全無効化（CORSエラー対策）
+    const db = firebase.firestore();
+    db.settings({
+        ignoreUndefinedProperties: true,
+        experimentalForceLongPolling: true, // ★追加: 長時間ポーリングでCORS回避
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
     });
+    
+    console.log("🔧 Firebase設定完了（CORSエラー対策版）");
+    
+    // 永続化は完全に無効化
+    console.log("⚠️ CORSエラー対策のためオフライン永続化を無効化");
+    
 } catch (error) {
     console.error("Firebase設定エラー:", error);
 }
