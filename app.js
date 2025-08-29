@@ -1756,21 +1756,30 @@ if (this.currentBook && this.currentBook.id === bookId) {
 
 // ★追加: ヒートマップと分析データを即座に更新
 setTimeout(() => {
-    // ヒートマップで選択されている問題集が同じ場合は更新
     const heatmapSelect = document.getElementById('heatmapBookSelect');
-    if (heatmapSelect && heatmapSelect.value === bookId) {
-        console.log('🔄 ヒートマップを更新中...');
-        if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
-            Analytics.updateHeatmap();
-            console.log('✅ ヒートマップ更新完了');
+    
+    // ヒートマップで該当する問題集が選択されている場合は、強制的に更新
+    if (heatmapSelect) {
+        // 現在の選択を保存
+        const currentSelection = heatmapSelect.value;
+        
+        // リセットした問題集が選択されている場合
+        if (currentSelection === bookId) {
+            console.log('🔄 リセットした問題集のヒートマップを更新中...');
+            if (window.Analytics && typeof Analytics.updateHeatmap === 'function') {
+                Analytics.updateHeatmap();
+                console.log('✅ ヒートマップ更新完了');
+            }
         }
     }
+    
     // ★追加: その他の分析データも更新
     if (window.Analytics) {
         Analytics.updateChartBars();
         Analytics.updateWeaknessAnalysis();
         Analytics.updateHistoryContent();
         Analytics.drawRadarChart();
+        Analytics.updateProgressContent();
     }
 }, 100);
 
