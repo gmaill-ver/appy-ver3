@@ -347,6 +347,11 @@ class AnalyticsClass {
         
         localStorage.setItem('studyHistory', JSON.stringify(DataManager.allRecords));
         
+        // ★追加: 記録入力タブの状態も更新
+        if (window.App && typeof App.syncQuestionStateFromHeatmap === 'function') {
+            App.syncQuestionStateFromHeatmap(bookId, pathStr, questionNum, record.questions[questionNum]);
+        }
+        
         this.updateHeatmap();
     }
 
