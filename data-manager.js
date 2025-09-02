@@ -24,6 +24,93 @@ class DataManagerClass {
     }
 
     /**
+     * 超安定固定ユーザーID生成
+     */
+    generateUltraStableUserId() {
+        const stableElements = [
+            navigator.userAgent.split(' ')[0],
+            navigator.platform,
+            screen.width,
+            screen.height,
+            navigator.language,
+            navigator.hardwareConcurrency || '4',
+            new Date().getTimezoneOffset().toString()
+        ];
+        
+        let hash = 'stable';
+        const combined = stableElements.join('|');
+        
+        for (let i = 0; i < combined.length; i++) {
+            const char = combined.charCodeAt(i);
+            hash = ((hash << 5) - hash + char) & 0xffffffff;
+        }
+        
+        const isMobile = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+        const deviceType = isMobile ? 'mobile' : 'desktop';
+        const baseId = Math.abs(hash).toString(36).padStart(8, '0');
+        
+        return `${deviceType}_${baseId}_permanent`;
+    }
+
+    /**
+     * 複数ストレージからの確実なID取得
+     */
+    async getOrCreateFixedUserId() {
+        console.log("🔍 固定ID取得・生成開始");
+        
+        // 1. LocalStorageから取得
+        let userId = localStorage.getItem('ultraStableUserId');
+        if (userId) {
+            console.log("✅ LocalStorageから固定ID取得:", userId);
+            return userId;
+        }
+        
+        // 2. SessionStorageから取得
+        userId = sessionStorage.getItem('ultraStableUserId');
+        if (userId) {
+            console.log("✅ SessionStorageから固定ID取得:", userId);
+            localStorage.setItem('ultraStableUserId', userId);
+            return userId;
+        }
+        
+        // 3. 新規生成
+        userId = this.generateUltraStableUserId();
+        console.log("🆕 新規固定ID生成:", userId);
+        
+        // 全ストレージに保存
+        localStorage.setItem('ultraStableUserId', userId);
+        sessionStorage.setItem('ultraStableUserId', userId);
+        
+        return userId;
+    }
+
+    /**
+     * 固定IDの生成と設定
+     */
+    async setupStableUserId() {
+        window.ULTRA_STABLE_USER_ID = await this.getOrCreateFixedUserId();
+        this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
+        
+        // Firestoreのオフライン永続化
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
+            try {
+                await firebase.firestore().enablePersistence({ 
+                    synchronizeTabs: true
+                });
+                console.log("✅ Firebase オフライン永続化有効");
+            } catch (err) {
+                if (err.code === 'failed-precondition') {
+                    console.log("⚠️ 複数タブ開いているため永続化無効");
+                } else if (err.code === 'unimplemented') {
+                    console.log("⚠️ ブラウザが永続化非対応");
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
      * 初期化処理（Firebase統合強化版）
      */
     async initialize() {
@@ -31,12 +118,11 @@ class DataManagerClass {
             console.log('DataManager already initialized');
             return true;
         }
-
         try {
             console.log('🚀 DataManager初期化開始...');
             
-            // ★修正: 固定IDの取得を最初に実行
-            await this.waitForStableUserId();
+            // ★修正: 固定IDの生成と設定
+            await this.setupStableUserId();
             
             // ★修正: Firebase初期化を先に実行（復元のため）
             await this.initializeFirebase();
@@ -63,31 +149,6 @@ class DataManagerClass {
     }
 
     /**
-     * 固定IDの取得を待つ
-     */
-    async waitForStableUserId(maxWaitSeconds = 10) {
-        const maxAttempts = maxWaitSeconds * 10; // 100ms間隔
-        let attempts = 0;
-        
-        while (!window.ULTRA_STABLE_USER_ID && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-            
-            if (attempts % 10 === 0) {
-                console.log(`⏳ 固定ID取得待機中... ${attempts/10}秒経過`);
-            }
-        }
-        
-        if (window.ULTRA_STABLE_USER_ID) {
-            console.log('✅ 固定ID取得完了:', window.ULTRA_STABLE_USER_ID);
-            return true;
-        } else {
-            console.log('⚠️ 固定ID取得タイムアウト');
-            return false;
-        }
-    }
-
-    /**
      * Firebase初期化
      */
     async initializeFirebase() {
@@ -103,7 +164,6 @@ class DataManagerClass {
                 this.firebaseEnabled = false;
                 return;
             }
-
             this.currentUser = { uid: window.ULTRA_STABLE_USER_ID };
             this.firebaseEnabled = true;
             
