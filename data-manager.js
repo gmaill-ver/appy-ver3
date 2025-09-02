@@ -405,24 +405,27 @@ class DataManagerClass {
         }
         
         if (userData.examDate) {
-            try {
-                this.examDate = new Date(userData.examDate);
-                localStorage.setItem('examDate', userData.examDate);
-                console.log(`📅 試験日復元: ${this.examDate.toLocaleDateString('ja-JP')}`);
-            } catch (e) {
-                console.warn('⚠️ 試験日データが無効:', userData.examDate);
-            }
-        }
-        
-        if (userData.heatmapPinnedBook && !this.isDeleted('books', userData.heatmapPinnedBook)) {
-            this.heatmapPinnedBook = userData.heatmapPinnedBook;
-            localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
-        }
-        
-        if (userData.radarPinnedBook && !this.isDeleted('books', userData.radarPinnedBook)) {
-            this.radarPinnedBook = userData.radarPinnedBook;
-            localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
-        }
+    try {
+        this.examDate = new Date(userData.examDate);
+        localStorage.setItem('examDate', userData.examDate);
+        console.log(`📅 試験日復元: ${this.examDate.toLocaleDateString('ja-JP')}`);
+    } catch (e) {
+        console.warn('⚠️ 試験日データが無効:', userData.examDate);
+    }
+}
+
+// ★修正: ピン固定設定の復元を追加
+if (userData.heatmapPinnedBook && !this.isDeleted('books', userData.heatmapPinnedBook)) {
+    this.heatmapPinnedBook = userData.heatmapPinnedBook;
+    localStorage.setItem('heatmapPinnedBook', userData.heatmapPinnedBook);
+    console.log(`📌 ヒートマップピン固定復元: ${userData.heatmapPinnedBook}`);
+}
+
+if (userData.radarPinnedBook && !this.isDeleted('books', userData.radarPinnedBook)) {
+    this.radarPinnedBook = userData.radarPinnedBook;
+    localStorage.setItem('radarPinnedBook', userData.radarPinnedBook);
+    console.log(`📌 レーダーチャートピン固定復元: ${userData.radarPinnedBook}`);
+}
         
         if (userData.analysisCardOrder && Array.isArray(userData.analysisCardOrder)) {
             this.analysisCardOrder = userData.analysisCardOrder;
