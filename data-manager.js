@@ -439,6 +439,110 @@ class DataManagerClass {
     }
 }
 
+/**
+ * Firebaseへの保存（サブコレクション対応版）
+ */
+async saveToFirebase() {
+    if (!this.firebaseEnabled || !this.currentUser) {
+        console.warn('🔄 Firebase保存スキップ（未認証）');
+        return false;
+    }
+    
+    try {
+        const db = firebase.firestore();
+        const userId = this.currentUser.uid;
+        const userRef = db.collection('users').doc(userId);
+        const batch = db.batch();
+        
+        // メインドキュメント
+        const mainData = {
+            userId: userId,
+            lastUpdated: new Date().toISOString(),
+            bookOrder: this.bookOrder || [],
+            examDate: this.examDate ? this.examDate.toISOString() : null,
+            deletedItems: this.deletedItems || [],
+            heatmapPinnedBook: this.heatmapPinnedBook,
+            radarPinnedBook: this.radarPinnedBook,
+            analysisCardOrder: this.analysisCardOrder || []
+        };
+        batch.set(userRef, mainData, { merge: true });
+        
+        // booksサブコレクション
+        if (Object.keys(this.books).length > 0) {
+            const booksRef = userRef.collection('books').doc('data');
+            batch.set(booksRef, {
+                books: this.books,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // recordsサブコレクション
+        if (this.allRecords && this.allRecords.length > 0) {
+            const recordsRef = userRef.collection('records').doc('data');
+            batch.set(recordsRef, {
+                records: this.allRecords.slice(-500), // 最新500件のみ
+                totalCount: this.allRecords.length,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // plansサブコレクション
+        if (this.studyPlans && this.studyPlans.length > 0) {
+            const plansRef = userRef.collection('plans').doc('data');
+            batch.set(plansRef, {
+                plans: this.studyPlans,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // qaサブコレクション
+        if (this.qaQuestions && Object.keys(this.qaQuestions).length > 0) {
+            const qaRef = userRef.collection('qa').doc('data');
+            batch.set(qaRef, {
+                questions: this.qaQuestions,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // csvサブコレクション
+        if (this.csvTemplates && Object.keys(this.csvTemplates).length > 0) {
+            const csvRef = userRef.collection('csv').doc('data');
+            batch.set(csvRef, {
+                templates: this.csvTemplates,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // statesサブコレクション
+        if (this.savedQuestionStates && Object.keys(this.savedQuestionStates).length > 0) {
+            const statesRef = userRef.collection('states').doc('data');
+            batch.set(statesRef, {
+                states: this.savedQuestionStates,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+        
+        // keypointsサブコレクション
+        const keyPointsData = localStorage.getItem('keyPointsData');
+        if (keyPointsData) {
+            const parsed = JSON.parse(keyPointsData);
+            for (const [subjectKey, data] of Object.entries(parsed)) {
+                const keypointRef = userRef.collection('keypoints').doc(subjectKey);
+                batch.set(keypointRef, data, { merge: true });
+            }
+        }
+        
+        await batch.commit();
+        console.log('✅ Firebase保存完了');
+        this.showSaveNotification();
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Firebase保存エラー:', error);
+        this.showSaveErrorNotification('データのクラウド保存に失敗しました');
+        return false;
+    }
+}
     /**
      * 現在の同期カウントを取得
      */
