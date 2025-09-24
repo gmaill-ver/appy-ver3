@@ -307,8 +307,13 @@ class KeyPointsModuleClass {
      */
     async applyTemplateData() {
         try {
+            console.log('📋 テンプレートデータ適用開始...');
+
             const db = window.firebase.firestore();
-            if (!db) return;
+            if (!db) {
+                console.log('❌ Firebase未接続でテンプレートデータスキップ');
+                return;
+            }
 
             const templateRef = db.collection('keypoints_templates').doc('default');
             const doc = await templateRef.get();
@@ -319,6 +324,7 @@ class KeyPointsModuleClass {
             }
 
             const templateData = doc.data();
+            console.log('📋 テンプレートデータ取得:', templateData);
             let appliedCount = 0;
 
             // 各科目のテンプレートデータを適用
@@ -344,6 +350,8 @@ class KeyPointsModuleClass {
 
             if (appliedCount > 0) {
                 console.log(`📋 テンプレートデータ適用完了: ${appliedCount}件のトピック`);
+            } else {
+                console.log('📋 適用できるテンプレートデータがありません（全て既編集済み）');
             }
 
         } catch (error) {
