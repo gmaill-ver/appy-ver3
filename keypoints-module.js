@@ -618,7 +618,17 @@ class KeyPointsModuleClass {
      * 管理者UIボタンを追加
      */
     addAdminUI(container, subjectKey, topicIndex) {
-        if (!this.isAdmin) return;
+        console.log('🔑 addAdminUI呼び出し:', {
+            isAdmin: this.isAdmin,
+            container: container,
+            subjectKey: subjectKey,
+            topicIndex: topicIndex
+        });
+
+        if (!this.isAdmin) {
+            console.log('🔒 管理者権限なし - UI追加スキップ');
+            return;
+        }
 
         const adminControls = document.createElement('div');
         adminControls.className = 'admin-controls';
@@ -636,6 +646,7 @@ class KeyPointsModuleClass {
             </div>
         `;
         container.appendChild(adminControls);
+        console.log('✅ 管理者UIパネル追加完了');
     }
 
     /**
@@ -1324,13 +1335,26 @@ class KeyPointsModuleClass {
         content.innerHTML = html;
 
         // 🔑 管理者UIを追加
+        console.log('🔍 管理者UI追加チェック:', {
+            isAdmin: this.isAdmin,
+            hasLocation: !!this.currentContentLocation,
+            location: this.currentContentLocation
+        });
+
         if (this.isAdmin && this.currentContentLocation) {
+            console.log('🔓 管理者UIを追加します');
             setTimeout(() => {
                 const container = document.getElementById('adminUIContainer');
+                console.log('🔍 adminUIContainer:', container);
                 if (container) {
                     this.addAdminUI(container, this.currentContentLocation.subjectKey, this.currentContentLocation.topicIndex);
+                    console.log('✅ 管理者UI追加完了');
+                } else {
+                    console.error('❌ adminUIContainerが見つかりません');
                 }
             }, 100);
+        } else {
+            console.log('🔒 管理者UIスキップ - 権限なしまたは位置情報なし');
         }
         
         // モーダルヘッダーを更新
