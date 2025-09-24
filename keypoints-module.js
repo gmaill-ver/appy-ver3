@@ -647,14 +647,14 @@ class KeyPointsModuleClass {
             return;
         }
 
-        // エディタから現在の内容を取得
-        const editor = document.querySelector(`[data-subject="${subjectKey}"][data-topic="${topicIndex}"] .editor-content`);
-        if (!editor) {
-            alert('エディタが見つかりません');
+        // 現在表示中のコンテンツを取得
+        const contentDiv = document.getElementById('keyPointContent');
+        if (!contentDiv) {
+            alert('コンテンツが見つかりません');
             return;
         }
 
-        const content = editor.innerHTML;
+        const content = contentDiv.innerHTML;
         if (!content.trim()) {
             alert('内容が空です');
             return;
@@ -1317,10 +1317,21 @@ class KeyPointsModuleClass {
                 <div id="keyPointContent">
                     ${htmlContent}
                 </div>
+                <div id="adminUIContainer"></div>
             </div>
         `;
 
         content.innerHTML = html;
+
+        // 🔑 管理者UIを追加
+        if (this.isAdmin && this.currentContentLocation) {
+            setTimeout(() => {
+                const container = document.getElementById('adminUIContainer');
+                if (container) {
+                    this.addAdminUI(container, this.currentContentLocation.subjectKey, this.currentContentLocation.topicIndex);
+                }
+            }, 100);
+        }
         
         // モーダルヘッダーを更新
         const modalHeader = document.querySelector('.modal-header');
