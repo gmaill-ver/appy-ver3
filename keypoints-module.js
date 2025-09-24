@@ -526,12 +526,17 @@ class KeyPointsModuleClass {
         }
 
         try {
+            console.log(`📋 テンプレート保存開始: ${subjectKey} - トピック${topicIndex}`);
+            console.log('📋 保存内容:', content.substring(0, 100) + '...');
+
             const db = window.firebase.firestore();
             const templateRef = db.collection('keypoints_templates').doc('default');
 
             // 既存のテンプレートデータを取得
+            console.log('📋 既存データ取得中...');
             const doc = await templateRef.get();
             const existingData = doc.exists ? doc.data() : {};
+            console.log('📋 既存データ:', existingData);
 
             // 新しい内容を追加/更新
             if (!existingData[subjectKey]) {
@@ -547,7 +552,10 @@ class KeyPointsModuleClass {
                 updatedBy: window.firebase.auth().currentUser?.email
             };
 
+            console.log('📋 更新後データ:', existingData);
+
             // Firestoreに保存
+            console.log('📋 Firestore保存実行中...');
             await templateRef.set(existingData, { merge: true });
 
             console.log(`✅ テンプレート保存完了: ${subjectKey} - トピック${topicIndex}`);
