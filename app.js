@@ -1,4 +1,44 @@
+/**
+ * App - メインアプリケーションロジック（Firebase統合強化版）
+ */
+class Application {
+    constructor() {
+        this.currentBook = null;
+        this.currentPath = [];
+        this.questionStates = {};
+        this.bookmarkMode = false;
+        this.expandedNodes = new Set();
+        this.selectedBookCard = null;
+        this.sortMode = false;
+        this.analysisSortMode = false;
+        this.initialized = false;
+    }
 
+    /**
+     * アプリケーション初期化
+     */
+    async initialize() {
+        // 二重初期化を防ぐ
+        if (this.initialized) {
+            console.log('App already initialized');
+            return true;
+        }
+
+        try {
+            console.log('Starting App initialization...');
+            
+            // DataManagerの初期化を待つ（最大5秒）
+            const maxWait = 50;
+            let attempts = 0;
+            while (!window.DataManager && attempts < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.DataManager) {
+                console.error('DataManager not found after waiting');
+                return false;
+            }
 
             // DataManagerの初期化
             const dataInitialized = await DataManager.initialize();
