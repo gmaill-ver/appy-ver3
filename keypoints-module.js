@@ -394,30 +394,40 @@ class KeyPointsModuleClass {
         try {
             if (!window.firebase || !window.firebase.auth) {
                 this.isAdmin = false;
+                console.log('🔑 Firebase認証が利用できません');
                 return;
             }
 
-            const user = window.firebase.auth().currentUser;
-            if (!user) {
-                this.isAdmin = false;
-                console.log('🔑 管理者判定: 未ログイン');
-                return;
-            }
+            // Firebase認証の状態変更を待つ
+            return new Promise((resolve) => {
+                const unsubscribe = window.firebase.auth().onAuthStateChanged((user) => {
+                    unsubscribe(); // リスナーを解除
 
-            // 管理者メールアドレスのリスト
-            const adminEmails = [
-                'utohideki@gmail.com', // メインの管理者
-                // 必要に応じて他の管理者メールを追加
-            ];
+                    if (!user) {
+                        this.isAdmin = false;
+                        console.log('🔑 管理者判定: 未ログイン');
+                        resolve();
+                        return;
+                    }
 
-            this.isAdmin = adminEmails.includes(user.email);
-            console.log(`🔑 管理者判定: ${this.isAdmin ? '管理者' : '一般ユーザー'} (${user.email})`);
+                    // 管理者メールアドレスのリスト
+                    const adminEmails = [
+                        'utohideki@gmail.com', // メインの管理者
+                        // 必要に応じて他の管理者メールを追加
+                    ];
 
-            if (this.isAdmin) {
-                console.log('🔓 管理者機能が有効になりました');
-                this.loadTemplateData(); // 管理者の場合はテンプレートデータを読み込み
-                this.showAdminIndicator(); // 管理者表示を追加
-            }
+                    this.isAdmin = adminEmails.includes(user.email);
+                    console.log(`🔑 管理者判定: ${this.isAdmin ? '管理者' : '一般ユーザー'} (${user.email})`);
+
+                    if (this.isAdmin) {
+                        console.log('🔓 管理者機能が有効になりました');
+                        this.loadTemplateData(); // 管理者の場合はテンプレートデータを読み込み
+                        this.showAdminIndicator(); // 管理者表示を追加
+                    }
+
+                    resolve();
+                });
+            });
         } catch (error) {
             console.error('❌ 管理者判定エラー:', error);
             this.isAdmin = false;
