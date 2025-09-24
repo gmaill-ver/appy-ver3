@@ -536,6 +536,17 @@ class KeyPointsModuleClass {
     }
 
     /**
+     * 管理者ステータス表示インジケーター非表示
+     */
+    hideAdminIndicator() {
+        const existingIndicator = document.getElementById('admin-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+            console.log('👑 管理者インジケーターを非表示にしました');
+        }
+    }
+
+    /**
      * 管理者UIボタンを追加
      */
     addAdminUI(container, subjectKey, topicIndex) {
@@ -1616,7 +1627,25 @@ class KeyPointsModuleClass {
 // グローバルに公開
 window.KeyPointsModule = new KeyPointsModuleClass();
 
-// 🔧 開発用: 管理者モード手動有効化
+// 🔧 管理者モード切り替え機能
+window.toggleAdminMode = () => {
+    const km = window.KeyPointsModule;
+    km.isAdmin = !km.isAdmin;
+
+    if (km.isAdmin) {
+        km.showAdminIndicator();
+        km.loadTemplateData();
+        console.log('🔓 管理者モードを有効にしました');
+    } else {
+        km.hideAdminIndicator();
+        km.templateData = null;
+        console.log('🔒 管理者モードを解除しました');
+    }
+
+    return km.isAdmin ? '管理者モード: ON' : '管理者モード: OFF';
+};
+
+// 後方互換性のため残す
 window.enableAdminMode = () => {
     window.KeyPointsModule.isAdmin = true;
     window.KeyPointsModule.showAdminIndicator();
