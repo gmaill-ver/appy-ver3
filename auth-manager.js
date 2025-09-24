@@ -23,9 +23,55 @@ class AuthManagerClass {
                 this.handleAuthStateChange(user);
             });
 
+            // 🔑 隠しキー操作の設定
+            this.setupSecretKeyBinding();
+
             console.log('🔐 AuthManager初期化完了');
         } catch (error) {
             console.error('❌ AuthManager初期化エラー:', error);
+        }
+    }
+
+    /**
+     * 隠しキー操作の設定 (Ctrl+Shift+A で管理者ログインボタン表示)
+     */
+    setupSecretKeyBinding() {
+        let keySequence = [];
+        const secretKeys = ['ControlLeft', 'ShiftLeft', 'KeyA']; // Ctrl+Shift+A
+        let isSequenceActive = false;
+
+        document.addEventListener('keydown', (event) => {
+            // 入力フィールドにフォーカス中は無効
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            const key = event.code;
+
+            // Ctrl+Shift+A の組み合わせ検出
+            if (event.ctrlKey && event.shiftKey && event.code === 'KeyA') {
+                event.preventDefault();
+                this.toggleAdminUI();
+                return;
+            }
+        });
+    }
+
+    /**
+     * 管理者UIの表示/非表示切り替え
+     */
+    toggleAdminUI() {
+        const authBtn = document.getElementById('authBtn');
+        if (!authBtn) return;
+
+        const isVisible = authBtn.classList.contains('visible');
+
+        if (isVisible) {
+            authBtn.classList.remove('visible');
+            console.log('🔒 管理者ログインボタンを非表示にしました');
+        } else {
+            authBtn.classList.add('visible');
+            console.log('🔓 管理者ログインボタンを表示しました (Ctrl+Shift+A)');
         }
     }
 

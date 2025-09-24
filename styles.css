@@ -144,12 +144,16 @@ body {
     padding: 6px 12px;
     color: white;
     cursor: pointer;
-    display: flex;
+    display: none; /* デフォルトで非表示 */
     align-items: center;
     gap: 6px;
     font-size: 13px;
     font-weight: 500;
     transition: all 0.3s;
+}
+
+.auth-btn.visible {
+    display: flex; /* 表示時はフレックス */
 }
 
 .auth-btn:hover {
