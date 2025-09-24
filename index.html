@@ -9,13 +9,21 @@
 <body>
     <!-- ヘッダー -->
     <header class="app-header">
-        <button class="timer-icon-btn" onclick="App.openTimerModal()" title="タイマー">⏰</button>
-        <div class="timer-display" id="timerDisplay">00:00:00</div>
+        <div class="header-left">
+            <button class="timer-icon-btn" onclick="App.openTimerModal()" title="タイマー">⏰</button>
+            <div class="timer-display" id="timerDisplay">00:00:00</div>
+        </div>
         <div class="app-logo">
             <span class="app-logo-icon">📚</span>
             <span class="app-title">学習トラッカー</span>
         </div>
-        <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
+        <div class="header-right">
+            <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
+            <button class="auth-btn" id="authBtn" onclick="AuthManager.toggleAuth()" title="ログイン">
+                <span id="authIcon">👤</span>
+                <span id="authText">ログイン</span>
+            </button>
+        </div>
     </header>
     
     <!-- メインタブ -->
@@ -424,6 +432,7 @@
     <script src="data-manager.js?v=20250924"></script>
     <script src="ui-components.js?v=20250924"></script>
     <script src="analytics.js?v=20250924"></script>
+    <script src="auth-manager.js?v=20250924"></script>
     <script src="qa-module.js?v=20250924"></script>
     <script src="timer-module.js?v=20250924"></script>
     <script src="keypoints-module.js?v=20250924"></script>

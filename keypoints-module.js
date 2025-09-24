@@ -698,9 +698,6 @@ class KeyPointsModuleClass {
             this.initialized = true;
             console.log('✅ KeyPointsModule初期化完了');
 
-            // 🔑 管理者判定（DataManager初期化後に実行）
-            setTimeout(() => this.detectAdminStatus(), 1000);
-
         } catch (error) {
             console.error('❌ KeyPointsModule初期化エラー:', error);
             this.initialized = true;
