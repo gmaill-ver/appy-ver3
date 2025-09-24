@@ -8,6 +8,10 @@ class KeyPointsModuleClass {
         this.userContent = null;   // ユーザーの要点内容
         this.isLoading = false;    // 読み込み状態
 
+        // 🔑 管理者機能
+        this.isAdmin = false;      // 管理者フラグ
+        this.templateData = null;  // 初期データテンプレート
+
         // ケータイ行政書士の階層に完全対応（フォールバック兼用）
         this.subjects = {
             'constitution': {
@@ -384,6 +388,264 @@ class KeyPointsModuleClass {
     }
 
     /**
+     * 管理者ステータス判定
+     */
+    async detectAdminStatus() {
+        try {
+            if (!window.firebase || !window.firebase.auth) {
+                this.isAdmin = false;
+                return;
+            }
+
+            const user = window.firebase.auth().currentUser;
+            if (!user) {
+                this.isAdmin = false;
+                console.log('🔑 管理者判定: 未ログイン');
+                return;
+            }
+
+            // 管理者メールアドレスのリスト
+            const adminEmails = [
+                'utohideki@gmail.com', // メインの管理者
+                // 必要に応じて他の管理者メールを追加
+            ];
+
+            this.isAdmin = adminEmails.includes(user.email);
+            console.log(`🔑 管理者判定: ${this.isAdmin ? '管理者' : '一般ユーザー'} (${user.email})`);
+
+            if (this.isAdmin) {
+                console.log('🔓 管理者機能が有効になりました');
+                this.loadTemplateData(); // 管理者の場合はテンプレートデータを読み込み
+                this.showAdminIndicator(); // 管理者表示を追加
+            }
+        } catch (error) {
+            console.error('❌ 管理者判定エラー:', error);
+            this.isAdmin = false;
+        }
+    }
+
+    /**
+     * テンプレートデータ読み込み（管理者用）
+     */
+    async loadTemplateData() {
+        try {
+            const db = window.firebase.firestore();
+            const templateRef = db.collection('keypoints_templates').doc('default');
+            const doc = await templateRef.get();
+
+            if (doc.exists) {
+                this.templateData = doc.data();
+                console.log('📋 テンプレートデータ読み込み完了:', Object.keys(this.templateData).length, 'subjects');
+            } else {
+                console.log('📋 テンプレートデータが存在しません');
+                this.templateData = {};
+            }
+        } catch (error) {
+            console.error('❌ テンプレートデータ読み込みエラー:', error);
+            this.templateData = {};
+        }
+    }
+
+    /**
+     * 初期データテンプレート保存（管理者用）
+     */
+    async saveAsTemplate(subjectKey, topicIndex, content) {
+        if (!this.isAdmin) {
+            console.warn('⚠️ 管理者のみがテンプレートを保存できます');
+            return false;
+        }
+
+        try {
+            const db = window.firebase.firestore();
+            const templateRef = db.collection('keypoints_templates').doc('default');
+
+            // 既存のテンプレートデータを取得
+            const doc = await templateRef.get();
+            const existingData = doc.exists ? doc.data() : {};
+
+            // 新しい内容を追加/更新
+            if (!existingData[subjectKey]) {
+                existingData[subjectKey] = {};
+            }
+            if (!existingData[subjectKey].topics) {
+                existingData[subjectKey].topics = {};
+            }
+
+            existingData[subjectKey].topics[topicIndex] = {
+                htmlContent: content,
+                updatedAt: new Date().toISOString(),
+                updatedBy: window.firebase.auth().currentUser?.email
+            };
+
+            // Firestoreに保存
+            await templateRef.set(existingData, { merge: true });
+
+            console.log(`✅ テンプレート保存完了: ${subjectKey} - トピック${topicIndex}`);
+            return true;
+        } catch (error) {
+            console.error('❌ テンプレート保存エラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 管理者ステータス表示インジケーター
+     */
+    showAdminIndicator() {
+        // 既存のインジケーターがあれば削除
+        const existingIndicator = document.getElementById('admin-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+
+        const indicator = document.createElement('div');
+        indicator.id = 'admin-indicator';
+        indicator.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #4CAF50, #45a049);
+                color: white;
+                padding: 8px 15px;
+                border-radius: 20px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+                z-index: 9999;
+                font-size: 14px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            ">
+                🔓 管理者モード
+            </div>
+        `;
+        document.body.appendChild(indicator);
+
+        console.log('👑 管理者インジケーターを表示しました');
+    }
+
+    /**
+     * 管理者UIボタンを追加
+     */
+    addAdminUI(container, subjectKey, topicIndex) {
+        if (!this.isAdmin) return;
+
+        const adminControls = document.createElement('div');
+        adminControls.className = 'admin-controls';
+        adminControls.innerHTML = `
+            <div class="admin-panel" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border: 1px solid #87ceeb; border-radius: 5px;">
+                <strong>🔓 管理者機能</strong>
+                <button onclick="KeyPointsModule.saveCurrentAsTemplate('${subjectKey}', ${topicIndex})"
+                        class="admin-btn" style="margin-left: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    初期データとして保存
+                </button>
+                <button onclick="KeyPointsModule.showTemplatePreview('${subjectKey}', ${topicIndex})"
+                        class="admin-btn" style="margin-left: 5px; padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    テンプレート確認
+                </button>
+            </div>
+        `;
+        container.appendChild(adminControls);
+    }
+
+    /**
+     * 現在の内容をテンプレートとして保存
+     */
+    async saveCurrentAsTemplate(subjectKey, topicIndex) {
+        if (!this.isAdmin) {
+            alert('管理者権限が必要です');
+            return;
+        }
+
+        // エディタから現在の内容を取得
+        const editor = document.querySelector(`[data-subject="${subjectKey}"][data-topic="${topicIndex}"] .editor-content`);
+        if (!editor) {
+            alert('エディタが見つかりません');
+            return;
+        }
+
+        const content = editor.innerHTML;
+        if (!content.trim()) {
+            alert('内容が空です');
+            return;
+        }
+
+        const success = await this.saveAsTemplate(subjectKey, topicIndex, content);
+        if (success) {
+            alert('初期データテンプレートとして保存しました！\n全てのユーザーがこの内容を初期状態で見ることができます。');
+        } else {
+            alert('保存に失敗しました');
+        }
+    }
+
+    /**
+     * テンプレート内容プレビュー表示
+     */
+    showTemplatePreview(subjectKey, topicIndex) {
+        if (!this.isAdmin || !this.templateData) return;
+
+        const templateContent = this.templateData[subjectKey]?.topics?.[topicIndex];
+        if (!templateContent) {
+            alert('このトピックにはテンプレートが設定されていません');
+            return;
+        }
+
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 80%; max-width: 600px; height: 70%;
+            background: white; border: 2px solid #87ceeb; border-radius: 10px;
+            padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000;
+            overflow-y: auto;
+        `;
+
+        preview.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>📋 テンプレートプレビュー</h3>
+                <button onclick="this.parentElement.parentElement.remove()"
+                        style="padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    閉じる
+                </button>
+            </div>
+            <p><strong>更新日時:</strong> ${new Date(templateContent.updatedAt).toLocaleString('ja-JP')}</p>
+            <p><strong>更新者:</strong> ${templateContent.updatedBy}</p>
+            <hr>
+            <div style="border: 1px solid #ddd; padding: 15px; background: #f9f9f9;">
+                ${templateContent.htmlContent}
+            </div>
+        `;
+
+        document.body.appendChild(preview);
+    }
+
+    /**
+     * ユーザー向けテンプレートデータ読み込み
+     */
+    async loadUserTemplateData(subjectKey, topicIndex) {
+        try {
+            const db = window.firebase.firestore();
+            const templateRef = db.collection('keypoints_templates').doc('default');
+            const doc = await templateRef.get();
+
+            if (doc.exists) {
+                const templateData = doc.data();
+                const templateContent = templateData[subjectKey]?.topics?.[topicIndex];
+
+                if (templateContent) {
+                    console.log(`📋 初期データテンプレートを読み込みました: ${subjectKey} - トピック${topicIndex}`);
+                    return templateContent.htmlContent;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ テンプレートデータ読み込みエラー:', error);
+            return null;
+        }
+    }
+
+    /**
      * 初期化
      */
     async initialize() {
@@ -398,6 +660,9 @@ class KeyPointsModuleClass {
                 setTimeout(() => this.initialize(), 100);
                 return;
             }
+
+            // 🔑 管理者判定
+            await this.detectAdminStatus();
 
             // 🚀 新しい軽量データ読み込み
             const loadSuccess = await this.loadKeyPointsDataNew();
