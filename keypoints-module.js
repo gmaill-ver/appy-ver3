@@ -266,7 +266,7 @@ class KeyPointsModuleClass {
     /**
      * 🚀 階層構造と要点内容をマージして表示用データ作成
      */
-    mergeStructureAndContent() {
+    async mergeStructureAndContent() {
         try {
             console.log('🔀 データマージ開始...');
 
@@ -276,7 +276,10 @@ class KeyPointsModuleClass {
             // 深いコピーでベース構造作成
             this.subjects = JSON.parse(JSON.stringify(sourceStructure));
 
-            // ユーザーの要点内容をマージ
+            // 📋 Step 1: テンプレートデータを最初に適用（全ユーザー共通の初期データ）
+            await this.applyTemplateData();
+
+            // 📝 Step 2: ユーザーの要点内容をマージ（ユーザー固有の編集内容で上書き）
             if (this.userContent) {
                 Object.keys(this.userContent).forEach(subjectKey => {
                     if (this.subjects[subjectKey] && this.userContent[subjectKey].topics) {
@@ -300,6 +303,55 @@ class KeyPointsModuleClass {
     }
 
     /**
+     * 📋 テンプレートデータを全ユーザーに適用
+     */
+    async applyTemplateData() {
+        try {
+            const db = window.firebase.firestore();
+            if (!db) return;
+
+            const templateRef = db.collection('keypoints_templates').doc('default');
+            const doc = await templateRef.get();
+
+            if (!doc.exists) {
+                console.log('📋 テンプレートデータなし - ユーザーデータのみ使用');
+                return;
+            }
+
+            const templateData = doc.data();
+            let appliedCount = 0;
+
+            // 各科目のテンプレートデータを適用
+            Object.keys(templateData).forEach(subjectKey => {
+                if (this.subjects[subjectKey] && templateData[subjectKey].topics) {
+                    Object.keys(templateData[subjectKey].topics).forEach(topicIndex => {
+                        const index = parseInt(topicIndex);
+                        const templateTopic = templateData[subjectKey].topics[topicIndex];
+
+                        if (this.subjects[subjectKey].topics[index] && templateTopic.htmlContent) {
+                            // ユーザーが未編集の場合のみテンプレートを適用
+                            const hasUserContent = this.userContent?.[subjectKey]?.topics?.[index]?.htmlContent;
+
+                            if (!hasUserContent) {
+                                this.subjects[subjectKey].topics[index].htmlContent = templateTopic.htmlContent;
+                                this.subjects[subjectKey].topics[index].type = 'html';
+                                appliedCount++;
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (appliedCount > 0) {
+                console.log(`📋 テンプレートデータ適用完了: ${appliedCount}件のトピック`);
+            }
+
+        } catch (error) {
+            console.error('❌ テンプレートデータ適用エラー:', error);
+        }
+    }
+
+    /**
      * 🚀 新しい軽量読み込みシステム
      */
     async loadKeyPointsDataNew() {
@@ -319,7 +371,7 @@ class KeyPointsModuleClass {
             const contentLoaded = await this.loadContentFromFirestore();
 
             // Step 3: データをマージして表示用構造作成
-            this.mergeStructureAndContent();
+            await this.mergeStructureAndContent();
 
             console.log('🎉 軽量読み込み完了');
             return true;
