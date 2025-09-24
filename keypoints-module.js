@@ -1,579 +1,179 @@
 /**
- * KeyPointsModule - 要点確認専用モジュール（Firebase統合完全版・キャッシュクリア対応）
- * ★修正: エラーハンドリング強化、確実なFirebase保存、初期化問題解決
+ * KeyPointsModule - 要点確認専用モジュール（ケータイ行政書士対応版）
  */
 class KeyPointsModuleClass {
     constructor() {
-        // ★修正: 科目順序を憲法、行政法、民法、商法、基礎法学、基礎知識に固定
+        // ケータイ行政書士の階層に完全対応
         this.subjects = {
-            'constitution': { 
-                name: '憲法',
-                order: 1, // ★追加: 順序固定
-                chapters: {
-                    '第1章 総論': {
-                        sections: {
-                            '第1節 憲法の意味': [
-                                { title: '憲法の特色', url: '/kenpou/kenpou-tokushitsu/', difficulty: 'C', type: 'link' },
-                                { title: '憲法の基本原理', url: '/kenpou/kenpou-kihon-genri/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第2節 天皇': [
-                                { title: '天皇の地位', url: '/kenpou/tennou-chii/', difficulty: 'B', type: 'link' },
-                                { title: '皇位継承', url: '/kenpou/koi-keisho/', difficulty: 'C', type: 'link' },
-                                { title: '天皇の権能', url: '/kenpou/tennou-kennou/', difficulty: 'A', type: 'link' },
-                                { title: '皇室の財産授受の議決', url: '/kenpou/koshitsu-zaisan/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2章 人権': {
-                        sections: {
-                            '第1節 人権総論': [
-                                { title: '人権の分類', url: '/kenpou/jinken-bunrui/', difficulty: 'B', type: 'link' },
-                                { title: '人権の享有主体', url: '/kenpou/jinken-kyouyu-shutai/', difficulty: 'A', type: 'link' },
-                                { title: '人権の限界', url: '/kenpou/jinken-genkai/', difficulty: 'A', type: 'link' },
-                                { title: '人権の私人間効力', url: '/kenpou/shijin-kan-kouri/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 幸福追求権・法の下の平等': [
-                                { title: '幸福追求権', url: '/kenpou/koufuku-tsuikyuu/', difficulty: 'A', type: 'link' },
-                                { title: '法の下の平等', url: '/kenpou/hou-shita-byoudou/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 精神的自由権': [
-                                { title: '思想・良心の自由', url: '/kenpou/shisou-ryoushin/', difficulty: 'B', type: 'link' },
-                                { title: '信教の自由', url: '/kenpou/shinkyou-jiyuu/', difficulty: 'A', type: 'link' },
-                                { title: '表現の自由', url: '/kenpou/hyougen-jiyuu/', difficulty: 'A', type: 'link' },
-                                { title: '学問の自由', url: '/kenpou/gakumon-jiyuu/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第4節 経済的自由権': [
-                                { title: '職業選択の自由', url: '/kenpou/shokugyou-sentaku/', difficulty: 'A', type: 'link' },
-                                { title: '居住・移転の自由', url: '/kenpou/kyojuu-iten/', difficulty: 'B', type: 'link' },
-                                { title: '外国移住・国籍離脱の自由', url: '/kenpou/gaikoku-iten/', difficulty: 'B', type: 'link' },
-                                { title: '財産権', url: '/kenpou/zaisan-ken/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第5節 人身の自由': [
-                                { title: '奴隷的拘束・苦役からの自由', url: '/kenpou/doreitekikousoku/', difficulty: 'B', type: 'link' },
-                                { title: '法定手続の保障', url: '/kenpou/houtei-tetuzuki/', difficulty: 'A', type: 'link' },
-                                { title: '被疑者・被告人の権利', url: '/kenpou/higisha-kokokuninz/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第6節 社会権': [
-                                { title: '生存権', url: '/kenpou/seizon-ken/', difficulty: 'A', type: 'link' },
-                                { title: '教育を受ける権利', url: '/kenpou/kyouiku-ukeru/', difficulty: 'B', type: 'link' },
-                                { title: '勤労の権利', url: '/kenpou/roudou-kenri/', difficulty: 'C', type: 'link' },
-                                { title: '労働基本権', url: '/kenpou/roudou-kihon/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第7節 参政権・国務請求権': [
-                                { title: '参政権', url: '/kenpou/sansei-ken/', difficulty: 'B', type: 'link' },
-                                { title: '国務請求権', url: '/kenpou/kokumu-seikyu/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第3章 統治': {
-                        sections: {
-                            '第1節 国会': [
-                                { title: '権力分立', url: '/kenpou/kenryoku-bunritsu/', difficulty: 'A', type: 'link' },
-                                { title: '国会の地位', url: '/kenpou/kokkai-chii/', difficulty: 'A', type: 'link' },
-                                { title: '二院制', url: '/kenpou/niinsei/', difficulty: 'A', type: 'link' },
-                                { title: '国会の活動', url: '/kenpou/kokkai-katsudou/', difficulty: 'A', type: 'link' },
-                                { title: '国会議員の特権', url: '/kenpou/kokkai-giin-tokken/', difficulty: 'A', type: 'link' },
-                                { title: '国会と議院の権能', url: '/kenpou/kokkai-giin-kennou/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 内閣': [
-                                { title: '行政権と内閣', url: '/kenpou/gyouseikenz-naikaku/', difficulty: 'B', type: 'link' },
-                                { title: '内閣の組織', url: '/kenpou/naikaku-soshiki/', difficulty: 'A', type: 'link' },
-                                { title: '議院内閣制', url: '/kenpou/giin-naikaku-sei/', difficulty: 'A', type: 'link' },
-                                { title: '内閣と内閣総理大臣の権能', url: '/kenpou/naikaku-naikaku-souri/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 裁判所': [
-                                { title: '司法権', url: '/kenpou/shihou-ken/', difficulty: 'A', type: 'link' },
-                                { title: '裁判所の組織と権能', url: '/kenpou/saibansho-soshiki/', difficulty: 'A', type: 'link' },
-                                { title: '司法権の独立', url: '/kenpou/shihou-dokuritsu/', difficulty: 'A', type: 'link' },
-                                { title: '違憲審査権', url: '/kenpou/kenpou-shinsa/', difficulty: 'A', type: 'link' },
-                                { title: '裁判の公開', url: '/kenpou/saiban-koukai/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第4節 財政': [
-                                { title: '国家財政', url: '/kenpou/kokka-zaisei/', difficulty: 'B', type: 'link' },
-                                { title: '予算・会計検査', url: '/kenpou/yosan-kaikei/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第5節 地方自治・憲法改正': [
-                                { title: '地方自治の本旨', url: '/kenpou/chihou-jichi-honshi/', difficulty: 'B', type: 'link' },
-                                { title: '憲法改正', url: '/kenpou/kenpou-kaisei/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: []
+            'constitution': {
+                name: '第1編 憲法',
+                order: 1,
+                topics: [
+                    { title: '憲法と前文', url: '/kenpou/kenpou-zenbun/', difficulty: 'C', type: 'link' },
+                    { title: '国民主権と象徴天皇', url: '/kenpou/kokumin-shuken/', difficulty: 'B', type: 'link' },
+                    { title: '人権総論', url: '/kenpou/jinken-souron/', difficulty: 'B', type: 'link' },
+                    { title: '法の下の平等', url: '/kenpou/hou-no-shita-byoudou/', difficulty: 'A', type: 'link' },
+                    { title: '幸福追求権', url: '/kenpou/koufuku-tsuikyuuken/', difficulty: 'A', type: 'link' },
+                    { title: '思想・信教の自由', url: '/kenpou/shisou-shinkyou/', difficulty: 'A', type: 'link' },
+                    { title: '表現の自由(1)', url: '/kenpou/hyougen-1/', difficulty: 'A', type: 'link' },
+                    { title: '表現の自由(2)', url: '/kenpou/hyougen-2/', difficulty: 'A', type: 'link' },
+                    { title: '表現の自由(3)', url: '/kenpou/hyougen-3/', difficulty: 'A', type: 'link' },
+                    { title: '学問の自由と教育を受ける権利', url: '/kenpou/gakumon-kyouiku/', difficulty: 'B', type: 'link' },
+                    { title: '経済的自由・人身の自由', url: '/kenpou/keizaiteki-jinshin/', difficulty: 'A', type: 'link' },
+                    { title: '生存権と労働基本権', url: '/kenpou/seizonken-roudou/', difficulty: 'A', type: 'link' },
+                    { title: '代表民主制と参政権', url: '/kenpou/daihyou-minshu/', difficulty: 'B', type: 'link' },
+                    { title: '国会(1)', url: '/kenpou/kokkai-1/', difficulty: 'B', type: 'link' },
+                    { title: '国会(2)', url: '/kenpou/kokkai-2/', difficulty: 'B', type: 'link' },
+                    { title: '内閣(1)', url: '/kenpou/naikaku-1/', difficulty: 'B', type: 'link' },
+                    { title: '内閣(2)', url: '/kenpou/naikaku-2/', difficulty: 'B', type: 'link' },
+                    { title: '司法権', url: '/kenpou/shihouken/', difficulty: 'B', type: 'link' },
+                    { title: '裁判官', url: '/kenpou/saibakan/', difficulty: 'B', type: 'link' },
+                    { title: '財政', url: '/kenpou/zaisei/', difficulty: 'C', type: 'link' },
+                    { title: '地方自治', url: '/kenpou/chihou-jichi/', difficulty: 'B', type: 'link' },
+                    { title: '憲法改正', url: '/kenpou/kenpou-kaisei/', difficulty: 'C', type: 'link' }
+                ]
             },
-            'administrative': { 
-                name: '行政法',
-                order: 2, // ★追加: 順序固定
-                chapters: {
-                    '第1章 行政法の一般的な法理論': {
-                        sections: {
-                            '第1節 行政法総論': [
-                                { title: '行政法の一般原理', url: '/gyouseihou/gyouseihou-ippan-genri/', difficulty: 'A', type: 'link' },
-                                { title: '行政上の法律関係', url: '/gyouseihou/gyouseihou-houtei-kankei/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 行政組織法': [
-                                { title: '行政主体と行政機関', url: '/gyouseihou/gyousei-shutai-kikan/', difficulty: 'A', type: 'link' },
-                                { title: '行政機関の権限', url: '/gyouseihou/gyousei-kikan-kengen/', difficulty: 'A', type: 'link' },
-                                { title: '国の行政組織', url: '/gyouseihou/kuni-gyousei-soshiki/', difficulty: 'B', type: 'link' },
-                                { title: '公務員', url: '/gyouseihou/koumuin/', difficulty: 'B', type: 'link' },
-                                { title: '公物', url: '/gyouseihou/kouchoubutsu/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第3節 行政作用の類型': [
-                                { title: '行政作用とは何か', url: '/gyouseihou/gyousei-sayou-towa/', difficulty: 'B', type: 'link' },
-                                { title: '行政処分', url: '/gyouseihou/gyousei-shobun/', difficulty: 'A', type: 'link' },
-                                { title: '行政立法', url: '/gyouseihou/gyousei-rippou/', difficulty: 'A', type: 'link' },
-                                { title: '行政計画', url: '/gyouseihou/gyousei-keikaku/', difficulty: 'B', type: 'link' },
-                                { title: '行政契約', url: '/gyouseihou/gyousei-keiyaku/', difficulty: 'B', type: 'link' },
-                                { title: '行政指導', url: '/gyouseihou/gyousei-shidou/', difficulty: 'B', type: 'link' },
-                                { title: '行政調査', url: '/gyouseihou/gyousei-chousa/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第4節 行政上の強制措置': [
-                                { title: '行政上の強制措置の全体像', url: '/gyouseihou/gyousei-kyousei-zentaizou/', difficulty: 'B', type: 'link' },
-                                { title: '行政上の強制執行', url: '/gyouseihou/gyousei-kyousei-shikkou/', difficulty: 'A', type: 'link' },
-                                { title: '即時強制', url: '/gyouseihou/sokuji-kyousei/', difficulty: 'B', type: 'link' },
-                                { title: '行政罰', url: '/gyouseihou/gyousei-batsu/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2章 行政手続法': {
-                        sections: {
-                            '第1節 行政手続法総則': [
-                                { title: '行政手続法とは何か', url: '/gyouseihou/gyousei-tetuzuki-towa/', difficulty: 'B', type: 'link' },
-                                { title: '行政手続法の目的', url: '/gyouseihou/gyousei-tetuzuki-mokuteki/', difficulty: 'A', type: 'link' },
-                                { title: '行政手続法の対象', url: '/gyouseihou/gyousei-tetuzuki-taishou/', difficulty: 'A', type: 'link' },
-                                { title: '適用除外', url: '/gyouseihou/tekiyou-jogai/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 申請に対する処分': [
-                                { title: '申請に対する処分とは何か', url: '/gyouseihou/shinsei-shobun-towa/', difficulty: 'B', type: 'link' },
-                                { title: '審査基準', url: '/gyouseihou/shinsa-kijun/', difficulty: 'A', type: 'link' },
-                                { title: '標準処理期間', url: '/gyouseihou/hyoujun-shori-kikan/', difficulty: 'A', type: 'link' },
-                                { title: '申請に対する審査・応答', url: '/gyouseihou/shinsei-shinsa-toutou/', difficulty: 'A', type: 'link' },
-                                { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ/', difficulty: 'A', type: 'link' },
-                                { title: 'その他の規定', url: '/gyouseihou/sonota-kitei/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第3節 不利益処分': [
-                                { title: '不利益処分とは何か', url: '/gyouseihou/furieki-shobun-towa/', difficulty: 'A', type: 'link' },
-                                { title: '処分基準', url: '/gyouseihou/shobun-kijun/', difficulty: 'A', type: 'link' },
-                                { title: '理由の提示', url: '/gyouseihou/riyuu-teijiZ-furieki/', difficulty: 'A', type: 'link' },
-                                { title: '聴聞選択手続', url: '/gyouseihou/choushin-tetuzuki/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第4節 行政指導': [
-                                { title: '行政指導とは何か', url: '/gyouseihou/gyousei-shidou-towa/', difficulty: 'A', type: 'link' },
-                                { title: '行政指導の手続', url: '/gyouseihou/gyousei-shidou-tetsuzuki/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第5節 届出': [
-                                { title: '届出とは何か', url: '/gyouseihou/todokede-towa/', difficulty: 'C', type: 'link' },
-                                { title: '届出の効力発生時期', url: '/gyouseihou/todokede-kouryoku-hassei/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第6節 命令等制定手続': [
-                                { title: '命令等を定める場合の一般原則', url: '/gyouseihou/meirei-toutei-ippan-genri/', difficulty: 'B', type: 'link' },
-                                { title: '意見公募手続', url: '/gyouseihou/iken-koubo/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第3章 行政不服審査法': {
-                        sections: {
-                            '第1節 行政不服審査法総則': [
-                                { title: '行政済法の全体像', url: '/gyouseihou/gyousei-fufuku-zentaizou/', difficulty: 'B', type: 'link' },
-                                { title: '行政不服審査法の目的', url: '/gyouseihou/gyousei-fufuku-mokuteki/', difficulty: 'A', type: 'link' },
-                                { title: '審査請求の対象', url: '/gyouseihou/shinsei-kyusai-taishou/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 審査請求': [
-                                { title: '審査請求の流れ', url: '/gyouseihou/shinsa-seikyu-nagare/', difficulty: 'B', type: 'link' },
-                                { title: '審査請求の要件', url: '/gyouseihou/shinsa-seikyu-youken/', difficulty: 'A', type: 'link' },
-                                { title: '審査請求の審理手続', url: '/gyouseihou/shinsa-seikyu-shinri-tetuzuki/', difficulty: 'A', type: 'link' },
-                                { title: '審査請求の裁決', url: '/gyouseihou/shinsa-seikyu-saiketsu/', difficulty: 'A', type: 'link' },
-                                { title: '執行停止', url: '/gyouseihou/shikkou-teishi/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 審査請求以外の不服申立て': [
-                                { title: '再調査の請求', url: '/gyouseihou/saichousa-seikyu/', difficulty: 'B', type: 'link' },
-                                { title: '再審査請求', url: '/gyouseihou/saishingsa-seikyu/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第4節 教示': [
-                                { title: '教示とは何か', url: '/gyouseihou/kyouji-towa/', difficulty: 'B', type: 'link' },
-                                { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第4章 行政事件訴訟法': {
-                        sections: {
-                            '第1節 行政事件訴訟の類型': [
-                                { title: '行政事件訴訟', url: '/gyouseihou/gyousei-jiken-soshou/', difficulty: 'A', type: 'link' },
-                                { title: '抗告訴訟', url: '/gyouseihou/koutoku-soshou/', difficulty: 'A', type: 'link' },
-                                { title: '当事者訴訟', url: '/gyouseihou/touji-soshou/', difficulty: 'B', type: 'link' },
-                                { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou/', difficulty: 'B', type: 'link' },
-                                { title: '機関訴訟', url: '/gyouseihou/kikan-soshou/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第2節 取消訴訟': [
-                                { title: '取消訴訟の類型', url: '/gyouseihou/torikeshi-soshou-ruikei/', difficulty: 'A', type: 'link' },
-                                { title: '取消訴訟の要件', url: '/gyouseihou/torikeshi-soshou-youken/', difficulty: 'A', type: 'link' },
-                                { title: '取消訴訟の審理', url: '/gyouseihou/torikeshi-soshou-shinri/', difficulty: 'B', type: 'link' },
-                                { title: '取消訴訟の判決', url: '/gyouseihou/torikeshi-soshou-hanketsu/', difficulty: 'A', type: 'link' },
-                                { title: '執行停止', url: '/gyouseihou/shikkou-teishi-soshou/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 取消訴訟以外の抗告訴訟': [
-                                { title: '無効等確認訴訟', url: '/gyouseihou/mukou-toutou-kakunin/', difficulty: 'B', type: 'link' },
-                                { title: '不作為の違法確認訴訟', url: '/gyouseihou/fusaku-ihou-kakunin/', difficulty: 'B', type: 'link' },
-                                { title: '義務付け訴訟', url: '/gyouseihou/gimu-dzuke-soshou/', difficulty: 'A', type: 'link' },
-                                { title: '差止め訴訟', url: '/gyouseihou/sashi-tome-soshou/', difficulty: 'B', type: 'link' },
-                                { title: '仮の義務付け・仮の差止め', url: '/gyouseihou/kari-gimu-dzuke-sashitome/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第4節 当事者訴訟': [
-                                { title: '当事者訴訟とは何か', url: '/gyouseihou/toujisha-soshou-towa/', difficulty: 'B', type: 'link' },
-                                { title: '形態的当事者訴訟', url: '/gyouseihou/keitai-betsu-toujisha/', difficulty: 'B', type: 'link' },
-                                { title: '実質的当事者訴訟', url: '/gyouseihou/jisshitsu-toujisha/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第5節 民衆訴訟・機関訴訟': [
-                                { title: '民衆訴訟', url: '/gyouseihou/minshuu-soshou-towa/', difficulty: 'C', type: 'link' },
-                                { title: '機関訴訟', url: '/gyouseihou/kikan-soshou-towa/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第6節 教示': [
-                                { title: '教示とは何か', url: '/gyouseihou/kyouji-soshou/', difficulty: 'B', type: 'link' },
-                                { title: '教示の内容', url: '/gyouseihou/kyouji-naiyou-soshou/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第5章 国家賠償法・損失補償': {
-                        sections: {
-                            '第1節 国家賠償法': [
-                                { title: '国家賠償法の全体像', url: '/gyouseihou/kokka-baishou-zentaizou/', difficulty: 'B', type: 'link' },
-                                { title: '国家賠償法1条', url: '/gyouseihou/kokka-baishou-1jou/', difficulty: 'A', type: 'link' },
-                                { title: '国家賠償法2条', url: '/gyouseihou/kokka-baishou-2jou/', difficulty: 'A', type: 'link' },
-                                { title: '国家賠償法3条～6条', url: '/gyouseihou/kokka-baishou-3-6jou/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 損失補償': [
-                                { title: '損失補償とは何か', url: '/gyouseihou/sonshitsu-hoshou-towa/', difficulty: 'B', type: 'link' },
-                                { title: '補償の根拠', url: '/gyouseihou/hoshou-konkyou/', difficulty: 'B', type: 'link' },
-                                { title: '補償の内容・程度', url: '/gyouseihou/hoshou-naiyou-teido/', difficulty: 'B', type: 'link' },
-                                { title: '補償の方法', url: '/gyouseihou/hoshou-houhou/', difficulty: 'C', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第6章 地方自治法': {
-                        sections: {
-                            '第1節 地方公共団体の種類': [
-                                { title: '地方自治とは何か', url: '/gyouseihou/chihou-jichi-towa/', difficulty: 'B', type: 'link' },
-                                { title: '地方公共団体の種類', url: '/gyouseihou/chihou-dantai-shurui/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 地方公共団体の事務': [
-                                { title: '地方公共団体の事務の種類', url: '/gyouseihou/chihou-dantai-jimu-shurui/', difficulty: 'B', type: 'link' },
-                                { title: '事務処理の基本原則', url: '/gyouseihou/jimu-shori-kihon-genri/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第3節 地方公共団体の機関': [
-                                { title: '議会', url: '/gyouseihou/gikai/', difficulty: 'A', type: 'link' },
-                                { title: '執行機関', url: '/gyouseihou/shikkou-kikan/', difficulty: 'A', type: 'link' },
-                                { title: '議会と長の関係', url: '/gyouseihou/gikai-chou-kankei/', difficulty: 'A', type: 'link' },
-                                { title: '地域自治区', url: '/gyouseihou/chiiki-jichi-ku/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第4節 地方公共団体の立法': [
-                                { title: '地方公共団体の自主立法', url: '/gyouseihou/chihou-dantai-jiritsu-rippou/', difficulty: 'B', type: 'link' },
-                                { title: '条例', url: '/gyouseihou/jourei/', difficulty: 'A', type: 'link' },
-                                { title: '規則', url: '/gyouseihou/kisoku/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第5節 地方公共団体の財務': [
-                                { title: '地方公共団体の財務の流れ', url: '/gyouseihou/chihou-dantai-zaimu-nagare/', difficulty: 'B', type: 'link' },
-                                { title: '地方公共団体の財務に関する規定', url: '/gyouseihou/chihou-dantai-zaimu-kitei/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第6節 住民の権利': [
-                                { title: '住民', url: '/gyouseihou/juumin/', difficulty: 'B', type: 'link' },
-                                { title: '選挙', url: '/gyouseihou/senkyo/', difficulty: 'B', type: 'link' },
-                                { title: '直接請求', url: '/gyouseihou/chokusetsu-seikyu/', difficulty: 'A', type: 'link' },
-                                { title: '住民監査請求・住民訴訟', url: '/gyouseihou/juumin-kansa-seikyu-soshou/', difficulty: 'A', type: 'link' },
-                                { title: '公の施設', url: '/gyouseihou/koukai-seikyu/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第7節 関与': [
-                                { title: '関与とは何か', url: '/gyouseihou/kanyo-towa/', difficulty: 'B', type: 'link' },
-                                { title: '関与の基本原則', url: '/gyouseihou/kanyo-kihon-genri/', difficulty: 'B', type: 'link' },
-                                { title: '関与の基本類型', url: '/gyouseihou/kanyo-kihon-ruikei/', difficulty: 'B', type: 'link' },
-                                { title: '紛争処理', url: '/gyouseihou/funsou-shori/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: []
+            'administrative': {
+                name: '第2編 行政法',
+                order: 2,
+                topics: [
+                    { title: '法治行政', url: '/gyousei/houchi-gyousei/', difficulty: 'B', type: 'link' },
+                    { title: '行政上の法律関係と民事法', url: '/gyousei/gyousei-houritsu/', difficulty: 'A', type: 'link' },
+                    { title: '行政主体と行政機関', url: '/gyousei/gyousei-shutai/', difficulty: 'B', type: 'link' },
+                    { title: '国の行政組織', url: '/gyousei/kuni-soshiki/', difficulty: 'B', type: 'link' },
+                    { title: '公務員と公物', url: '/gyousei/koumuin-koubutsu/', difficulty: 'B', type: 'link' },
+                    { title: '行政立法', url: '/gyousei/gyousei-rippou/', difficulty: 'B', type: 'link' },
+                    { title: '行政行為(1)', url: '/gyousei/gyousei-koui-1/', difficulty: 'A', type: 'link' },
+                    { title: '行政行為(2)', url: '/gyousei/gyousei-koui-2/', difficulty: 'A', type: 'link' },
+                    { title: '行政行為(3)', url: '/gyousei/gyousei-koui-3/', difficulty: 'A', type: 'link' },
+                    { title: '行政行為の附款', url: '/gyousei/gyousei-fukan/', difficulty: 'B', type: 'link' },
+                    { title: '行政行為の職権取消しと撤回', url: '/gyousei/shokken-torikeshi/', difficulty: 'A', type: 'link' },
+                    { title: '行政上の義務の履行確保', url: '/gyousei/gimu-rikou/', difficulty: 'B', type: 'link' },
+                    { title: '行政上の義務違反に対する制裁', url: '/gyousei/gimu-ihan-seisai/', difficulty: 'B', type: 'link' },
+                    { title: '即時強制と行政調査', url: '/gyousei/sokuji-kyousei/', difficulty: 'B', type: 'link' },
+                    { title: '行政契約と行政計画', url: '/gyousei/gyousei-keiyaku/', difficulty: 'C', type: 'link' },
+                    { title: '行政手続法(1)', url: '/gyousei/tetsuzuki-1/', difficulty: 'A', type: 'link' },
+                    { title: '行政手続法(2)', url: '/gyousei/tetsuzuki-2/', difficulty: 'A', type: 'link' },
+                    { title: '行政手続法(3)', url: '/gyousei/tetsuzuki-3/', difficulty: 'A', type: 'link' },
+                    { title: '行政手続法(4)', url: '/gyousei/tetsuzuki-4/', difficulty: 'A', type: 'link' },
+                    { title: '行政手続法(5)', url: '/gyousei/tetsuzuki-5/', difficulty: 'A', type: 'link' },
+                    { title: '行政不服審査法(1)', url: '/gyousei/fufuku-1/', difficulty: 'A', type: 'link' },
+                    { title: '行政不服審査法(2)', url: '/gyousei/fufuku-2/', difficulty: 'A', type: 'link' },
+                    { title: '行政不服審査法(3)', url: '/gyousei/fufuku-3/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(1)', url: '/gyousei/jiken-soshou-1/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(2)', url: '/gyousei/jiken-soshou-2/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(3)', url: '/gyousei/jiken-soshou-3/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(4)', url: '/gyousei/jiken-soshou-4/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(5)', url: '/gyousei/jiken-soshou-5/', difficulty: 'A', type: 'link' },
+                    { title: '行政事件訴訟法(6)', url: '/gyousei/jiken-soshou-6/', difficulty: 'A', type: 'link' },
+                    { title: '国家賠償法(1)', url: '/gyousei/kokka-baishou-1/', difficulty: 'A', type: 'link' },
+                    { title: '国家賠償法(2)', url: '/gyousei/kokka-baishou-2/', difficulty: 'A', type: 'link' },
+                    { title: '国家賠償法(3)', url: '/gyousei/kokka-baishou-3/', difficulty: 'A', type: 'link' },
+                    { title: '地方自治法(1)', url: '/gyousei/chihou-jichi-1/', difficulty: 'B', type: 'link' },
+                    { title: '地方自治法(2)', url: '/gyousei/chihou-jichi-2/', difficulty: 'B', type: 'link' },
+                    { title: '地方自治法(3)', url: '/gyousei/chihou-jichi-3/', difficulty: 'B', type: 'link' },
+                    { title: '地方自治法(4)', url: '/gyousei/chihou-jichi-4/', difficulty: 'B', type: 'link' },
+                    { title: '地方自治法(5)', url: '/gyousei/chihou-jichi-5/', difficulty: 'B', type: 'link' },
+                    { title: '地方自治法(6)', url: '/gyousei/chihou-jichi-6/', difficulty: 'B', type: 'link' }
+                ]
             },
-            'civil': {  
-                name: '民法',
-                order: 3, // ★追加: 順序固定
-                chapters: {
-                    '第1編 総則': {
-                        sections: {
-                            '第1節 権利の主体・客体': [
-                                { title: '権利能力', url: '/minpou/kenri-nouryoku/', difficulty: 'B', type: 'link' },
-                                { title: '意思能力', url: '/minpou/ishi-nouryoku/', difficulty: 'B', type: 'link' },
-                                { title: '行為能力', url: '/minpou/koui-nouryoku/', difficulty: 'A', type: 'link' },
-                                { title: '法人', url: '/minpou/houjin/', difficulty: 'C', type: 'link' },
-                                { title: '物', url: '/minpou/mono/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第2節 意思表示': [
-                                { title: '法律行為', url: '/minpou/houtei-koui/', difficulty: 'B', type: 'link' },
-                                { title: '意思表示', url: '/minpou/ishi-hyouji/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 代理': [
-                                { title: '代理とは何か', url: '/minpou/dairi-towa/', difficulty: 'B', type: 'link' },
-                                { title: '代理の成立要件', url: '/minpou/dairi-seirtitu/', difficulty: 'A', type: 'link' },
-                                { title: '復代理', url: '/minpou/hukudairi/', difficulty: 'B', type: 'link' },
-                                { title: '無権代理', url: '/minpou/muken-dairi/', difficulty: 'A', type: 'link' },
-                                { title: '表見代理', url: '/minpou/hyoken-dairi/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第4節 無効・取消し': [
-                                { title: '無効', url: '/minpou/mukou/', difficulty: 'B', type: 'link' },
-                                { title: '取消し', url: '/minpou/torikeshi/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第5節 条件・期限': [
-                                { title: '条件', url: '/minpou/jouken/', difficulty: 'C', type: 'link' },
-                                { title: '期限', url: '/minpou/kigen/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第6節 時効': [
-                                { title: '時効とは何か', url: '/minpou/jikou-towa/', difficulty: 'A', type: 'link' },
-                                { title: '時効の効力', url: '/minpou/jikou-kouryoku/', difficulty: 'A', type: 'link' },
-                                { title: '時効の完成猶予・更新', url: '/minpou/jikou-kansei/', difficulty: 'A', type: 'link' },
-                                { title: '取得時効', url: '/minpou/shutoku-jikou/', difficulty: 'A', type: 'link' },
-                                { title: '消滅時効', url: '/minpou/shometsu-jikou/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2編 物権': {
-                        sections: {
-                            '第1節 物権総論': [
-                                { title: '物権とは何か', url: '/minpou/bukken-towa/', difficulty: 'B', type: 'link' },
-                                { title: '物権的請求権', url: '/minpou/bukken-seikyu/', difficulty: 'B', type: 'link' },
-                                { title: '物権変動', url: '/minpou/bukken-hendou/', difficulty: 'C', type: 'link' },
-                                { title: '不動産物権変動①－177条の第三者', url: '/minpou/fudousan-bukken-hendou1/', difficulty: 'A', type: 'link' },
-                                { title: '不動産物権変動②－登記と対抗要件', url: '/minpou/fudousan-bukken-hendou2/', difficulty: 'A', type: 'link' },
-                                { title: '動産物権変動①－対抗要件', url: '/minpou/dousann-bukken-hendou1/', difficulty: 'B', type: 'link' },
-                                { title: '動産物権変動②－即時取得', url: '/minpou/dousann-bukken-hendou2/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 占有権': [
-                                { title: '占有権とは何か', url: '/minpou/senyuu-towa/', difficulty: 'B', type: 'link' },
-                                { title: '占有の取得', url: '/minpou/senyuu-shutoku/', difficulty: 'B', type: 'link' },
-                                { title: '占有の効力', url: '/minpou/senyuu-kouryoku/', difficulty: 'B', type: 'link' },
-                                { title: '占有の訴え', url: '/minpou/senyuu-sosho/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 所有権': [
-                                { title: '相隣関係', url: '/minpou/soyuu-souran/', difficulty: 'B', type: 'link' },
-                                { title: '所有権の取得', url: '/minpou/soyuu-shutoku/', difficulty: 'B', type: 'link' },
-                                { title: '共有', url: '/minpou/kyoyuu/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第4節 用益物権': [
-                                { title: '地上権', url: '/minpou/chijou-ken/', difficulty: 'C', type: 'link' },
-                                { title: '永小作権', url: '/minpou/eisho-saku/', difficulty: 'C', type: 'link' },
-                                { title: '地役権', url: '/minpou/chieki-ken/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第5節 担保物権': [
-                                { title: '担保物権とは何か', url: '/minpou/tanpo-bukken-towa/', difficulty: 'B', type: 'link' },
-                                { title: '留置権', url: '/minpou/ryuuchi-ken/', difficulty: 'A', type: 'link' },
-                                { title: '先取特権', url: '/minpou/sendori-tokken/', difficulty: 'B', type: 'link' },
-                                { title: '質権', url: '/minpou/shichi-ken/', difficulty: 'B', type: 'link' },
-                                { title: '抵当権', url: '/minpou/teitou-ken/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第3編 債権': {
-                        sections: {
-                            '第1節 債権の目的': [
-                                { title: '債権とは何か', url: '/minpou/saiken-towa/', difficulty: 'C', type: 'link' },
-                                { title: '特定物債権と種類債権', url: '/minpou/tokutei-bukken-saiken/', difficulty: 'B', type: 'link' },
-                                { title: '選択債権', url: '/minpou/sentaku-saiken/', difficulty: 'C', type: 'link' }
-                            ],
-                            '第2節 債務不履行': [
-                                { title: '債務不履行とは何か', url: '/minpou/saimu-furikou-towa/', difficulty: 'B', type: 'link' },
-                                { title: '債務不履行の要件', url: '/minpou/saimu-furikou-youken/', difficulty: 'A', type: 'link' },
-                                { title: '債務不履行の効果', url: '/minpou/saimu-furikou-kouryoku/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 契約': [
-                                { title: '売買', url: '/minpou/baibai/', difficulty: 'A', type: 'link' },
-                                { title: '賃貸借', url: '/minpou/chintai-shakae/', difficulty: 'A', type: 'link' },
-                                { title: '請負', url: '/minpou/ukeoi/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第4編 親族': {
-                        sections: {
-                            '第1節 夫婦': [
-                                { title: '婚姻', url: '/minpou/kon-in/', difficulty: 'A', type: 'link' },
-                                { title: '離婚', url: '/minpou/rikon/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 親子': [
-                                { title: '実子', url: '/minpou/jisshi/', difficulty: 'A', type: 'link' },
-                                { title: '養子', url: '/minpou/youshi/', difficulty: 'B', type: 'link' },
-                                { title: '親権', url: '/minpou/shinken/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第5編 相続': {
-                        sections: {
-                            '第1節 相続人': [
-                                { title: '相続人の種類・順位', url: '/minpou/souzokuninz-shurui/', difficulty: 'A', type: 'link' },
-                                { title: '相続欠格の喪失', url: '/minpou/souzoku-ketsuraku/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 相続の効力': [
-                                { title: '相続の効力', url: '/minpou/souzoku-kouryoku/', difficulty: 'B', type: 'link' },
-                                { title: '遺産分割', url: '/minpou/isan-bunkatsu/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第3節 遺言': [
-                                { title: '遺言の方式', url: '/minpou/yuigon-houshiki/', difficulty: 'B', type: 'link' },
-                                { title: '遺言の効力', url: '/minpou/yuigon-kouryoku/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: [] 
+            'civil': {
+                name: '第3編 民法',
+                order: 3,
+                topics: [
+                    { title: '権利の主体', url: '/minpou/kenri-shutai/', difficulty: 'B', type: 'link' },
+                    { title: '制限行為能力者(1)', url: '/minpou/seigen-1/', difficulty: 'A', type: 'link' },
+                    { title: '制限行為能力者(2)', url: '/minpou/seigen-2/', difficulty: 'A', type: 'link' },
+                    { title: '意思表示(1)', url: '/minpou/ishi-hyouji-1/', difficulty: 'A', type: 'link' },
+                    { title: '意思表示(2)', url: '/minpou/ishi-hyouji-2/', difficulty: 'A', type: 'link' },
+                    { title: '意思表示(3)', url: '/minpou/ishi-hyouji-3/', difficulty: 'A', type: 'link' },
+                    { title: '代理(1)', url: '/minpou/dairi-1/', difficulty: 'A', type: 'link' },
+                    { title: '代理(2)', url: '/minpou/dairi-2/', difficulty: 'A', type: 'link' },
+                    { title: '代理(3)', url: '/minpou/dairi-3/', difficulty: 'A', type: 'link' },
+                    { title: '時効', url: '/minpou/jikou/', difficulty: 'A', type: 'link' },
+                    { title: '物権変動(1)', url: '/minpou/bukken-hendou-1/', difficulty: 'A', type: 'link' },
+                    { title: '物権変動(2)', url: '/minpou/bukken-hendou-2/', difficulty: 'A', type: 'link' },
+                    { title: '所有権', url: '/minpou/shoyuuken/', difficulty: 'B', type: 'link' },
+                    { title: '占有権・地役権', url: '/minpou/senyuu-chiyaku/', difficulty: 'C', type: 'link' },
+                    { title: '担保物権(1)', url: '/minpou/tanpo-1/', difficulty: 'A', type: 'link' },
+                    { title: '担保物権(2)', url: '/minpou/tanpo-2/', difficulty: 'A', type: 'link' },
+                    { title: '担保物権(3)', url: '/minpou/tanpo-3/', difficulty: 'A', type: 'link' },
+                    { title: '債権(1)', url: '/minpou/saiken-1/', difficulty: 'B', type: 'link' },
+                    { title: '債権(2)', url: '/minpou/saiken-2/', difficulty: 'B', type: 'link' },
+                    { title: '債務不履行', url: '/minpou/saimu-furikou/', difficulty: 'A', type: 'link' },
+                    { title: '責任財産保全', url: '/minpou/sekinin-zaisan/', difficulty: 'B', type: 'link' },
+                    { title: '連帯債務', url: '/minpou/rentai-saimu/', difficulty: 'B', type: 'link' },
+                    { title: '保証債務', url: '/minpou/hoshou-saimu/', difficulty: 'A', type: 'link' },
+                    { title: '契約総論(1)', url: '/minpou/keiyaku-souron-1/', difficulty: 'B', type: 'link' },
+                    { title: '契約総論(2)', url: '/minpou/keiyaku-souron-2/', difficulty: 'B', type: 'link' },
+                    { title: '所有権を移転する契約(1)', url: '/minpou/shoyuu-iten-1/', difficulty: 'A', type: 'link' },
+                    { title: '所有権を移転する契約(2)', url: '/minpou/shoyuu-iten-2/', difficulty: 'A', type: 'link' },
+                    { title: '他人の物を使用する契約(1)', url: '/minpou/tanin-shiyou-1/', difficulty: 'B', type: 'link' },
+                    { title: '他人の物を使用する契約(2)', url: '/minpou/tanin-shiyou-2/', difficulty: 'B', type: 'link' },
+                    { title: '他人の労務を利用する契約', url: '/minpou/tanin-roumu/', difficulty: 'B', type: 'link' },
+                    { title: '事務管理・不当利得', url: '/minpou/jimu-kanri/', difficulty: 'B', type: 'link' },
+                    { title: '不法行為(1)', url: '/minpou/fuhou-koui-1/', difficulty: 'A', type: 'link' },
+                    { title: '不法行為(2)', url: '/minpou/fuhou-koui-2/', difficulty: 'A', type: 'link' },
+                    { title: '親族法(1)', url: '/minpou/shinzoku-1/', difficulty: 'B', type: 'link' },
+                    { title: '親族法(2)', url: '/minpou/shinzoku-2/', difficulty: 'B', type: 'link' },
+                    { title: '相続法(1)', url: '/minpou/souzoku-1/', difficulty: 'A', type: 'link' },
+                    { title: '相続法(2)', url: '/minpou/souzoku-2/', difficulty: 'A', type: 'link' }
+                ]
             },
-            'commercial': { 
-                name: '商法',
-                order: 4, // ★追加: 順序固定
-                chapters: {
-                    '第1編 商法総則': {
-                        sections: {
-                            '第1節 商法の意義': [
-                                { title: '商法の概念', url: '/shouhou/shouhou-gainen/', difficulty: 'B', type: 'link' },
-                                { title: '商行為', url: '/shouhou/shou-koui/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 商人': [
-                                { title: '商人の意義', url: '/shouhou/shounin-igi/', difficulty: 'A', type: 'link' },
-                                { title: '商業登記', url: '/shouhou/shougyou-touki/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2編 会社法': {
-                        sections: {
-                            '第1節 会社の種類': [
-                                { title: '株式会社', url: '/shouhou/kabushiki-gaisha/', difficulty: 'A', type: 'link' },
-                                { title: '持分会社', url: '/shouhou/mochibun-gaisha/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 株式会社の機関': [
-                                { title: '株主総会', url: '/shouhou/kabunushi-soukai/', difficulty: 'A', type: 'link' },
-                                { title: '取締役', url: '/shouhou/torishimari-yaku/', difficulty: 'A', type: 'link' },
-                                { title: '監査役', url: '/shouhou/kansa-yaku/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: [] 
+            'commercial': {
+                name: '第4編 商法・会社法',
+                order: 4,
+                topics: [
+                    { title: '商法総則(1)', url: '/shouhou/sousoku-1/', difficulty: 'B', type: 'link' },
+                    { title: '商法総則(2)', url: '/shouhou/sousoku-2/', difficulty: 'B', type: 'link' },
+                    { title: '商法総則(3)', url: '/shouhou/sousoku-3/', difficulty: 'B', type: 'link' },
+                    { title: '商行為(1)', url: '/shouhou/shou-koui-1/', difficulty: 'B', type: 'link' },
+                    { title: '商行為(2)', url: '/shouhou/shou-koui-2/', difficulty: 'B', type: 'link' },
+                    { title: '商行為(3)', url: '/shouhou/shou-koui-3/', difficulty: 'B', type: 'link' },
+                    { title: '持分会社', url: '/shouhou/mochibun-gaisha/', difficulty: 'C', type: 'link' },
+                    { title: '株式会社(1)', url: '/shouhou/kabushiki-1/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(2)', url: '/shouhou/kabushiki-2/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(3)', url: '/shouhou/kabushiki-3/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(4)', url: '/shouhou/kabushiki-4/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(5)', url: '/shouhou/kabushiki-5/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(6)', url: '/shouhou/kabushiki-6/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(7)', url: '/shouhou/kabushiki-7/', difficulty: 'A', type: 'link' },
+                    { title: '株式会社(8)', url: '/shouhou/kabushiki-8/', difficulty: 'A', type: 'link' },
+                    { title: '組織再編', url: '/shouhou/soshiki-saihen/', difficulty: 'B', type: 'link' }
+                ]
             },
-            'basic_law': { 
-                name: '基礎法学',
-                order: 5, // ★追加: 順序固定
-                chapters: {
-                    '第1章 法学概論': {
-                        sections: {
-                            '第1節 法とは何か': [
-                                { title: '法とは何か', url: '/kiso-hougaku/hou-gainen/', difficulty: 'B', type: 'link' },
-                                { title: '成文法（制定法）・不文法', url: '/kiso-hougaku/seibun-hou-fubun-hou/', difficulty: 'B', type: 'link' },
-                                { title: '意味の紛らわしい法律用語', url: '/kiso-hougaku/imi-magirawa-yougo/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 法の効力': [
-                                { title: '時間的適用範囲', url: '/kiso-hougaku/jikan-tekiyou-hanui/', difficulty: 'A', type: 'link' },
-                                { title: '場所的適用範囲', url: '/kiso-hougaku/basho-tekiyou-hanui/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 法の解釈': [
-                                { title: '法の解釈とは何か', url: '/kiso-hougaku/hou-kaishaku-towa/', difficulty: 'C', type: 'link' },
-                                { title: '法の解釈の種類', url: '/kiso-hougaku/hou-kaishaku-shurui/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第4節 法律用語': [
-                                { title: '段階的な使い方がなされる法律用語', url: '/kiso-hougaku/dankaiteki-tsukaikata/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2章 紛争解決制度': {
-                        sections: {
-                            '第1節 裁判制度': [
-                                { title: '裁判とは何か', url: '/kiso-hougaku/saiban-towa/', difficulty: 'B', type: 'link' },
-                                { title: '裁判の基本原則', url: '/kiso-hougaku/saiban-kihon-genri/', difficulty: 'B', type: 'link' },
-                                { title: '裁判所・裁判官', url: '/kiso-hougaku/saibansho-saibankan/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: [] 
-            },
-            'basic_knowledge': { 
-                name: '基礎知識',
-                order: 6, // ★追加: 順序固定
-                chapters: {
-                    '第1章 政治・経済・社会': {
-                        sections: {
-                            '第1節 政治制度': [
-                                { title: '国会制度', url: '/kiso/kokkai-seido/', difficulty: 'B', type: 'link' },
-                                { title: '選挙制度', url: '/kiso/senkyo-seido/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 経済理論': [
-                                { title: 'マクロ経済学', url: '/kiso/macro-keizai/', difficulty: 'A', type: 'link' },
-                                { title: 'ミクロ経済学', url: '/kiso/micro-keizai/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第3節 社会制度': [
-                                { title: '社会保障制度', url: '/kiso/shakai-hoshou/', difficulty: 'B', type: 'link' },
-                                { title: '労働法制', url: '/kiso/roudou-housei/', difficulty: 'B', type: 'link' },
-                                { title: '環境問題', url: '/kiso-chishiki/kankyou-mondai/', difficulty: 'B', type: 'link' },
-                                { title: '消費者問題', url: '/kiso-chishiki/shohi-sha-mondai/', difficulty: 'B', type: 'link' },
-                                { title: '外国人問題', url: '/kiso-chishiki/gaikokujin-mondai/', difficulty: 'B', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第2章 情報通信・個人情報保護': {
-                        sections: {
-                            '第1節 情報通信技術': [
-                                { title: 'IT基礎知識', url: '/kiso/it-kiso/', difficulty: 'B', type: 'link' },
-                                { title: 'インターネット', url: '/kiso/internet/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第2節 個人情報保護': [
-                                { title: '個人情報保護法', url: '/kiso/kojin-jouhou/', difficulty: 'A', type: 'link' },
-                                { title: 'プライバシー保護', url: '/kiso/privacy/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第3章 文章理解': {
-                        sections: {
-                            '第1節 現代文': [
-                                { title: '現代文の読解', url: '/bunsho-rikai/gendaibun-dokkai/', difficulty: 'A', type: 'link' },
-                                { title: '漢字・語彙', url: '/bunsho-rikai/kanji-goi/', difficulty: 'A', type: 'link' }
-                            ],
-                            '第2節 古文': [
-                                { title: '古文の基礎', url: '/bunsho-rikai/kobun-kiso/', difficulty: 'B', type: 'link' },
-                                { title: '古文読解', url: '/bunsho-rikai/kobun-dokkai/', difficulty: 'B', type: 'link' }
-                            ],
-                            '第3節 並べ替え問題': [
-                                { title: '並べ替え問題の手順', url: '/bunsho-rikai/narabikae-tehou/', difficulty: 'A', type: 'link' },
-                                { title: '手順の使い方', url: '/bunsho-rikai/narabikae-tehou-tsukaikata/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    },
-                    '第4章 業務関連法令': {
-                        sections: {
-                            '第1節 行政書士法': [
-                                { title: '行政書士法総則', url: '/gyoumu-kanren/gyouseishoshi-hou-sousoku/', difficulty: 'A', type: 'link' },
-                                { title: '行政書士会と日本行政書士会連合会', url: '/gyoumu-kanren/gyouseishoshi-kai/', difficulty: 'B', type: 'link' },
-                                { title: '行政書士の登録', url: '/gyoumu-kanren/gyouseishoshi-touroku/', difficulty: 'A', type: 'link' }
-                            ]
-                        }
-                    }
-                },
-                items: [] 
+            'basic_law': {
+                name: '第5編 基礎法学',
+                order: 5,
+                topics: [
+                    { title: '法の分類', url: '/kiso/hou-bunrui/', difficulty: 'B', type: 'link' },
+                    { title: '法の効力・適用範囲', url: '/kiso/hou-kouryoku/', difficulty: 'B', type: 'link' },
+                    { title: '法律用語・法の解釈', url: '/kiso/houritsu-yougo/', difficulty: 'A', type: 'link' },
+                    { title: '紛争解決', url: '/kiso/funsou-kaiketsu/', difficulty: 'B', type: 'link' },
+                    { title: '刑事法', url: '/kiso/keiji-hou/', difficulty: 'B', type: 'link' }
+                ]
             }
         };
+
+        // 現在の選択状態
         this.currentSubject = null;
-        this.currentView = 'welcome';
+        this.currentTopicIndex = null;
+        this.currentView = 'subjects';
         this.keyTermsHidden = false;
         this.initialized = false;
         this.isContentView = false;
+        this.currentContentLocation = null;
         
-        // カード式選択用の状態管理
-        this.selectedSubject = null;
-        this.selectedChapter = null;
-        this.selectedSection = null;
-        this.selectedTopic = null;
-        this.selectedTopicIndex = null;
+        // カード選択用の状態
+        this.selectedSubjectForRegister = null;
+        this.selectedTopicForRegister = null;
     }
 
     /**
-     * 初期化（★修正: エラーハンドリング強化）
+     * 初期化
      */
     initialize() {
-        if (this.initialized) {
-            console.log('⚠️ KeyPointsModule already initialized');
-            return;
-        }
+        if (this.initialized) return;
 
         try {
             console.log('🚀 KeyPointsModule初期化開始');
@@ -592,7 +192,7 @@ class KeyPointsModuleClass {
             this.addKeyPointStyles();
             this.addDifficultyStyles();
             
-            // ★追加: グローバル関数定義
+            // グローバル関数定義
             window.toggleKeyTerms = () => this.toggleKeyTerms();
             
             this.initialized = true;
@@ -600,227 +200,110 @@ class KeyPointsModuleClass {
             
         } catch (error) {
             console.error('❌ KeyPointsModule初期化エラー:', error);
-            // 初期化失敗でも最低限の状態で動作させる
             this.initialized = true;
         }
     }
 
     /**
-     * 要点データの読み込み（★修正: エラーハンドリング強化）
+     * 要点データの読み込み
      */
     loadKeyPointsData() {
         try {
-            console.log('📖 KeyPoints データ読み込み開始');
-            
             const saved = localStorage.getItem('keyPointsData');
             if (saved) {
-                try {
-                    const parsedData = JSON.parse(saved);
-                    if (parsedData && typeof parsedData === 'object') {
-                        console.log('📝 LocalStorage からデータ復元中...');
-                        
-                        // 既存科目データにカスタムコンテンツを安全にマージ
-                        Object.keys(this.subjects).forEach(subjectKey => {
-                            if (parsedData[subjectKey]) {
-                                // カスタムHTMLコンテンツのみマージ
-                                this.mergeCustomContent(subjectKey, parsedData[subjectKey]);
-                            }
-                        });
-                        
-                        console.log('✅ データ復元完了');
-                    }
-                } catch (parseError) {
-                    console.warn('⚠️ LocalStorage データ解析エラー:', parseError);
-                    localStorage.removeItem('keyPointsData'); // 破損データを削除
+                const parsedData = JSON.parse(saved);
+                if (parsedData && typeof parsedData === 'object') {
+                    // カスタムHTMLコンテンツをマージ
+                    Object.keys(this.subjects).forEach(subjectKey => {
+                        if (parsedData[subjectKey] && parsedData[subjectKey].topics) {
+                            parsedData[subjectKey].topics.forEach((savedTopic, index) => {
+                                if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                                    this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
+                                    this.subjects[subjectKey].topics[index].type = 'html';
+                                }
+                            });
+                        }
+                    });
                 }
-            } else {
-                console.log('📝 新規データで開始');
             }
-            
-            // Firebase統合（利用可能な場合のみ）
+            // Firebase統合
             this.initializeFirebaseSync();
-            
         } catch (error) {
             console.error('❌ KeyPointsデータ読み込みエラー:', error);
         }
     }
 
     /**
-     * カスタムコンテンツのマージ（★追加: 安全なマージ処理）
+     * Firebase同期初期化
      */
-    mergeCustomContent(subjectKey, savedSubjectData) {
-        try {
-            if (!savedSubjectData.chapters) return;
-            
-            Object.keys(savedSubjectData.chapters).forEach(chapterKey => {
-                const savedChapter = savedSubjectData.chapters[chapterKey];
-                const currentChapter = this.subjects[subjectKey].chapters[chapterKey];
-                
-                if (!savedChapter.sections || !currentChapter) return;
-                
-                Object.keys(savedChapter.sections).forEach(sectionKey => {
-                    const savedSection = savedChapter.sections[sectionKey];
-                    const currentSection = currentChapter.sections[sectionKey];
-                    
-                    if (!Array.isArray(savedSection) || !Array.isArray(currentSection)) return;
-                    
-                    // 各項目のHTMLコンテンツをマージ
-                    savedSection.forEach((savedTopic, index) => {
-                        if (currentSection[index] && savedTopic && savedTopic.htmlContent) {
-                            currentSection[index].htmlContent = savedTopic.htmlContent;
-                            currentSection[index].type = 'html';
-                        }
-                    });
-                });
-            });
-        } catch (error) {
-            console.warn('⚠️ カスタムコンテンツマージエラー:', error);
-        }
-    }
+    initializeFirebaseSync() {
+        if (window.firebase && window.ULTRA_STABLE_USER_ID) {
+            const db = firebase.firestore();
+            const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
+            const keyPointsRef = userRef.collection('keyPoints');
 
-    /**
-     * Firebase同期初期化（★修正: DataManager統合版）
-     */
-    async initializeFirebaseSync() {
-        // Firebase統合が利用可能か確認
-        if (!window.ULTRA_STABLE_USER_ID || !window.DataManager) {
-            console.log('📝 Firebase統合未利用（LocalStorageのみ）');
-            return;
-        }
-        
-        try {
-            console.log('🔄 Firebase同期機能有効');
-            
-            // DataManagerからKeyPointsデータを読み込み
-            if (typeof DataManager.loadKeyPointsFromFirestore === 'function') {
-                const firebaseData = await DataManager.loadKeyPointsFromFirestore();
-                if (firebaseData) {
-                    console.log('📖 Firebaseからデータ復元中...');
-                    // 既存科目データにカスタムコンテンツを安全にマージ
-                    Object.keys(this.subjects).forEach(subjectKey => {
-                        if (firebaseData[subjectKey]) {
-                            this.mergeCustomContent(subjectKey, firebaseData[subjectKey]);
-                        }
-                    });
-                    console.log('✅ Firebaseデータ復元完了');
-                }
-            }
-            
-        } catch (error) {
-            console.warn('⚠️ Firebase同期初期化エラー:', error);
-        }
-    }
-
-    /**
- * 要点データの保存（★修正: DataManager統合版）
- */
-saveKeyPointsData() {
-    try {
-        console.log('💾 KeyPoints保存開始（サブコレクション対応版）');
-        
-        // 1. LocalStorageに即座に保存（最重要）
-        const dataToSave = JSON.stringify(this.subjects);
-        localStorage.setItem('keyPointsData', dataToSave);
-        localStorage.setItem('keyPointsData_timestamp', new Date().toISOString());
-        console.log('✅ LocalStorage保存完了');
-        
-        // 2. DataManagerの保存を呼び出し（サブコレクション保存含む）
-        if (window.DataManager && typeof DataManager.saveToFirebase === 'function') {
-            DataManager.saveToFirebase().then(() => {
-                console.log('✅ Firebaseサブコレクション保存完了');
-            }).catch(error => {
-                console.warn('⚠️ Firebase保存エラー（LocalStorageは保存済み）:', error);
-            });
-        }
-        
-        return true; // 保存成功
-        
-    } catch (error) {
-        console.error('❌ KeyPoints保存エラー:', error);
-        
-        // 緊急保存試行
-        try {
-            localStorage.setItem('keyPointsData_emergency', JSON.stringify(this.subjects));
-            console.log('🚨 緊急保存完了');
-        } catch (emergencyError) {
-            console.error('💥 緊急保存も失敗:', emergencyError);
-            alert('データ保存に失敗しました。ページを更新してください。');
-        }
-        
-        return false; // 保存失敗
-    }
-}
-
-    /**
-     * 総要点数カウント
-     */
-    countTotalKeyPoints() {
-        let count = 0;
-        try {
-            Object.values(this.subjects).forEach(subject => {
-                if (subject.chapters) {
-                    Object.values(subject.chapters).forEach(chapter => {
-                        if (chapter.sections) {
-                            Object.values(chapter.sections).forEach(topics => {
-                                if (Array.isArray(topics)) {
-                                    topics.forEach(topic => {
-                                        if (topic.type === 'html' && topic.htmlContent) {
-                                            count++;
-                                        }
-                                    });
+            keyPointsRef.get().then(snapshot => {
+                if (!snapshot.empty) {
+                    snapshot.forEach(doc => {
+                        const subjectKey = doc.id;
+                        const data = doc.data();
+                        if (data && data.topics && this.subjects[subjectKey]) {
+                            data.topics.forEach((savedTopic, index) => {
+                                if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                                    this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
+                                    this.subjects[subjectKey].topics[index].type = 'html';
                                 }
                             });
                         }
                     });
+                    this.saveKeyPointsData();
                 }
+            }).catch(error => {
+                console.warn('Firebase同期エラー:', error);
             });
-        } catch (error) {
-            console.warn('⚠️ 要点数カウントエラー:', error);
-        }
-        return count;
-    }
-
-    /**
-     * 科目一覧の取得（★修正: 実際の項目数計算）
-     */
-    getSubjectList() {
-        try {
-            return Object.entries(this.subjects)
-                .map(([key, data]) => ({
-                    key,
-                    name: data.name,
-                    order: data.order || 999,
-                    itemCount: this.calculateActualItemCount(data), // ★修正: 実際の項目数計算
-                    chapterCount: Object.keys(data.chapters || {}).length
-                }))
-                .sort((a, b) => a.order - b.order);
-        } catch (error) {
-            console.warn('⚠️ 科目一覧取得エラー:', error);
-            return [];
         }
     }
 
     /**
-     * 科目の実際の項目数を計算（★追加）
+     * 要点データの保存
      */
-    calculateActualItemCount(subjectData) {
-        let itemCount = 0;
+    saveKeyPointsData() {
         try {
-            if (subjectData.chapters) {
-                Object.values(subjectData.chapters).forEach(chapter => {
-                    if (chapter.sections) {
-                        Object.values(chapter.sections).forEach(topics => {
-                            if (Array.isArray(topics)) {
-                                itemCount += topics.length;
-                            }
-                        });
-                    }
+            // LocalStorage保存
+            const dataToSave = {};
+            Object.keys(this.subjects).forEach(subjectKey => {
+                dataToSave[subjectKey] = {
+                    ...this.subjects[subjectKey],
+                    topics: this.subjects[subjectKey].topics.map(topic => ({
+                        ...topic
+                    }))
+                };
+            });
+            localStorage.setItem('keyPointsData', JSON.stringify(dataToSave));
+
+            // Firebase保存
+            if (window.firebase && window.ULTRA_STABLE_USER_ID) {
+                const db = firebase.firestore();
+                const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
+                const keyPointsRef = userRef.collection('keyPoints');
+
+                Object.keys(this.subjects).forEach(subjectKey => {
+                    keyPointsRef.doc(subjectKey).set({
+                        ...this.subjects[subjectKey],
+                        lastUpdated: new Date().toISOString()
+                    }, { merge: true });
                 });
             }
+
+            if (window.DataManager && typeof DataManager.saveToFirebase === 'function') {
+                DataManager.saveToFirebase();
+            }
+
+            return true;
         } catch (error) {
-            console.warn('⚠️ 項目数計算エラー:', error);
+            console.error('保存エラー:', error);
+            return false;
         }
-        return itemCount;
     }
 
     /**
@@ -831,98 +314,60 @@ saveKeyPointsData() {
         
         return `
             <div id="keyPointsMainContent">
-                ${this.renderSubjectListDirect()}
+                ${this.renderSubjectList()}
             </div>
         `;
     }
 
     /**
-     * 直接科目一覧を表示（カードなし・3列固定）
+     * 科目一覧を表示
      */
-    renderSubjectListDirect() {
+    renderSubjectList() {
         this.currentView = 'subjects';
         this.isContentView = false;
-        const subjects = this.getSubjectList(); // ★修正: 順序固定済み
+        
+        const subjects = Object.entries(this.subjects)
+            .map(([key, data]) => ({ key, ...data }))
+            .sort((a, b) => a.order - b.order);
         
         let html = `
             <div style="padding: 15px;">
                 <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
-                <div class="subject-grid-fixed" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
         `;
 
         subjects.forEach(subject => {
+            const registeredCount = subject.topics.filter(t => t.type === 'html' && t.htmlContent).length;
             html += `
-                <div class="subject-card-mobile" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
+                <div class="subject-card" style="background: white; border: 2px solid var(--light); border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" 
                      onclick="KeyPointsModule.selectSubject('${subject.key}')">
-                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
                         ${subject.name}
                     </div>
-                    <div style="font-size: 11px; color: var(--gray);">
-                        ${subject.chapterCount} 編
+                    <div style="font-size: 12px; color: var(--gray);">
+                        項目数: ${subject.topics.length}
                     </div>
-                    <div style="font-size: 11px; color: var(--gray);">
-                        ${subject.itemCount} 項目
-                    </div>
+                    ${registeredCount > 0 ? `
+                        <div style="font-size: 11px; color: var(--success); margin-top: 5px;">
+                            登録済: ${registeredCount}件
+                        </div>
+                    ` : ''}
                 </div>
             `;
         });
 
         html += `
                 </div>
-            </div>
-            
-            <div style="margin: 20px 15px;">
-                <h4 style="margin-bottom: 15px;">📝 要点管理（カード選択式）</h4>
-                <div id="hierarchySelectionArea">
-                    <div class="form-group">
-                        <label class="form-label">科目を選択</label>
-                        <select class="form-control" id="keyPointSubjectSelect" onchange="KeyPointsModule.onSubjectChangeCard()">
-                            <option value="">科目を選択</option>
-                            ${this.getSubjectList().map(subject => 
-                                `<option value="${subject.key}">${subject.name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    
-                    <!-- パンくずリスト -->
-                    <div id="selectionBreadcrumb" style="display: none; margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #007bff;">
-                        <div style="font-size: 12px; color: #6c757d; margin-bottom: 4px;">選択履歴</div>
-                        <div id="breadcrumbPath" style="font-size: 13px; color: #495057; font-weight: 500;"></div>
-                    </div>
-                    
-                    <div id="chapterCardsArea" style="display: none;">
-                        <label class="form-label">編を選択</label>
-                        <div id="chapterCards" class="small-card-grid"></div>
-                    </div>
-                    
-                    <div id="sectionCardsArea" style="display: none;">
-                        <label class="form-label">節を選択</label>
-                        <div id="sectionCards" class="small-card-grid"></div>
-                    </div>
-                    
-                    <div id="topicCardsArea" style="display: none;">
-                        <label class="form-label">項目を選択</label>
-                        <div id="topicCards" class="small-card-grid"></div>
-                    </div>
+                
+                <div style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <h4 style="margin-bottom: 15px;">📝 要点編集</h4>
+                    ${this.renderRegistrationCards()}
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label">HTML内容</label>
-                    <textarea class="form-control" id="keyPointHtml" rows="8" 
-                              placeholder="HTML形式の要点まとめ内容を入力してください"></textarea>
-                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                        💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
-                    </div>
+                <div style="margin-top: 20px;">
+                    <h4>📚 登録済み要点</h4>
+                    ${this.renderRegisteredKeyPoints()}
                 </div>
-                
-                <button class="save-button" onclick="KeyPointsModule.handleAddHierarchyItemCard()" id="submitBtn" disabled>
-                    📋 階層に要点を登録
-                </button>
-            </div>
-            
-            <div style="margin: 20px 15px;">
-                <h4>📚 登録済み要点</h4>
-                <div id="keyPointsList">${this.renderKeyPointsList()}</div>
             </div>
         `;
 
@@ -930,12 +375,13 @@ saveKeyPointsData() {
     }
 
     /**
-     * 科目選択（章一覧表示・折りたたみ機能付き）- ★修正: 順序ソート＋1列レイアウト
+     * 科目選択（項目一覧表示）
      */
     selectSubject(subjectKey) {
         this.currentSubject = subjectKey;
-        this.currentView = 'chapters';
+        this.currentView = 'topics';
         this.isContentView = false;
+        
         const subject = this.subjects[subjectKey];
         if (!subject) return;
 
@@ -945,191 +391,334 @@ saveKeyPointsData() {
         let html = `
             <div style="padding: 15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h3 style="margin: 0;">📚 ${subject.name} 要点まとめ</h3>
-                    <button class="save-button" onclick="KeyPointsModule.backToSubjectList()" 
-                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️ 戻る</button>
+                    <h3 style="margin: 0;">${subject.name}</h3>
+                    <button onclick="KeyPointsModule.backToSubjectList()" 
+                            style="padding: 6px 12px; background: var(--gray); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        戻る
+                    </button>
                 </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 8px;">
         `;
 
-        const chapters = subject.chapters || {};
-        
-        if (Object.keys(chapters).length === 0) {
+        subject.topics.forEach((topic, index) => {
+            const hasContent = topic.type === 'html' && topic.htmlContent;
+            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
+            
             html += `
-                <div style="text-align: center; padding: 30px; color: var(--gray);">
-                    <p>まだ編項目がありません</p>
-                    <p style="font-size: 14px;">下の管理画面から項目を追加してください</p>
+                <div class="topic-item" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s;"
+                     onclick="KeyPointsModule.viewTopicContent('${subjectKey}', ${index})">
+                    <span style="color: #718096; min-width: 30px; font-weight: 600;">
+                        ${index + 1}
+                    </span>
+                    <div style="flex: 1;">
+                        ${topic.title}
+                    </div>
+                    <span class="difficulty-badge ${difficultyClass}" style="padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                        ${topic.difficulty}
+                    </span>
+                    ${hasContent ? 
+                        '<span style="color: var(--success);">✅</span>' : 
+                        ''
+                    }
                 </div>
             `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        content.innerHTML = html;
+    }
+
+    /**
+     * カード形式の登録フォーム
+     */
+    renderRegistrationCards() {
+        const subjects = Object.entries(this.subjects)
+            .map(([key, data]) => ({ key, ...data }))
+            .sort((a, b) => a.order - b.order);
+
+        let html = `
+            <div id="registrationArea">
+                <div id="subjectSelectCards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
+        `;
+
+        subjects.forEach(subject => {
+            const isSelected = this.selectedSubjectForRegister === subject.key;
+            html += `
+                <div class="register-card ${isSelected ? 'selected' : ''}" 
+                     style="background: ${isSelected ? 'var(--primary)' : 'white'}; color: ${isSelected ? 'white' : 'black'}; 
+                            border: 2px solid ${isSelected ? 'var(--primary)' : '#e2e8f0'}; 
+                            border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s;"
+                     onclick="KeyPointsModule.selectSubjectForRegister('${subject.key}')">
+                    <div style="font-size: 14px; font-weight: 500;">
+                        ${subject.name.replace('第', '').replace('編 ', '')}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+                
+                <div id="topicSelectArea" style="display: ${this.selectedSubjectForRegister ? 'block' : 'none'};">
+                    <div id="topicSelectCards" style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 15px;">
+                        ${this.renderTopicCards()}
+                    </div>
+                </div>
+                
+                <div id="htmlInputArea" style="display: ${this.selectedTopicForRegister !== null ? 'block' : 'none'};">
+                    <textarea class="form-control" id="registerHtml" rows="8" 
+                              placeholder="HTML形式の要点まとめを入力" 
+                              style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; resize: vertical;"></textarea>
+                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                        💡 重要語句を &lt;span class="wp-key-term"&gt;語句&lt;/span&gt; で囲むと隠し機能付きになります
+                    </div>
+                    <button onclick="KeyPointsModule.registerKeyPoint()" 
+                            style="margin-top: 10px; padding: 10px 20px; background: var(--success); color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                        📝 要点を登録
+                    </button>
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    /**
+     * 項目カードを描画
+     */
+    renderTopicCards() {
+        if (!this.selectedSubjectForRegister) return '';
+
+        const subject = this.subjects[this.selectedSubjectForRegister];
+        if (!subject) return '';
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 5px;">';
+
+        subject.topics.forEach((topic, index) => {
+            const hasContent = topic.type === 'html' && topic.htmlContent;
+            const isSelected = this.selectedTopicForRegister === index;
+            
+            html += `
+                <div class="topic-register-card ${isSelected ? 'selected' : ''}"
+                     style="background: ${isSelected ? '#f0f9ff' : 'white'}; 
+                            border: 1px solid ${isSelected ? 'var(--primary)' : '#e2e8f0'}; 
+                            border-radius: 6px; padding: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;"
+                     onclick="KeyPointsModule.selectTopicForRegister(${index})">
+                    <span style="color: #718096; min-width: 25px; font-size: 12px;">${index + 1}</span>
+                    <div style="flex: 1; font-size: 13px;">${topic.title}</div>
+                    ${hasContent ? '<span style="color: var(--success); font-size: 12px;">✅</span>' : ''}
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * 登録用科目選択
+     */
+    selectSubjectForRegister(subjectKey) {
+        this.selectedSubjectForRegister = subjectKey;
+        this.selectedTopicForRegister = null;
+        
+        // UIを更新
+        document.getElementById('registrationArea').innerHTML = this.renderRegistrationCards();
+    }
+
+    /**
+     * 登録用項目選択
+     */
+    selectTopicForRegister(topicIndex) {
+        this.selectedTopicForRegister = topicIndex;
+        
+        // HTMLエリアを表示
+        const htmlArea = document.getElementById('htmlInputArea');
+        if (htmlArea) {
+            htmlArea.style.display = 'block';
+            
+            // 既存のコンテンツがある場合は表示
+            const subject = this.subjects[this.selectedSubjectForRegister];
+            const topic = subject.topics[topicIndex];
+            if (topic.htmlContent) {
+                document.getElementById('registerHtml').value = topic.htmlContent;
+            }
+        }
+        
+        // 選択状態を更新
+        this.updateTopicCardSelection();
+    }
+
+    /**
+     * 項目カードの選択状態を更新
+     */
+    updateTopicCardSelection() {
+        const cards = document.querySelectorAll('.topic-register-card');
+        cards.forEach((card, index) => {
+            if (index === this.selectedTopicForRegister) {
+                card.style.background = '#f0f9ff';
+                card.style.border = '1px solid var(--primary)';
+            } else {
+                card.style.background = 'white';
+                card.style.border = '1px solid #e2e8f0';
+            }
+        });
+    }
+
+    /**
+     * 要点を登録
+     */
+    registerKeyPoint() {
+        const htmlContent = document.getElementById('registerHtml').value.trim();
+
+        if (!this.selectedSubjectForRegister || this.selectedTopicForRegister === null || !htmlContent) {
+            alert('すべての項目を入力してください');
+            return;
+        }
+
+        const subject = this.subjects[this.selectedSubjectForRegister];
+        if (!subject || !subject.topics[this.selectedTopicForRegister]) {
+            alert('選択した項目が見つかりません');
+            return;
+        }
+
+        // HTMLコンテンツを保存
+        subject.topics[this.selectedTopicForRegister].htmlContent = htmlContent;
+        subject.topics[this.selectedTopicForRegister].type = 'html';
+
+        // データを保存
+        if (this.saveKeyPointsData()) {
+            alert('要点を登録しました！');
+            
+            // フォームをリセット
+            this.selectedSubjectForRegister = null;
+            this.selectedTopicForRegister = null;
+            
+            // UIを更新
+            const content = document.getElementById('keyPointsMainContent');
+            if (content) {
+                content.innerHTML = this.renderSubjectList();
+            }
         } else {
-            // ★修正: 章（編）の順序をソート
-            const sortedChapters = Object.entries(chapters).sort((a, b) => {
-                const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
-                const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
-                if (aMatch && bMatch) {
-                    const aNum = parseInt(aMatch[1] || aMatch[2]);
-                    const bNum = parseInt(bMatch[1] || bMatch[2]);
-                    return aNum - bNum;
+            alert('保存に失敗しました');
+        }
+    }
+
+    /**
+     * 登録済み要点を表示（科目一覧と同様のUI）
+     */
+    renderRegisteredKeyPoints() {
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">';
+        let hasItems = false;
+
+        Object.entries(this.subjects)
+            .sort((a, b) => a[1].order - b[1].order)
+            .forEach(([subjectKey, subject]) => {
+                const registeredTopics = subject.topics
+                    .map((topic, index) => ({ ...topic, index }))
+                    .filter(topic => topic.type === 'html' && topic.htmlContent);
+
+                if (registeredTopics.length > 0) {
+                    hasItems = true;
+                    html += `
+                        <div class="registered-subject-card" style="background: white; border: 2px solid #86efac; border-radius: 10px; padding: 12px; cursor: pointer;"
+                             onclick="KeyPointsModule.showEditList('${subjectKey}')">
+                            <div style="font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 5px;">
+                                ${subject.name}
+                            </div>
+                            <div style="font-size: 12px; color: var(--success);">
+                                登録済: ${registeredTopics.length}件
+                            </div>
+                        </div>
+                    `;
                 }
-                return a[0].localeCompare(b[0]);
             });
 
-            // 折りたたみ可能な編構造
-            sortedChapters.forEach(([chapterName, chapterData]) => {
-                const chapterId = `chapter-${subjectKey}-${chapterName.replace(/\s+/g, '-')}`;
-                
-                html += `
-                    <div class="collapsible-chapter" style="margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <div class="chapter-header-collapsible" style="background: linear-gradient(135deg, #4a5568, #2d3748); color: white; padding: 15px 20px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;"
-                             onclick="KeyPointsModule.toggleChapter('${chapterId}')">
-                            <span style="font-size: 16px; font-weight: bold;">${chapterName}</span>
-                            <span class="chapter-arrow" id="arrow-${chapterId}" style="font-size: 14px; transition: transform 0.3s;">▼</span>
-                        </div>
-                        <div class="chapter-content-collapsible" id="${chapterId}" style="display: block; background: white;">
-                            <div style="padding: 20px;">
-                `;
-                
-                if (chapterData.sections) {
-                    // ★修正: 節の順序をソート
-                    const sortedSections = Object.entries(chapterData.sections).sort((a, b) => {
-                        const aMatch = a[0].match(/第(\d+)節/);
-                        const bMatch = b[0].match(/第(\d+)節/);
-                        if (aMatch && bMatch) {
-                            return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-                        }
-                        return a[0].localeCompare(b[0]);
-                    });
+        if (!hasItems) {
+            html = '<div style="text-align: center; color: var(--gray); padding: 20px;">登録済みの要点はありません</div>';
+        } else {
+            html += '</div>';
+        }
 
-                    sortedSections.forEach(([sectionName, topics]) => {
-                        html += `
-                            <div class="section" style="margin-bottom: 25px;">
-                                <div class="section-title" style="font-size: 15px; font-weight: bold; color: #2d3748; margin-bottom: 15px; padding: 8px 0; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px;">
-                                    <span style="background: #4a5568; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${sortedSections.findIndex(([name]) => name === sectionName) + 1}</span>
-                                    ${sectionName}
-                                </div>
-                                <div class="topic-list-single" style="display: flex; flex-direction: column; gap: 8px;">
-                        `;
-                        
-                        topics.forEach((topic, index) => {
-                            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                            
-                            html += `
-                                <div class="topic-card-single" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
-                                     onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                    <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
-                                    <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
-                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
-                                </div>
-                            `;
-                        });
-                        
-                        html += `
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-                
+        return html;
+    }
+
+    /**
+     * 編集リスト表示
+     */
+    showEditList(subjectKey) {
+        const subject = this.subjects[subjectKey];
+        if (!subject) return;
+
+        const content = document.getElementById('keyPointsMainContent');
+        if (!content) return;
+
+        let html = `
+            <div style="padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">${subject.name} の登録済み要点</h3>
+                    <button onclick="KeyPointsModule.backToSubjectList()" 
+                            style="padding: 6px 12px; background: var(--gray); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        戻る
+                    </button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+        `;
+
+        subject.topics.forEach((topic, index) => {
+            const hasContent = topic.type === 'html' && topic.htmlContent;
+            if (hasContent) {
                 html += `
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="color: #718096; min-width: 25px; font-size: 14px;">${index + 1}</span>
+                            <div style="font-weight: 500;">
+                                ${topic.title}
                             </div>
+                        </div>
+                        <div style="display: flex; gap: 5px;">
+                            <button onclick="KeyPointsModule.editKeyPoint('${subjectKey}', ${index})" 
+                                    style="padding: 4px 8px; background: var(--primary); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                編集
+                            </button>
+                            <button onclick="KeyPointsModule.deleteKeyPoint('${subjectKey}', ${index})" 
+                                    style="padding: 4px 8px; background: var(--danger); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                削除
+                            </button>
                         </div>
                     </div>
                 `;
-            });
-        }
-
-        html += `</div>`;
-        content.innerHTML = html;
-
-        // ページトップにスクロール
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
-        }
-
-        this.addDifficultyStyles();
-        this.addKeyPointStyles();
-    }
-
-    /**
-     * 編の折りたたみ切り替え（修正版）
-     */
-    toggleChapter(chapterId) {
-        const content = document.getElementById(chapterId);
-        const arrow = document.getElementById(`arrow-${chapterId}`);
-        
-        if (!content || !arrow) {
-            console.warn(`Chapter elements not found: ${chapterId}`);
-            return;
-        }
-
-        try {
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                arrow.style.transform = 'rotate(0deg)';
-                arrow.textContent = '▼';
-            } else {
-                content.style.display = 'none';
-                arrow.style.transform = 'rotate(-90deg)';
-                arrow.textContent = '▶';
             }
-        } catch (error) {
-            console.error('Error toggling chapter:', error);
-        }
-    }
+        });
 
-    /**
-     * 科目一覧に戻る
-     */
-    backToSubjectList() {
-        this.isContentView = false;
-        const content = document.getElementById('keyPointsMainContent');
-        if (content) {
-            content.innerHTML = this.renderSubjectListDirect();
-            this.addKeyPointStyles();
-        }
+        html += `
+                </div>
+            </div>
+        `;
         
-        this.resetModalHeader();
-        
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
-        }
+        content.innerHTML = html;
     }
 
     /**
-     * モーダルヘッダーを通常状態にリセット
+     * 項目内容表示
      */
-    resetModalHeader() {
-        const modalHeader = document.querySelector('.modal-header');
-        if (modalHeader) {
-            modalHeader.innerHTML = `
-                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">📚 要点確認</h3>
-                <button class="modal-close" style="width: 30px; height: 30px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="App.closeFooterModal()">×</button>
-            `;
-        }
-    }
-
-    /**
-     * 項目内容表示（★修正: ページネーション情報を保存）
-     */
-    viewTopicContent(subjectKey, chapterName, sectionName, topicIndex) {
+    viewTopicContent(subjectKey, topicIndex) {
         const subject = this.subjects[subjectKey];
-        if (!subject || !subject.chapters[chapterName] || !subject.chapters[chapterName].sections[sectionName]) {
-            return;
-        }
+        if (!subject || !subject.topics[topicIndex]) return;
 
-        const topic = subject.chapters[chapterName].sections[sectionName][topicIndex];
-        if (!topic) return;
-
-        // ★追加: ページネーション用に現在位置を保存
+        const topic = subject.topics[topicIndex];
+        
+        // 現在位置を保存
         this.currentContentLocation = {
             subjectKey,
-            chapterName,
-            sectionName,
             topicIndex
         };
 
-        // HTMLコンテンツが登録されている場合は表示、そうでなければ外部リンク
         if (topic.type === 'html' && topic.htmlContent) {
             this.showHTMLContent(topic.title, topic.htmlContent);
         } else if (topic.url) {
@@ -1138,19 +727,18 @@ saveKeyPointsData() {
     }
 
     /**
-     * HTMLコンテンツ表示（★修正: ページネーション追加）
+     * HTMLコンテンツ表示
      */
     showHTMLContent(title, htmlContent) {
         this.isContentView = true;
         const content = document.getElementById('keyPointsMainContent');
         if (!content) return;
 
-        // ★追加: ページネーション情報を計算
         const paginationInfo = this.calculatePagination();
 
         const html = `
-            <div style="padding: 0; margin: 0;">
-                <div style="padding: 20px;" id="keyPointContent">
+            <div style="padding: 20px;">
+                <div id="keyPointContent">
                     ${htmlContent}
                 </div>
             </div>
@@ -1158,1335 +746,367 @@ saveKeyPointsData() {
 
         content.innerHTML = html;
         
-        // ★修正: モーダルヘッダーにページネーション付きで重要語句ボタンを追加
+        // モーダルヘッダーを更新
         const modalHeader = document.querySelector('.modal-header');
         if (modalHeader) {
             modalHeader.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-                    <!-- ★追加: 前のページボタン -->
-                    ${paginationInfo.hasPrev ? `<button onclick="KeyPointsModule.navigateToPrevTopic()" title="前の項目: ${paginationInfo.prevTitle}" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">◀︎</button>` : '<div style="width: 44px;"></div>'}
-                    
-                    <h3 style="margin: 0; flex-grow: 1; text-align: center; font-size: 16px;">📄 ${title}</h3>
-                    
-                    <!-- ★追加: ページ情報 -->
-                    <span style="font-size: 12px; color: var(--gray); min-width: 40px; text-align: center;">${paginationInfo.current}/${paginationInfo.total}</span>
-                    
-                    <!-- ★追加: 次のページボタン -->
-                    ${paginationInfo.hasNext ? `<button onclick="KeyPointsModule.navigateToNextTopic()" title="次の項目: ${paginationInfo.nextTitle}" style="background: var(--primary); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">▶︎</button>` : '<div style="width: 44px;"></div>'}
-                    
-                    <button onclick="KeyPointsModule.toggleKeyTerms()" id="keyPointToggleBtn" style="background: #2196f3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.3s;">重要語句を隠す</button>
-                    <button class="modal-close" style="width: 24px; height: 24px; border: none; background: var(--light); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; margin-left: 10px;" onclick="App.closeFooterModal()">×</button>
+                    ${paginationInfo.hasPrev ? 
+                        `<button onclick="KeyPointsModule.navigateTopic(-1)" style="padding: 5px 10px; background: var(--light); border: none; border-radius: 5px; cursor: pointer;">◀</button>` : 
+                        '<div style="width: 30px;"></div>'
+                    }
+                    <h3 style="margin: 0; flex-grow: 1; text-align: center;">${title}</h3>
+                    <button onclick="toggleKeyTerms()" style="padding: 5px 10px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        重要語句
+                    </button>
+                    ${paginationInfo.hasNext ? 
+                        `<button onclick="KeyPointsModule.navigateTopic(1)" style="padding: 5px 10px; background: var(--light); border: none; border-radius: 5px; cursor: pointer;">▶</button>` : 
+                        '<div style="width: 30px;"></div>'
+                    }
+                    <button class="modal-close" onclick="KeyPointsModule.backFromContent()">×</button>
                 </div>
             `;
         }
-        
-        // モーダルフッターを戻るボタン付きに変更
-        const modalFooter = document.querySelector('.modal-footer');
-        if (modalFooter) {
-            modalFooter.innerHTML = `
-                <div style="display: flex; gap: 10px;">
-                    <button style="background: var(--gray); color: white; border: none; border-radius: 10px; padding: 15px 20px; cursor: pointer; font-size: 16px; font-weight: 600;" onclick="KeyPointsModule.selectSubject('${this.currentSubject}')">↩️ 戻る</button>
-                    <button class="modal-close-bottom" style="flex: 1;" onclick="App.closeFooterModal()">閉じる</button>
-                </div>
-            `;
-        }
-        
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
-        }
-        
-        this.initializeKeyTerms();
-        // ★修正：グローバル関数定義をinitialize内に移動
     }
 
     /**
-     * 重要語句機能の初期化
+     * ページネーション情報を計算
      */
-    initializeKeyTerms() {
-        setTimeout(() => {
-            this.keyTermsHidden = false;
-            const keyTerms = document.querySelectorAll('.wp-key-term');
-            
-            keyTerms.forEach((term) => {
-                term.dataset.individualState = 'visible';
-                
-                term.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    if (term.dataset.individualState === 'visible') {
-                        term.classList.add('wp-hidden');
-                        term.dataset.individualState = 'hidden';
-                    } else {
-                        term.classList.remove('wp-hidden');
-                        term.dataset.individualState = 'visible';
-                    }
-                });
-            });
-            
-            console.log(`Initialized ${keyTerms.length} key terms`);
-        }, 100);
-    }
-
-    /**
- * ページネーション情報を計算（★修正: 全科目対応・階層跨ぎ対応）
- */
-calculatePagination() {
-    if (!this.currentContentLocation) {
-        return { current: 1, total: 1, hasPrev: false, hasNext: false };
-    }
-
-    const { subjectKey, chapterName, sectionName, topicIndex } = this.currentContentLocation;
-    const subject = this.subjects[subjectKey];
-    
-    if (!subject) {
-        return { current: 1, total: 1, hasPrev: false, hasNext: false };
-    }
-
-    // ★修正: 科目内の全HTMLコンテンツ項目を収集（階層順序で）
-    const allHtmlTopics = [];
-    
-    try {
-        // 章（編）の順序でソート
-        const sortedChapters = Object.entries(subject.chapters || {}).sort((a, b) => {
-            const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
-            const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
-            if (aMatch && bMatch) {
-                const aNum = parseInt(aMatch[1] || aMatch[2]);
-                const bNum = parseInt(bMatch[1] || bMatch[2]);
-                return aNum - bNum;
-            }
-            return a[0].localeCompare(b[0]);
-        });
-
-        sortedChapters.forEach(([chapterKey, chapterData]) => {
-            if (!chapterData.sections) return;
-            
-            // 節の順序でソート
-            const sortedSections = Object.entries(chapterData.sections).sort((a, b) => {
-                const aMatch = a[0].match(/第(\d+)節/);
-                const bMatch = b[0].match(/第(\d+)節/);
-                if (aMatch && bMatch) {
-                    return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-                }
-                return a[0].localeCompare(b[0]);
-            });
-
-            sortedSections.forEach(([sectionKey, topics]) => {
-                if (!Array.isArray(topics)) return;
-                
-                topics.forEach((topic, index) => {
-                    if (topic.type === 'html' && topic.htmlContent) {
-                        allHtmlTopics.push({
-                            subjectKey,
-                            chapterName: chapterKey,
-                            sectionName: sectionKey,
-                            topicIndex: index,
-                            title: topic.title,
-                            difficulty: topic.difficulty
-                        });
-                    }
-                });
-            });
-        });
-
-        // ★修正: 現在の項目の位置を特定
-        const currentIndex = allHtmlTopics.findIndex(item => 
-            item.subjectKey === subjectKey &&
-            item.chapterName === chapterName &&
-            item.sectionName === sectionName &&
-            item.topicIndex === topicIndex
-        );
-
-        if (currentIndex === -1) {
-            return { current: 1, total: allHtmlTopics.length, hasPrev: false, hasNext: false };
+    calculatePagination() {
+        if (!this.currentContentLocation) {
+            return { hasPrev: false, hasNext: false };
         }
 
-        const prevTopic = currentIndex > 0 ? allHtmlTopics[currentIndex - 1] : null;
-        const nextTopic = currentIndex < allHtmlTopics.length - 1 ? allHtmlTopics[currentIndex + 1] : null;
+        const { subjectKey, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
+        
+        if (!subject) {
+            return { hasPrev: false, hasNext: false };
+        }
 
         return {
-            current: currentIndex + 1,
-            total: allHtmlTopics.length,
-            hasPrev: !!prevTopic,
-            hasNext: !!nextTopic,
-            prevTitle: prevTopic ? prevTopic.title : '',
-            nextTitle: nextTopic ? nextTopic.title : '',
-            prevTopic: prevTopic,
-            nextTopic: nextTopic
+            hasPrev: topicIndex > 0,
+            hasNext: topicIndex < subject.topics.length - 1,
+            current: topicIndex + 1,
+            total: subject.topics.length
         };
-        
-    } catch (error) {
-        console.warn('⚠️ ページネーション計算エラー:', error);
-        return { current: 1, total: 1, hasPrev: false, hasNext: false };
     }
-}
 
-/**
- * 前の項目に移動（★修正: 階層跨ぎ対応）
- */
-navigateToPrevTopic() {
-    if (!this.currentContentLocation) return;
+    /**
+     * 項目間のナビゲーション
+     */
+    navigateTopic(direction) {
+        if (!this.currentContentLocation) return;
 
-    try {
-        const paginationInfo = this.calculatePagination();
+        const { subjectKey, topicIndex } = this.currentContentLocation;
+        const subject = this.subjects[subjectKey];
         
-        if (paginationInfo.hasPrev && paginationInfo.prevTopic) {
-            const prev = paginationInfo.prevTopic;
-            this.viewTopicContent(prev.subjectKey, prev.chapterName, prev.sectionName, prev.topicIndex);
-            console.log('📖 前の項目に移動:', prev.title);
+        if (!subject) return;
+
+        const newIndex = topicIndex + direction;
+        
+        if (newIndex >= 0 && newIndex < subject.topics.length) {
+            this.viewTopicContent(subjectKey, newIndex);
+        }
+    }
+
+    /**
+     * コンテンツ表示から戻る
+     */
+    backFromContent() {
+        if (this.currentContentLocation) {
+            this.selectSubject(this.currentContentLocation.subjectKey);
         } else {
-            console.log('📖 これが最初の項目です');
-        }
-    } catch (error) {
-        console.error('❌ 前の項目移動エラー:', error);
-        alert('前の項目に移動できませんでした。');
-    }
-}
-
-/**
- * 次の項目に移動（★修正: 階層跨ぎ対応）
- */
-navigateToNextTopic() {
-    if (!this.currentContentLocation) return;
-
-    try {
-        const paginationInfo = this.calculatePagination();
-        
-        if (paginationInfo.hasNext && paginationInfo.nextTopic) {
-            const next = paginationInfo.nextTopic;
-            this.viewTopicContent(next.subjectKey, next.chapterName, next.sectionName, next.topicIndex);
-            console.log('📖 次の項目に移動:', next.title);
-        } else {
-            console.log('📖 これが最後の項目です');
-        }
-    } catch (error) {
-        console.error('❌ 次の項目移動エラー:', error);
-        alert('次の項目に移動できませんでした。');
-    }
-}
-
-    /**
-     * 重要語句の表示切り替え
-     */
-    toggleKeyTerms() {
-        if (!this.isContentView) {
-            console.log('Not in content view, toggle ignored');
-            return;
-        }
-
-        const keyTerms = document.querySelectorAll('.wp-key-term');
-        const btn = document.getElementById('keyPointToggleBtn');
-        
-        if (!btn || keyTerms.length === 0) {
-            console.log('No key terms found or button missing');
-            return;
-        }
-        
-        this.keyTermsHidden = !this.keyTermsHidden;
-        
-        if (this.keyTermsHidden) {
-            keyTerms.forEach((term) => {
-                term.classList.add('wp-hidden');
-                term.dataset.individualState = 'hidden';
-            });
-            btn.textContent = '重要語句を表示';
-            btn.style.background = '#f44336';
-        } else {
-            keyTerms.forEach((term) => {
-                term.classList.remove('wp-hidden');
-                term.dataset.individualState = 'visible';
-            });
-            btn.textContent = '重要語句を隠す';
-            btn.style.background = '#2196f3';
-        }
-        
-        console.log(`Toggled ${keyTerms.length} key terms to ${this.keyTermsHidden ? 'hidden' : 'visible'}`);
-    }
-
-    /**
-     * カード式科目選択時のイベント（修正版）
-     */
-    onSubjectChangeCard() {
-        const subjectSelect = document.getElementById('keyPointSubjectSelect');
-        if (!subjectSelect) {
-            console.warn('Subject select not found');
-            return;
-        }
-        
-        const chapterCardsArea = document.getElementById('chapterCardsArea');
-        const sectionCardsArea = document.getElementById('sectionCardsArea');
-        const topicCardsArea = document.getElementById('topicCardsArea');
-        const breadcrumb = document.getElementById('selectionBreadcrumb');
-
-        if (!subjectSelect || !chapterCardsArea) {
-            console.warn('Required elements not found for card selection');
-            return;
-        }
-
-        const subjectKey = subjectSelect.value;
-        
-        // すべての下位選択をリセット
-        chapterCardsArea.style.display = 'none';
-        sectionCardsArea.style.display = 'none';
-        topicCardsArea.style.display = 'none';
-        breadcrumb.style.display = 'none';
-        this.resetSelectionState();
-
-        if (subjectKey && this.subjects[subjectKey]) {
-            chapterCardsArea.style.display = 'block';
-            this.renderChapterCards(subjectKey);
-            this.updateBreadcrumb();
+            this.backToSubjectList();
         }
     }
 
     /**
-     * 選択状態をリセット
+     * 科目一覧に戻る
      */
-    resetSelectionState() {
-        this.selectedSubject = null;
-        this.selectedChapter = null;
-        this.selectedSection = null;
-        this.selectedTopic = null;
-        this.selectedTopicIndex = null;
-        
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
+    backToSubjectList() {
+        const content = document.getElementById('keyPointsMainContent');
+        if (content) {
+            content.innerHTML = this.renderSubjectList();
         }
+        this.resetModalHeader();
     }
 
     /**
-     * 編カードを描画 - ★修正: 順序ソート
+     * モーダルヘッダーをリセット
      */
-    renderChapterCards(subjectKey) {
-        const container = document.getElementById('chapterCards');
-        if (!container) return;
-
-        const chapters = this.subjects[subjectKey].chapters || {};
-        this.selectedSubject = subjectKey;
-        
-        // ★修正: 章（編）の順序をソート
-        const sortedChapters = Object.entries(chapters).sort((a, b) => {
-            const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
-            const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
-            if (aMatch && bMatch) {
-                const aNum = parseInt(aMatch[1] || aMatch[2]);
-                const bNum = parseInt(bMatch[1] || bMatch[2]);
-                return aNum - bNum;
-            }
-            return a[0].localeCompare(b[0]);
-        });
-        
-        let html = '';
-        sortedChapters.forEach(([chapterName, chapterData]) => {
-            const sectionCount = Object.keys(chapterData.sections || {}).length;
-            html += `
-                <div class="small-selection-card" onclick="KeyPointsModule.selectChapterCard('${chapterName}')">
-                    <div class="small-card-title">${chapterName}</div>
-                    <div class="small-card-meta">${sectionCount} 節</div>
-                </div>
+    resetModalHeader() {
+        const modalHeader = document.querySelector('.modal-header');
+        if (modalHeader) {
+            modalHeader.innerHTML = `
+                <h3 id="modalTitle" style="margin: 0; flex-grow: 1; text-align: center;">📚 要点確認</h3>
+                <button class="modal-close" onclick="App.closeFooterModal()">×</button>
             `;
-        });
-        
-        container.innerHTML = html;
-    }
-
-    /**
-     * 編を選択
-     */
-    selectChapterCard(chapterName) {
-        this.selectedChapter = chapterName;
-        
-        // 編カードエリアを非表示にして節カードエリアを表示
-        const chapterCardsArea = document.getElementById('chapterCardsArea');
-        const sectionCardsArea = document.getElementById('sectionCardsArea');
-        const topicCardsArea = document.getElementById('topicCardsArea');
-        
-        if (chapterCardsArea) chapterCardsArea.style.display = 'none';
-        if (sectionCardsArea) sectionCardsArea.style.display = 'block';
-        if (topicCardsArea) topicCardsArea.style.display = 'none';
-        
-        this.renderSectionCards();
-        this.updateBreadcrumb();
-    }
-
-    /**
-     * 節カードを描画 - ★修正: 順序ソート
-     */
-    renderSectionCards() {
-        const container = document.getElementById('sectionCards');
-        if (!container || !this.selectedSubject || !this.selectedChapter) return;
-
-        const sections = this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections || {};
-        
-        // ★修正: 節の順序をソート
-        const sortedSections = Object.entries(sections).sort((a, b) => {
-            const aMatch = a[0].match(/第(\d+)節/);
-            const bMatch = b[0].match(/第(\d+)節/);
-            if (aMatch && bMatch) {
-                return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-            }
-            return a[0].localeCompare(b[0]);
-        });
-        
-        let html = '';
-        sortedSections.forEach(([sectionName, topics]) => {
-            html += `
-                <div class="small-selection-card" onclick="KeyPointsModule.selectSectionCard('${sectionName}')">
-                    <div class="small-card-title">${sectionName}</div>
-                    <div class="small-card-meta">${topics.length} 項目</div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-    }
-
-    /**
-     * 節を選択
-     */
-    selectSectionCard(sectionName) {
-        this.selectedSection = sectionName;
-        
-        // 節カードエリアを非表示にして項目カードエリアを表示
-        const sectionCardsArea = document.getElementById('sectionCardsArea');
-        const topicCardsArea = document.getElementById('topicCardsArea');
-        
-        if (sectionCardsArea) sectionCardsArea.style.display = 'none';
-        if (topicCardsArea) topicCardsArea.style.display = 'block';
-        
-        this.renderTopicCards();
-        this.updateBreadcrumb();
-    }
-
-    /**
-     * 項目カードを描画
-     */
-    renderTopicCards() {
-        const container = document.getElementById('topicCards');
-        if (!container || !this.selectedSubject || !this.selectedChapter || !this.selectedSection) return;
-
-        const topics = this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] || [];
-        
-        let html = '';
-        topics.forEach((topic, index) => {
-            const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-            const hasCustomContent = topic.type === 'html' && topic.htmlContent;
-            
-            html += `
-                <div class="small-selection-card topic-card-small" onclick="KeyPointsModule.selectTopicCard('${topic.title}', ${index})">
-                    <div class="small-card-title">${topic.title}</div>
-                    <div class="small-card-meta">
-                        <span class="difficulty-badge ${difficultyClass}">${topic.difficulty}</span>
-                        ${hasCustomContent ? '<span class="custom-badge-small">HTML</span>' : '<span class="link-badge-small">Link</span>'}
-                    </div>
-                </div>
-            `;
-        });
-        
-        container.innerHTML = html;
-    }
-
-    /**
-     * 項目を選択
-     */
-    selectTopicCard(topicTitle, topicIndex) {
-        this.selectedTopic = topicTitle;
-        this.selectedTopicIndex = topicIndex;
-        
-        // 選択した項目カードを強調表示
-        document.querySelectorAll('#topicCards .small-selection-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        event.target.closest('.small-selection-card').classList.add('selected');
-        
-        // 登録ボタンを有効化
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-        }
-        
-        this.updateBreadcrumb();
-    }
-
-    /**
-     * パンくずリスト表示を更新
-     */
-    updateBreadcrumb() {
-        const breadcrumbPath = document.getElementById('breadcrumbPath');
-        const breadcrumb = document.getElementById('selectionBreadcrumb');
-        
-        if (!breadcrumbPath || !breadcrumb) return;
-
-        let html = '';
-        
-        if (this.selectedSubject) {
-            const subjectName = this.subjects[this.selectedSubject].name;
-            html += `<span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('subject')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${subjectName}</span>`;
-            breadcrumb.style.display = 'block';
-            
-            if (this.selectedChapter) {
-                html += ` → <span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('chapter')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${this.selectedChapter}</span>`;
-                
-                if (this.selectedSection) {
-                    html += ` → <span class="breadcrumb-item" onclick="KeyPointsModule.goToStep('section')" style="cursor: pointer; color: #007bff; text-decoration: underline;">${this.selectedSection}</span>`;
-                    
-                    if (this.selectedTopic) {
-                        html += ` → <span class="breadcrumb-item current" style="color: #495057; font-weight: 600;">${this.selectedTopic}</span>`;
-                    }
-                }
-            }
-        }
-        
-        if (html) {
-            breadcrumbPath.innerHTML = html;
-        } else {
-            breadcrumb.style.display = 'none';
         }
     }
 
     /**
-     * パンくずリストから指定の段階に戻る
+     * 要点編集
      */
-    goToStep(step) {
-        const chapterCardsArea = document.getElementById('chapterCardsArea');
-        const sectionCardsArea = document.getElementById('sectionCardsArea');
-        const topicCardsArea = document.getElementById('topicCardsArea');
-        
-        // すべて非表示にする
-        if (chapterCardsArea) chapterCardsArea.style.display = 'none';
-        if (sectionCardsArea) sectionCardsArea.style.display = 'none';
-        if (topicCardsArea) topicCardsArea.style.display = 'none';
-        
-        // 登録ボタンを無効化
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) {
-            submitBtn.disabled = true;
-        }
-        
-        if (step === 'subject') {
-            // 科目選択段階に戻る（編選択を表示）
-            this.selectedChapter = null;
-            this.selectedSection = null;
-            this.selectedTopic = null;
-            this.selectedTopicIndex = null;
-            
-            if (chapterCardsArea) chapterCardsArea.style.display = 'block';
-            this.renderChapterCards(this.selectedSubject);
-            
-        } else if (step === 'chapter') {
-            // 編選択段階に戻る（節選択を表示）
-            this.selectedSection = null;
-            this.selectedTopic = null;
-            this.selectedTopicIndex = null;
-            
-            if (sectionCardsArea) sectionCardsArea.style.display = 'block';
-            this.renderSectionCards();
-            
-        } else if (step === 'section') {
-            // 節選択段階に戻る（項目選択を表示）
-            this.selectedTopic = null;
-            this.selectedTopicIndex = null;
-            
-            if (topicCardsArea) topicCardsArea.style.display = 'block';
-            this.renderTopicCards();
-        }
-        
-        this.updateBreadcrumb();
-    }
-
-    /**
-     * カード選択式の項目追加（★修正: キャッシュクリア完全対応）
-     */
-    async handleAddHierarchyItemCard() {
-        const htmlInput = document.getElementById('keyPointHtml');
-
-        if (!htmlInput) {
-            alert('HTML内容を入力してください');
+    editKeyPoint(subjectKey, topicIndex) {
+        const subject = this.subjects[subjectKey];
+        if (!subject || !subject.topics[topicIndex]) {
+            alert('編集対象が見つかりません');
             return;
         }
 
-        const htmlContent = htmlInput.value.trim();
+        const topic = subject.topics[topicIndex];
+        const currentContent = topic.htmlContent || '';
 
-        if (!this.selectedSubject || !this.selectedChapter || !this.selectedSection || this.selectedTopicIndex === null) {
-            alert('すべての階層を選択してください');
-            return;
-        }
+        const dialogBody = `
+            <div class="form-group">
+                <label class="form-label">項目名</label>
+                <input type="text" class="form-control" value="${topic.title}" readonly style="background: #f8f9fa;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">HTML内容</label>
+                <textarea class="form-control" id="editKeyPointHtml" rows="10">${currentContent}</textarea>
+                <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
+                    💡 重要語句を &lt;span class="wp-key-term"&gt;語句&lt;/span&gt; で囲むと隠し機能付きになります
+                </div>
+            </div>
+        `;
 
+        const modal = document.createElement('div');
+        modal.className = 'custom-modal';
+        modal.innerHTML = `
+            <div class="custom-modal-content" style="max-width: 600px;">
+                <div class="custom-modal-header">
+                    <h3>要点を編集</h3>
+                    <button class="modal-close" onclick="this.closest('.custom-modal').remove()">×</button>
+                </div>
+                <div class="custom-modal-body">
+                    ${dialogBody}
+                </div>
+                <div class="custom-modal-footer">
+                    <button class="save-button" onclick="KeyPointsModule.saveEditedKeyPoint('${subjectKey}', ${topicIndex})">
+                        保存
+                    </button>
+                    <button class="cancel-button" onclick="this.closest('.custom-modal').remove()">
+                        キャンセル
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    /**
+     * 編集した要点を保存
+     */
+    saveEditedKeyPoint(subjectKey, topicIndex) {
+        const htmlContent = document.getElementById('editKeyPointHtml').value.trim();
+        
         if (!htmlContent) {
             alert('HTML内容を入力してください');
             return;
         }
 
-        // 該当する項目を取得して更新
-        if (this.subjects[this.selectedSubject] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection] && 
-            this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex]) {
-            
-            try {
-                // 項目をHTMLコンテンツ付きで更新（元のタイトルは保持）
-                this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex] = {
-                    ...this.subjects[this.selectedSubject].chapters[this.selectedChapter].sections[this.selectedSection][this.selectedTopicIndex],
-                    htmlContent: htmlContent,
-                    type: 'html'
-                };
-
-                // ★修正: 確実な保存処理
-                const saveSuccess = this.saveKeyPointsData();
-                if (!saveSuccess) {
-                    alert('保存中にエラーが発生しました。再度お試しください。');
-                    return;
-                }
-
-                // フォームをクリア
-                htmlInput.value = '';
-                
-                // 選択をリセット
-                const subjectSelect = document.getElementById('keyPointSubjectSelect');
-                if (subjectSelect) {
-                    subjectSelect.value = '';
-                    this.onSubjectChangeCard();
-                }
-
-                // 登録済みリストを更新
-                const listContainer = document.getElementById('keyPointsList');
-                if (listContainer) {
-                    listContainer.innerHTML = this.renderKeyPointsList();
-                }
-
-                alert('要点まとめを登録しました！該当項目をクリックすると表示されます。');
-                console.log('✅ 要点追加保存完了', {
-                    selectedSubject: this.selectedSubject,
-                    selectedChapter: this.selectedChapter,
-                    selectedSection: this.selectedSection,
-                    selectedTopicIndex: this.selectedTopicIndex,
-                    timestamp: new Date().toISOString()
-                });
-                
-            } catch (error) {
-                console.error('❌ 要点追加保存エラー:', error);
-                alert('保存中にエラーが発生しました。再度お試しください。');
-            }
-        } else {
-            alert('選択した項目が見つかりません');
-        }
-    }
-
-    /**
-     * 登録済み要点リストを描画（★修正: 科目一覧と同じカード配置）
-     */
-    renderKeyPointsList() {
-        // 科目別要点数を集計
-        const subjectSummary = [];
-        
-        try {
-            const sortedSubjects = Object.entries(this.subjects)
-                .sort((a, b) => (a[1].order || 999) - (b[1].order || 999));
-            
-            sortedSubjects.forEach(([subjectKey, subject]) => {
-                let itemCount = 0;
-                
-                // この科目の要点数をカウント
-                if (subject.chapters) {
-                    Object.values(subject.chapters).forEach(chapter => {
-                        if (chapter.sections) {
-                            Object.values(chapter.sections).forEach(topics => {
-                                if (Array.isArray(topics)) {
-                                    topics.forEach(topic => {
-                                        if (topic.type === 'html' && topic.htmlContent) {
-                                            itemCount++;
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-                
-                subjectSummary.push({
-                    key: subjectKey,
-                    name: subject.name,
-                    chapterCount: Object.keys(subject.chapters || {}).length,
-                    itemCount: itemCount
-                });
-            });
-        } catch (error) {
-            console.warn('⚠️ 科目要点集計エラー:', error);
-        }
-        
-        // 要点がある科目のみ表示
-        const subjectsWithKeyPoints = subjectSummary.filter(subject => subject.itemCount > 0);
-        
-        if (subjectsWithKeyPoints.length === 0) {
-            return '<div style="text-align: center; padding: 30px; color: var(--gray); background: #f8f9fa; border-radius: 8px;"><p>📝 登録済み要点がありません</p><p style="font-size: 14px;">上のフォームから要点を追加してください</p></div>';
-        }
-        
-        // ★修正: 科目一覧と同じ3列グリッドレイアウト
-        let html = '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 15px;">';
-        
-        subjectsWithKeyPoints.forEach(subject => {
-            html += `
-                <div class="keypoints-subject-card" style="background: white; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s; min-height: 80px; display: flex; flex-direction: column; justify-content: center;" 
-                     onclick="KeyPointsModule.showSubjectKeyPoints('${subject.key}')">
-                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 6px; line-height: 1.3;">
-                        ${subject.name}
-                    </div>
-                    <div style="font-size: 11px; color: var(--gray);">
-                        ${subject.chapterCount} 編
-                    </div>
-                    <div style="font-size: 11px; color: #3182ce; font-weight: 600;">
-                        ${subject.itemCount} 要点
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        
-        return html;
-    }
-
-    /**
-     * 科目の要点詳細表示（★修正: 階層表示対応）
-     */
-    showSubjectKeyPoints(subjectKey) {
         const subject = this.subjects[subjectKey];
-        if (!subject) return;
-        
-        // 現在のビューを保存
-        this.previousView = 'keyPointsList';
-        this.currentEditMode = true; // ★追加: 編集モードフラグ
-        
-        // 階層表示で要点管理画面を生成
-        const content = document.getElementById('keyPointsList');
-        if (!content) return;
+        if (!subject || !subject.topics[topicIndex]) {
+            alert('保存対象が見つかりません');
+            return;
+        }
 
-        let html = `
-            <div style="padding: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h3 style="margin: 0;">📚 ${subject.name} 要点管理</h3>
-                    <button class="save-button" onclick="KeyPointsModule.backToKeyPointsList()" 
-                            style="background: var(--gray); padding: 8px 12px; font-size: 14px; min-width: auto; width: auto;">↩️ 戻る</button>
-                </div>
-        `;
+        // 保存
+        subject.topics[topicIndex].htmlContent = htmlContent;
+        subject.topics[topicIndex].type = 'html';
 
-        const chapters = subject.chapters || {};
-        
-        if (Object.keys(chapters).length === 0) {
-            html += `
-                <div style="text-align: center; padding: 30px; color: var(--gray);">
-                    <p>まだ編項目がありません</p>
-                </div>
-            `;
+        if (this.saveKeyPointsData()) {
+            alert('更新しました！');
+            document.querySelector('.custom-modal').remove();
+            
+            // 表示を更新
+            this.showEditList(subjectKey);
         } else {
-            // ★修正: selectSubject() と同じ階層表示を使用（編集モード）
-            html += this.renderSubjectChapters(subjectKey, subject, 'edit');
+            alert('保存に失敗しました');
         }
-
-        html += `</div>`;
-        content.innerHTML = html;
-
-        // スタイルを適用
-        this.addDifficultyStyles();
-        this.addKeyPointStyles();
     }
 
     /**
-     * 科目の章構造を描画（★修正: 表示モード対応・編集ボタンデザイン変更）
+     * 要点削除
      */
-    renderSubjectChapters(subjectKey, subject, mode = 'view') {
-        const chapters = subject.chapters || {};
-        let html = '';
+    deleteKeyPoint(subjectKey, topicIndex) {
+        if (!confirm('この要点を削除しますか？')) return;
+
+        const subject = this.subjects[subjectKey];
+        if (!subject || !subject.topics[topicIndex]) {
+            alert('削除対象が見つかりません');
+            return;
+        }
+
+        // HTMLコンテンツを削除
+        delete subject.topics[topicIndex].htmlContent;
+        subject.topics[topicIndex].type = 'link';
+
+        if (this.saveKeyPointsData()) {
+            alert('削除しました');
+            
+            // 表示を更新
+            this.showEditList(subjectKey);
+        } else {
+            alert('削除に失敗しました');
+        }
+    }
+
+    /**
+     * 重要語句の表示/非表示切替
+     */
+    toggleKeyTerms() {
+        this.keyTermsHidden = !this.keyTermsHidden;
+        const terms = document.querySelectorAll('.wp-key-term');
         
-        // ★修正: 章（編）の順序をソート
-        const sortedChapters = Object.entries(chapters).sort((a, b) => {
-            const aMatch = a[0].match(/第(\d+)編|第(\d+)章/);
-            const bMatch = b[0].match(/第(\d+)編|第(\d+)章/);
-            if (aMatch && bMatch) {
-                const aNum = parseInt(aMatch[1] || aMatch[2]);
-                const bNum = parseInt(bMatch[1] || bMatch[2]);
-                return aNum - bNum;
-            }
-            return a[0].localeCompare(b[0]);
-        });
-
-        // 折りたたみ可能な編構造
-        sortedChapters.forEach(([chapterName, chapterData]) => {
-            const chapterId = `chapter-${mode}-${subjectKey}-${chapterName.replace(/\s+/g, '-')}`;
-            
-            html += `
-                <div class="collapsible-chapter" style="margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <div class="chapter-header-collapsible" style="background: linear-gradient(135deg, #4a5568, #2d3748); color: white; padding: 15px 20px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;"
-                         onclick="KeyPointsModule.toggleChapter('${chapterId}')">
-                        <span style="font-size: 16px; font-weight: bold;">${chapterName}</span>
-                        <span class="chapter-arrow" id="arrow-${chapterId}" style="font-size: 14px; transition: transform 0.3s;">▼</span>
-                    </div>
-                    <div class="chapter-content-collapsible" id="${chapterId}" style="display: block; background: white;">
-                        <div style="padding: 20px;">
-            `;
-            
-            if (chapterData.sections) {
-                // ★修正: 節の順序をソート
-                const sortedSections = Object.entries(chapterData.sections).sort((a, b) => {
-                    const aMatch = a[0].match(/第(\d+)節/);
-                    const bMatch = b[0].match(/第(\d+)節/);
-                    if (aMatch && bMatch) {
-                        return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-                    }
-                    return a[0].localeCompare(b[0]);
-                });
-
-                sortedSections.forEach(([sectionName, topics]) => {
-                    html += `
-                        <div class="section" style="margin-bottom: 25px;">
-                            <div class="section-title" style="font-size: 15px; font-weight: bold; color: #2d3748; margin-bottom: 15px; padding: 8px 0; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px;">
-                                <span style="background: #4a5568; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${sortedSections.findIndex(([name]) => name === sectionName) + 1}</span>
-                                ${sectionName}
-                            </div>
-                            <div class="topic-list-single" style="display: flex; flex-direction: column; gap: 8px;">
-                    `;
-                    
-                    topics.forEach((topic, index) => {
-                        const difficultyClass = `difficulty-${topic.difficulty.toLowerCase()}`;
-                        const hasCustomContent = topic.type === 'html' && topic.htmlContent;
-                        
-                        // ★修正: モードによって表示を切り替え
-                        if (mode === 'edit') {
-                            // ★修正: 編集モード - 科目一覧と同じデザイン（要点表示削除、アイコンのみ）
-                            if (hasCustomContent) {
-                                html += `
-                                    <div class="topic-card-edit" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;">
-                                        <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
-                                        <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
-                                        <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
-                                        <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                                            <button class="edit-btn" 
-                                                    onclick="KeyPointsModule.editKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #3182ce;">
-                                                ✏️
-                                            </button>
-                                            <button class="delete-btn" 
-                                                    onclick="KeyPointsModule.deleteHierarchyItem('${subjectKey}', '${chapterName}', '${sectionName}', ${index})"
-                                                    style="background: none; border: none; padding: 8px; border-radius: 4px; font-size: 16px; cursor: pointer; transition: all 0.2s; color: #e53e3e;">
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </div>
-                                `;
-                            }
-                        } else {
-                            // 確認モード: 全項目表示（既存の処理）
-                            html += `
-                                <div class="topic-card-single" style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 12px;"
-                                     onclick="KeyPointsModule.viewTopicContent('${subjectKey}', '${chapterName}', '${sectionName}', ${index})">
-                                    <span style="font-size: 12px; color: #718096; min-width: 24px; font-weight: 600; background: #edf2f7; padding: 4px 8px; border-radius: 4px; text-align: center;">${index + 1}</span>
-                                    <div style="flex: 1; font-size: 14px; font-weight: 500; color: #2d3748;">${topic.title}</div>
-                                    <span class="difficulty-badge ${difficultyClass}" style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; min-width: 24px; text-align: center;">${topic.difficulty}</span>
-                                </div>
-                            `;
-                        }
-                    });
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-        
-        return html;
-    }
-
-    /**
-     * 登録済み要点一覧に戻る（★追加）
-     */
-    backToKeyPointsList() {
-        const listContainer = document.getElementById('keyPointsList');
-        if (listContainer) {
-            listContainer.innerHTML = this.renderKeyPointsList();
-        }
-    }
-
-    /**
-     * 要点編集機能（★修正: エラーハンドリング強化）
-     */
-    editKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
-        try {
-            if (!this.subjects[subjectKey] || 
-                !this.subjects[subjectKey].chapters[chapterName] || 
-                !this.subjects[subjectKey].chapters[chapterName].sections[sectionName] || 
-                !this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
-                alert('編集対象が見つかりません');
-                return;
-            }
-
-            const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
-            const currentContent = topic.htmlContent || '';
-
-            // 編集モーダルを表示
-            const dialogBody = `
-                <div class="form-group">
-                    <label class="form-label">項目名</label>
-                    <input type="text" class="form-control" id="editTopicTitle" value="${topic.title}" readonly style="background: #f8f9fa;">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">HTML内容</label>
-                    <textarea class="form-control" id="editKeyPointHtml" rows="8" 
-                              placeholder="HTML形式の要点まとめ内容を入力してください">${currentContent}</textarea>
-                    <div style="font-size: 12px; color: var(--gray); margin-top: 5px;">
-                        💡 <strong class="wp-key-term">重要語句</strong> を&lt;span class="wp-key-term"&gt;語句&lt;/span&gt;で囲むと、クリック可能な隠し機能付きになります
-                    </div>
-                </div>
-            `;
-
-            const modal = document.createElement('div');
-            modal.className = 'custom-modal';
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
-            
-            modal.innerHTML = `
-                <div style="background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                        <h3 style="margin: 0; color: #2d3748;">✏️ 要点編集</h3>
-                        <button onclick="this.closest('.custom-modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
-                    </div>
-                    ${dialogBody}
-                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: end;">
-                        <button onclick="this.closest('.custom-modal').remove()" style="background: #a0aec0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                            キャンセル
-                        </button>
-                        <button onclick="KeyPointsModule.saveEditedKeyPoint('${subjectKey}', '${chapterName}', '${sectionName}', ${topicIndex})" style="background: #3182ce; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                            保存
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-        } catch (error) {
-            console.error('❌ 編集モーダル表示エラー:', error);
-            alert('編集画面の表示中にエラーが発生しました。');
-        }
-    }
-
-    /**
-     * 編集内容を保存（★修正: リスト更新改善）
-     */
-    async saveEditedKeyPoint(subjectKey, chapterName, sectionName, topicIndex) {
-        try {
-            const htmlInput = document.getElementById('editKeyPointHtml');
-            if (!htmlInput) {
-                alert('HTML内容が見つかりません');
-                return;
-            }
-
-            const htmlContent = htmlInput.value.trim();
-            if (!htmlContent) {
-                alert('HTML内容を入力してください');
-                return;
-            }
-
-            // 項目を更新
-            if (this.subjects[subjectKey] && 
-                this.subjects[subjectKey].chapters[chapterName] && 
-                this.subjects[subjectKey].chapters[chapterName].sections[sectionName] && 
-                this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
-                
-                this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex].htmlContent = htmlContent;
-
-                // ★修正: 確実なFirebase統合保存
-                const saveSuccess = this.saveKeyPointsData();
-                if (!saveSuccess) {
-                    alert('保存中にエラーが発生しました。再度お試しください。');
-                    return;
-                }
-
-                // モーダルを閉じる
-                document.querySelector('.custom-modal').remove();
-                
-                // ★修正: 現在の表示を更新
-                this.updateCurrentKeyPointsView(subjectKey);
-                
-                alert('要点まとめを更新しました！');
-                console.log('✅ 要点編集保存完了', {
-                    subjectKey,
-                    chapterName,
-                    sectionName,
-                    topicIndex,
-                    timestamp: new Date().toISOString()
-                });
-                
+        terms.forEach(term => {
+            if (this.keyTermsHidden) {
+                term.style.backgroundColor = '#333';
+                term.style.color = '#333';
             } else {
-                alert('更新対象が見つかりません');
+                term.style.backgroundColor = '#ffeb3b';
+                term.style.color = '#000';
             }
-        } catch (error) {
-            console.error('❌ 要点編集保存エラー:', error);
-            alert('保存中にエラーが発生しました。再度お試しください。');
-        }
-    }
-
-    /**
-     * 階層項目削除（★修正: リスト更新改善）
-     */
-    async deleteHierarchyItem(subjectKey, chapterName, sectionName, topicIndex) {
-        if (confirm('この要点まとめを削除しますか？')) {
-            try {
-                if (this.subjects[subjectKey] && 
-                    this.subjects[subjectKey].chapters[chapterName] && 
-                    this.subjects[subjectKey].chapters[chapterName].sections[sectionName] && 
-                    this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex]) {
-                    
-                    // HTMLコンテンツを削除して元のリンクタイプに戻す
-                    const topic = this.subjects[subjectKey].chapters[chapterName].sections[sectionName][topicIndex];
-                    delete topic.htmlContent;
-                    topic.type = 'link';
-
-                    // ★修正: 確実なFirebase統合保存
-                    const saveSuccess = this.saveKeyPointsData();
-                    if (!saveSuccess) {
-                        alert('削除中にエラーが発生しました。再度お試しください。');
-                        return;
-                    }
-                    
-                    // ★修正: 現在の表示を更新
-                    this.updateCurrentKeyPointsView(subjectKey);
-                    
-                    alert('要点まとめを削除しました');
-                    console.log('✅ 要点削除保存完了', {
-                        subjectKey,
-                        chapterName,
-                        sectionName,
-                        topicIndex,
-                        timestamp: new Date().toISOString()
-                    });
-                }
-            } catch (error) {
-                console.error('❌ 要点削除保存エラー:', error);
-                alert('削除中にエラーが発生しました。再度お試しください。');
-            }
-        }
-    }
-
-    /**
-     * 現在の要点表示を更新（★追加: 編集・削除後の表示更新）
-     */
-    updateCurrentKeyPointsView(subjectKey) {
-        const listContainer = document.getElementById('keyPointsList');
-        if (!listContainer) return;
-        
-        // 現在詳細画面を表示中かチェック
-        const detailView = listContainer.querySelector('.keypoint-detail-item');
-        
-        if (detailView) {
-            // 詳細画面表示中 → 科目別詳細を再描画
-            this.showSubjectKeyPoints(subjectKey);
-        } else {
-            // 科目一覧表示中 → 科目一覧を再描画
-            listContainer.innerHTML = this.renderKeyPointsList();
-        }
-    }
-
-    /**
-     * 難易度バッジスタイル追加
-     */
-    addDifficultyStyles() {
-        if (document.getElementById('difficultyStyles')) return;
-
-        const style = document.createElement('style');
-        style.id = 'difficultyStyles';
-        style.textContent = `
-            .difficulty-a {
-                background: #fed7d7 !important;
-                color: #c53030 !important;
-                border: 1px solid #fc8181 !important;
-            }
-            
-            .difficulty-b {
-                background: #feebc8 !important;
-                color: #dd6b20 !important;
-                border: 1px solid #f6ad55 !important;
-            }
-            
-            .difficulty-c {
-                background: #c6f6d5 !important;
-                color: #38a169 !important;
-                border: 1px solid #68d391 !important;
-            }
-
-            .topic-card:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-            }
-
-            /* ★修正: 1列レイアウト用のスタイル */
-            .topic-card-single:hover {
-                transform: translateX(4px) !important;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-            }
-
-            /* 重要語句のスタイル */
-            .wp-key-term {
-                display: inline !important;
-                text-decoration: none !important;
-                border: none !important;
-                outline: none !important;
-                padding: 2px 6px !important;
-                margin: 0 1px !important;
-                color: #d32f2f !important;
-                font-weight: bold !important;
-                cursor: pointer !important;
-                border-radius: 4px !important;
-                transition: all 0.3s ease !important;
-                background: rgba(211, 47, 47, 0.1) !important;
-            }
-            
-            .wp-key-term:hover {
-                background: rgba(211, 47, 47, 0.2) !important;
-                transform: scale(1.05) !important;
-            }
-            
-            .wp-key-term.wp-hidden {
-                background: repeating-linear-gradient(
-                    45deg,
-                    #e8e8e8,
-                    #e8e8e8 2px,
-                    #d0d0d0 2px,
-                    #d0d0d0 4px
-                ) !important;
-                color: transparent !important;
-                text-shadow: none !important;
-                border: 1px solid #ccc !important;
-            }
-            
-            .wp-key-term.wp-hidden:hover {
-                background: repeating-linear-gradient(
-                    45deg,
-                    #f0f0f0,
-                    #f0f0f0 2px,
-                    #d8d8d8 2px,
-                    #d8d8d8 4px
-                ) !important;
-                transform: scale(1.02) !important;
-            }
-
-            /* カード式登録済み要点のスタイル */
-            .keypoints-card:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-                border-color: #3182ce !important;
-            }
-
-            /* 科目カード（登録済み要点用）のスタイル */
-            .keypoints-subject-card:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-                border-color: #3182ce !important;
-            }
-
-            /* 要点詳細アイテムのスタイル */
-            .keypoint-detail-item:hover {
-                box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
-                border-color: #cbd5e0 !important;
-            }
-
-            .edit-btn:hover {
-                background: #2c5aa0 !important;
-                transform: translateY(-1px) !important;
-            }
-
-            .delete-btn:hover {
-                background: #c53030 !important;
-                transform: translateY(-1px) !important;
-            }
-        `;
-        
-        document.head.appendChild(style);
+        });
     }
 
     /**
      * スタイル追加
      */
     addKeyPointStyles() {
-        if (document.getElementById('keypointsStyles')) return;
-
+        if (document.getElementById('keypoint-styles')) return;
+        
         const style = document.createElement('style');
-        style.id = 'keypointsStyles';
-        style.textContent = `
-            .subject-card-mobile:hover {
-                border-color: var(--secondary) !important;
-                box-shadow: var(--shadow-lg) !important;
-                transform: translateY(-2px) !important;
-            }
-
-            /* 3列固定（モバイルでも） */
-            .subject-grid-fixed {
-                display: grid !important;
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 12px !important;
-            }
-
-            /* カード選択式スタイル（小さなカード版） */
-            .small-card-grid {
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-                gap: 8px;
-                margin: 15px 0;
-            }
-
-            .small-selection-card {
-                background: white;
-                border: 2px solid var(--light);
-                border-radius: 8px;
-                padding: 8px;
+        style.id = 'keypoint-styles';
+        style.innerHTML = `
+            .wp-key-term {
+                background-color: #ffeb3b;
+                padding: 2px 4px;
+                border-radius: 3px;
                 cursor: pointer;
                 transition: all 0.3s ease;
-                min-height: 55px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                text-align: center;
-                position: relative;
+                display: inline-block;
+                font-weight: 500;
             }
-
-            .small-selection-card:hover {
-                border-color: var(--secondary);
-                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+            
+            .wp-key-term.hidden {
+                background-color: #333 !important;
+                color: #333 !important;
+            }
+            
+            .subject-card:hover {
                 transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                border-color: var(--primary) !important;
             }
-
-            .small-selection-card.selected {
-                border-color: var(--primary);
-                background: linear-gradient(135deg, rgba(44, 62, 80, 0.08), rgba(52, 152, 219, 0.08));
-                box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
-                transform: translateY(-1px);
+            
+            .registered-subject-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             }
-
-            .small-card-title {
-                font-weight: 600;
-                font-size: 12px;
-                margin-bottom: 4px;
-                line-height: 1.2;
-                color: var(--dark);
+            
+            .register-card:hover {
+                transform: scale(1.05);
             }
-
-            .small-card-meta {
-                font-size: 10px;
-                color: var(--gray);
+            
+            .topic-item:hover {
+                background: #f8f9fa !important;
+                transform: translateX(4px);
+            }
+            
+            .custom-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 4px;
-                flex-wrap: wrap;
+                z-index: 10000;
             }
-
-            .topic-card-small .small-card-meta {
-                flex-direction: column;
-                gap: 2px;
+            
+            .custom-modal-content {
+                background: white;
+                border-radius: 10px;
+                width: 90%;
+                max-height: 80vh;
+                overflow-y: auto;
             }
-
-            .custom-badge-small {
-                background: linear-gradient(135deg, #4caf50, #66bb6a);
+            
+            .custom-modal-header {
+                padding: 15px 20px;
+                border-bottom: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .custom-modal-body {
+                padding: 20px;
+            }
+            
+            .custom-modal-footer {
+                padding: 15px 20px;
+                border-top: 1px solid #e2e8f0;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+            
+            .cancel-button {
+                padding: 8px 16px;
+                background: var(--gray);
                 color: white;
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-size: 8px;
-                font-weight: bold;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
             }
-
-            .link-badge-small {
-                background: linear-gradient(135deg, #9e9e9e, #bdbdbd);
-                color: white;
-                padding: 2px 4px;
-                border-radius: 3px;
-                font-size: 8px;
-                font-weight: bold;
+            
+            .form-control {
+                width: 100%;
+                padding: 8px 12px;
+                border: 1px solid #e2e8f0;
+                border-radius: 5px;
+                font-size: 14px;
             }
-
-            /* パンくずリストのスタイル */
-            .breadcrumb-item {
-                transition: all 0.2s ease;
+            
+            .form-label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 500;
+                font-size: 14px;
+                color: #2d3748;
             }
+        `;
+        document.head.appendChild(style);
+    }
 
-            .breadcrumb-item:hover {
-                color: #0056b3 !important;
-                background: rgba(0, 123, 255, 0.1);
-                padding: 2px 4px;
-                border-radius: 3px;
+    /**
+     * 難易度スタイル追加
+     */
+    addDifficultyStyles() {
+        if (document.getElementById('difficulty-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'difficulty-styles';
+        style.innerHTML = `
+            .difficulty-a {
+                background: #fee2e2;
+                color: #dc2626;
             }
-
-            .breadcrumb-item.current {
-                background: rgba(73, 80, 87, 0.1);
-                padding: 2px 4px;
-                border-radius: 3px;
+            
+            .difficulty-b {
+                background: #fef3c7;
+                color: #d97706;
             }
-
-            @media (max-width: 768px) {
-                .small-card-grid {
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 6px;
-                }
-                
-                .subject-grid-fixed {
-                    grid-template-columns: repeat(3, 1fr) !important;
-                    gap: 10px !important;
-                }
-
-                .small-selection-card {
-                    padding: 7px;
-                    min-height: 50px;
-                }
-
-                .small-card-title {
-                    font-size: 11px;
-                }
-
-                .small-card-meta {
-                    font-size: 9px;
-                }
-
-                .topic-grid {
-                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
-                    gap: 8px !important;
-                }
-            }
-
-            @media (max-width: 480px) {
-                .small-card-grid {
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 5px;
-                }
-                
-                .subject-grid-fixed {
-                    grid-template-columns: repeat(3, 1fr) !important;
-                    gap: 8px !important;
-                }
-
-                .small-selection-card {
-                    padding: 6px;
-                    min-height: 45px;
-                }
-
-                .small-card-title {
-                    font-size: 10px;
-                }
-
-                .small-card-meta {
-                    font-size: 8px;
-                }
-
-                .topic-grid {
-                    grid-template-columns: 1fr !important;
-                    gap: 8px !important;
-                }
+            
+            .difficulty-c {
+                background: #dbeafe;
+                color: #2563eb;
             }
         `;
         document.head.appendChild(style);
@@ -2497,6 +1117,10 @@ navigateToNextTopic() {
 window.KeyPointsModule = new KeyPointsModuleClass();
 
 // 初期化
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        KeyPointsModule.initialize();
+    });
+} else {
     KeyPointsModule.initialize();
-});
+}
