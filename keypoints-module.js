@@ -1616,6 +1616,14 @@ class KeyPointsModuleClass {
 // グローバルに公開
 window.KeyPointsModule = new KeyPointsModuleClass();
 
+// 🔧 開発用: 管理者モード手動有効化
+window.enableAdminMode = () => {
+    window.KeyPointsModule.isAdmin = true;
+    window.KeyPointsModule.showAdminIndicator();
+    window.KeyPointsModule.loadTemplateData();
+    console.log('🔓 管理者モードを手動で有効にしました');
+};
+
 // 初期化
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
