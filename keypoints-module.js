@@ -3,7 +3,12 @@
  */
 class KeyPointsModuleClass {
     constructor() {
-        // ケータイ行政書士の階層に完全対応
+        // 🚀 階層構造データ管理用の変数
+        this.structureData = null; // Firestoreから読み込む階層構造データ
+        this.userContent = null;   // ユーザーの要点内容
+        this.isLoading = false;    // 読み込み状態
+
+        // ケータイ行政書士の階層に完全対応（フォールバック兼用）
         this.subjects = {
             'constitution': {
                 name: '第1編 憲法',
@@ -170,14 +175,223 @@ class KeyPointsModuleClass {
     }
 
     /**
+     * 🚀 Firestoreから階層構造を読み込み（新機能）
+     */
+    async loadStructureFromFirestore() {
+        try {
+            console.log('📚 階層構造をFirestoreから読み込み中...');
+
+            if (!window.firebase) {
+                console.warn('⚠️  Firebase未初期化 - フォールバック構造を使用');
+                return false;
+            }
+
+            const db = firebase.firestore();
+            const doc = await db.collection('keypoints_structure').doc('master').get();
+
+            if (doc.exists) {
+                const data = doc.data();
+                this.structureData = data.subjects;
+                console.log(`✅ 階層構造読み込み完了: ${Object.keys(this.structureData).length}科目`);
+                return true;
+            } else {
+                console.warn('⚠️  階層構造データなし - フォールバック構造を使用');
+                return false;
+            }
+
+        } catch (error) {
+            console.error('❌ 階層構造読み込みエラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 🚀 Firestoreからユーザーの要点内容を読み込み（既存機能改良）
+     */
+    async loadContentFromFirestore() {
+        try {
+            if (!window.firebase || !window.ULTRA_STABLE_USER_ID) {
+                console.warn('⚠️  Firebase/ユーザーID未設定 - LocalStorageから読み込み');
+                return this.loadContentFromLocalStorage();
+            }
+
+            console.log('📖 要点内容をFirestoreから読み込み中...');
+
+            const db = firebase.firestore();
+            const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
+            const keyPointsRef = userRef.collection('keyPoints');
+
+            const snapshot = await keyPointsRef.get();
+            if (!snapshot.empty) {
+                this.userContent = {};
+                snapshot.forEach(doc => {
+                    this.userContent[doc.id] = doc.data();
+                });
+                console.log(`✅ 要点内容読み込み完了: ${Object.keys(this.userContent).length}科目`);
+                return true;
+            } else {
+                console.log('📝 要点内容なし - 新規ユーザーまたは未編集');
+                this.userContent = {};
+                return true;
+            }
+
+        } catch (error) {
+            console.error('❌ 要点内容読み込みエラー:', error);
+            return this.loadContentFromLocalStorage(); // フォールバック
+        }
+    }
+
+    /**
+     * 🔄 LocalStorageからの読み込み（フォールバック）
+     */
+    loadContentFromLocalStorage() {
+        try {
+            const saved = localStorage.getItem('keyPointsData');
+            if (saved) {
+                this.userContent = JSON.parse(saved);
+                console.log('📁 LocalStorageから要点内容を読み込み完了');
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('❌ LocalStorage読み込みエラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 🚀 階層構造と要点内容をマージして表示用データ作成
+     */
+    mergeStructureAndContent() {
+        try {
+            console.log('🔀 データマージ開始...');
+
+            // フォールバック: structureDataがない場合は既存構造を使用
+            const sourceStructure = this.structureData || this.subjects;
+
+            // 深いコピーでベース構造作成
+            this.subjects = JSON.parse(JSON.stringify(sourceStructure));
+
+            // ユーザーの要点内容をマージ
+            if (this.userContent) {
+                Object.keys(this.userContent).forEach(subjectKey => {
+                    if (this.subjects[subjectKey] && this.userContent[subjectKey].topics) {
+                        this.userContent[subjectKey].topics.forEach((savedTopic, index) => {
+                            if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                                this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
+                                this.subjects[subjectKey].topics[index].type = 'html';
+                            }
+                        });
+                    }
+                });
+            }
+
+            console.log('✅ データマージ完了');
+            return true;
+
+        } catch (error) {
+            console.error('❌ データマージエラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 🚀 新しい軽量読み込みシステム
+     */
+    async loadKeyPointsDataNew() {
+        if (this.isLoading) {
+            console.log('⏳ 読み込み中...');
+            return;
+        }
+
+        try {
+            this.isLoading = true;
+            console.log('🚀 軽量読み込みシステム開始');
+
+            // Step 1: 階層構造を読み込み
+            const structureLoaded = await this.loadStructureFromFirestore();
+
+            // Step 2: ユーザーの要点内容を読み込み
+            const contentLoaded = await this.loadContentFromFirestore();
+
+            // Step 3: データをマージして表示用構造作成
+            this.mergeStructureAndContent();
+
+            console.log('🎉 軽量読み込み完了');
+            return true;
+
+        } catch (error) {
+            console.error('💥 軽量読み込みエラー:', error);
+            // 完全フォールバック: 既存システムを使用
+            return this.loadKeyPointsDataLegacy();
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    /**
+     * 🔄 既存の読み込みシステム（フォールバック用に名前変更）
+     */
+    loadKeyPointsDataLegacy() {
+        try {
+            const saved = localStorage.getItem('keyPointsData');
+            if (saved) {
+                const parsedData = JSON.parse(saved);
+                if (parsedData && typeof parsedData === 'object') {
+                    // カスタムHTMLコンテンツをマージ
+                    Object.keys(this.subjects).forEach(subjectKey => {
+                        if (parsedData[subjectKey] && parsedData[subjectKey].topics) {
+                            parsedData[subjectKey].topics.forEach((savedTopic, index) => {
+                                if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                                    this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
+                                    this.subjects[subjectKey].topics[index].type = 'html';
+                                }
+                            });
+                        }
+                    });
+                }
+            }
+            // Firebase統合
+            this.initializeFirebaseSync();
+            return true;
+        } catch (error) {
+            console.error('❌ レガシー読み込みエラー:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 🔄 カスタムコンテンツをマージ（DataManager連携用）
+     */
+    mergeCustomContent(subjectKey, subjectData) {
+        try {
+            if (!this.subjects[subjectKey] || !subjectData || !subjectData.topics) {
+                return;
+            }
+
+            // topics配列の各項目にカスタムHTMLコンテンツをマージ
+            subjectData.topics.forEach((savedTopic, index) => {
+                if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                    this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
+                    this.subjects[subjectKey].topics[index].type = 'html';
+                }
+            });
+
+            console.log(`✅ ${subjectKey} のカスタムコンテンツをマージしました`);
+        } catch (error) {
+            console.error(`❌ ${subjectKey} のコンテンツマージエラー:`, error);
+        }
+    }
+
+    /**
      * 初期化
      */
-    initialize() {
+    async initialize() {
         if (this.initialized) return;
 
         try {
-            console.log('🚀 KeyPointsModule初期化開始');
-            
+            console.log('🚀 KeyPointsModule初期化開始 (軽量版)');
+
             // DataManagerの存在確認
             if (!window.DataManager) {
                 console.log('⏳ DataManager待機中...');
@@ -185,19 +399,22 @@ class KeyPointsModuleClass {
                 return;
             }
 
-            // データ読み込み
-            this.loadKeyPointsData();
-            
+            // 🚀 新しい軽量データ読み込み
+            const loadSuccess = await this.loadKeyPointsDataNew();
+            if (!loadSuccess) {
+                console.warn('⚠️  新しい読み込み失敗 - レガシーシステムを使用');
+            }
+
             // スタイル追加
             this.addKeyPointStyles();
             this.addDifficultyStyles();
-            
+
             // グローバル関数定義
             window.toggleKeyTerms = () => this.toggleKeyTerms();
-            
+
             this.initialized = true;
             console.log('✅ KeyPointsModule初期化完了');
-            
+
         } catch (error) {
             console.error('❌ KeyPointsModule初期化エラー:', error);
             this.initialized = true;
@@ -205,9 +422,17 @@ class KeyPointsModuleClass {
     }
 
     /**
-     * 要点データの読み込み
+     * 🔄 要点データの読み込み（後方互換性用）
      */
     loadKeyPointsData() {
+        console.warn('⚠️  loadKeyPointsData() は非推奨です。loadKeyPointsDataNew() を使用してください。');
+        return this.loadKeyPointsDataLegacy();
+    }
+
+    /**
+     * 旧版要点データの読み込み
+     */
+    loadKeyPointsDataOld() {
         try {
             const saved = localStorage.getItem('keyPointsData');
             if (saved) {
