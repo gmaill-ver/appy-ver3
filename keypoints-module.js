@@ -671,9 +671,6 @@ class KeyPointsModuleClass {
                 return;
             }
 
-            // 🔑 管理者判定
-            await this.detectAdminStatus();
-
             // 🚀 新しい軽量データ読み込み
             const loadSuccess = await this.loadKeyPointsDataNew();
             if (!loadSuccess) {
@@ -689,6 +686,9 @@ class KeyPointsModuleClass {
 
             this.initialized = true;
             console.log('✅ KeyPointsModule初期化完了');
+
+            // 🔑 管理者判定（DataManager初期化後に実行）
+            setTimeout(() => this.detectAdminStatus(), 1000);
 
         } catch (error) {
             console.error('❌ KeyPointsModule初期化エラー:', error);
