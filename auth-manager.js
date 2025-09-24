@@ -66,8 +66,11 @@ class AuthManagerClass {
             return;
         }
 
-        // Googleプロバイダーかつutohideki@gmail.comの場合は管理者
-        const adminEmails = ['utohideki@gmail.com'];
+        // 管理者メールアドレスのリスト
+        const adminEmails = [
+            'utohideki@gmail.com',
+            'u.t.o0911@gmail.com'  // 実際のメールアドレス
+        ];
 
         // Googleログインの場合のみ管理者判定
         if (user.providerData && user.providerData.some(p => p.providerId === 'google.com')) {

@@ -14,11 +14,13 @@
             <div class="timer-display" id="timerDisplay">00:00:00</div>
         </div>
         <div class="app-logo">
-            <span class="app-logo-icon">📚</span>
-            <span class="app-title">学習トラッカー</span>
+            <div class="logo-title">
+                <span class="app-logo-icon">📚</span>
+                <span class="app-title">学習トラッカー</span>
+            </div>
+            <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
         </div>
         <div class="header-right">
-            <div class="exam-countdown" id="examCountdown">試験日まで <span class="days">--</span> 日</div>
             <button class="auth-btn" id="authBtn" onclick="AuthManager.toggleAuth()" title="ログイン">
                 <span id="authIcon">👤</span>
                 <span id="authText">ログイン</span>

@@ -63,10 +63,16 @@ body {
 
 .app-logo {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 5px;
+}
+
+.app-logo .logo-title {
+    display: flex;
+    align-items: center;
     gap: 10px;
-    margin-bottom: 5px;
 }
 
 .app-logo-icon {
