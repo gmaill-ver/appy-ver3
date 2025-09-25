@@ -643,6 +643,10 @@ class KeyPointsModuleClass {
                         class="admin-btn" style="margin-left: 5px; padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">
                     テンプレート確認
                 </button>
+                <button onclick="KeyPointsModule.deleteKeyPointAndTemplate('${subjectKey}', ${topicIndex})"
+                        class="admin-btn" style="margin-left: 5px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    要点を完全削除
+                </button>
             </div>
         `;
         container.appendChild(adminControls);
@@ -717,6 +721,120 @@ class KeyPointsModuleClass {
         `;
 
         document.body.appendChild(preview);
+    }
+
+    /**
+     * 要点とテンプレートデータを完全削除（管理者用）
+     */
+    async deleteKeyPointAndTemplate(subjectKey, topicIndex) {
+        if (!this.isAdmin) {
+            alert('管理者権限が必要です');
+            return;
+        }
+
+        // 確認ダイアログ
+        if (!confirm('この要点を完全削除しますか？\n・ユーザーデータから削除\n・テンプレートデータからも削除\n・全ユーザーに影響します\n\n削除したデータは復元できません。')) {
+            return;
+        }
+
+        try {
+            console.log(`🗑️ 完全削除開始: ${subjectKey} - トピック${topicIndex}`);
+
+            // Step 1: ユーザーデータから削除
+            await this.deleteUserKeyPoint(subjectKey, topicIndex);
+
+            // Step 2: テンプレートデータから削除
+            await this.deleteFromTemplate(subjectKey, topicIndex);
+
+            // Step 3: 現在のデータ構造を更新
+            if (this.subjects[subjectKey] && this.subjects[subjectKey].topics[topicIndex]) {
+                // HTMLコンテンツを削除（リンクは維持）
+                delete this.subjects[subjectKey].topics[topicIndex].htmlContent;
+                this.subjects[subjectKey].topics[topicIndex].type = 'link';
+            }
+
+            console.log(`✅ 完全削除完了: ${subjectKey} - トピック${topicIndex}`);
+            alert('要点を完全削除しました。\n・ユーザーデータから削除済み\n・テンプレートからも削除済み');
+
+            // 画面を更新（科目一覧に戻る）
+            this.backToSubjectList();
+
+        } catch (error) {
+            console.error('❌ 完全削除エラー:', error);
+            alert('削除に失敗しました: ' + error.message);
+        }
+    }
+
+    /**
+     * ユーザーデータから要点削除
+     */
+    async deleteUserKeyPoint(subjectKey, topicIndex) {
+        if (!window.DataManager) {
+            throw new Error('DataManagerが利用できません');
+        }
+
+        // 現在のユーザーデータを取得
+        const currentData = window.DataManager.data.keyPoints || {};
+
+        if (currentData[subjectKey] && currentData[subjectKey].topics && currentData[subjectKey].topics[topicIndex]) {
+            // 該当トピックのHTMLコンテンツを削除
+            delete currentData[subjectKey].topics[topicIndex].htmlContent;
+
+            // 空のトピック配列をクリーンアップ
+            if (Object.keys(currentData[subjectKey].topics).length === 0) {
+                delete currentData[subjectKey];
+            }
+
+            // DataManagerに保存
+            window.DataManager.data.keyPoints = currentData;
+            await window.DataManager.saveData();
+
+            console.log(`✅ ユーザーデータから削除: ${subjectKey} - トピック${topicIndex}`);
+        }
+    }
+
+    /**
+     * テンプレートデータから要点削除
+     */
+    async deleteFromTemplate(subjectKey, topicIndex) {
+        try {
+            const db = window.firebase.firestore();
+            const templateRef = db.collection('keypoints_templates').doc('default');
+
+            // 既存のテンプレートデータを取得
+            const doc = await templateRef.get();
+            if (!doc.exists) {
+                console.log('📋 テンプレートデータが存在しません');
+                return;
+            }
+
+            const templateData = doc.data();
+
+            // 該当トピックを削除
+            if (templateData[subjectKey] && templateData[subjectKey].topics && templateData[subjectKey].topics[topicIndex]) {
+                delete templateData[subjectKey].topics[topicIndex];
+
+                // 空のトピックオブジェクトをクリーンアップ
+                if (Object.keys(templateData[subjectKey].topics).length === 0) {
+                    delete templateData[subjectKey];
+                }
+
+                // Firestoreを更新
+                if (Object.keys(templateData).length === 0) {
+                    // 全データが空の場合はドキュメント削除
+                    await templateRef.delete();
+                    console.log('📋 テンプレートドキュメントを削除（空のため）');
+                } else {
+                    // 更新されたデータで上書き
+                    await templateRef.set(templateData);
+                    console.log(`✅ テンプレートから削除: ${subjectKey} - トピック${topicIndex}`);
+                }
+            }
+
+        } catch (error) {
+            console.error('❌ テンプレート削除エラー:', error);
+            throw error;
+        }
     }
 
     /**
