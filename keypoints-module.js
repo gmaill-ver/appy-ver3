@@ -740,11 +740,25 @@ class KeyPointsModuleClass {
         try {
             console.log(`🗑️ 完全削除開始: ${subjectKey} - トピック${topicIndex}`);
 
-            // Step 1: ユーザーデータから削除
-            await this.deleteUserKeyPoint(subjectKey, topicIndex);
+            let userDataResult = false;
+            let templateResult = false;
+
+            // Step 1: ユーザーデータから削除（エラーでも継続）
+            try {
+                await this.deleteUserKeyPoint(subjectKey, topicIndex);
+                userDataResult = true;
+            } catch (error) {
+                console.error('⚠️ ユーザーデータ削除でエラー（継続）:', error);
+            }
 
             // Step 2: テンプレートデータから削除
-            await this.deleteFromTemplate(subjectKey, topicIndex);
+            try {
+                await this.deleteFromTemplate(subjectKey, topicIndex);
+                templateResult = true;
+            } catch (error) {
+                console.error('❌ テンプレートデータ削除エラー:', error);
+                throw error; // テンプレート削除は重要なので例外を投げる
+            }
 
             // Step 3: 現在のデータ構造を更新
             if (this.subjects[subjectKey] && this.subjects[subjectKey].topics[topicIndex]) {
@@ -753,8 +767,13 @@ class KeyPointsModuleClass {
                 this.subjects[subjectKey].topics[topicIndex].type = 'link';
             }
 
-            console.log(`✅ 完全削除完了: ${subjectKey} - トピック${topicIndex}`);
-            alert('要点を完全削除しました。\n・ユーザーデータから削除済み\n・テンプレートからも削除済み');
+            console.log(`✅ 完全削除完了: ${subjectKey} - トピック${topicIndex}`, {
+                userData: userDataResult ? '削除済み' : 'エラー/スキップ',
+                template: templateResult ? '削除済み' : 'エラー'
+            });
+
+            const message = `要点を削除しました。\n・ユーザーデータ: ${userDataResult ? '削除済み' : 'エラー/スキップ'}\n・テンプレート: ${templateResult ? '削除済み' : 'エラー'}`;
+            alert(message);
 
             // 画面を更新（科目一覧に戻る）
             this.backToSubjectList();
@@ -769,27 +788,50 @@ class KeyPointsModuleClass {
      * ユーザーデータから要点削除
      */
     async deleteUserKeyPoint(subjectKey, topicIndex) {
-        if (!window.DataManager) {
-            throw new Error('DataManagerが利用できません');
-        }
+        try {
+            console.log('🔍 DataManager構造確認:', {
+                hasDataManager: !!window.DataManager,
+                hasData: !!(window.DataManager?.data),
+                dataKeys: window.DataManager?.data ? Object.keys(window.DataManager.data) : null
+            });
 
-        // 現在のユーザーデータを取得
-        const currentData = window.DataManager.data.keyPoints || {};
-
-        if (currentData[subjectKey] && currentData[subjectKey].topics && currentData[subjectKey].topics[topicIndex]) {
-            // 該当トピックのHTMLコンテンツを削除
-            delete currentData[subjectKey].topics[topicIndex].htmlContent;
-
-            // 空のトピック配列をクリーンアップ
-            if (Object.keys(currentData[subjectKey].topics).length === 0) {
-                delete currentData[subjectKey];
+            if (!window.DataManager) {
+                throw new Error('DataManagerが利用できません');
             }
 
-            // DataManagerに保存
-            window.DataManager.data.keyPoints = currentData;
-            await window.DataManager.saveData();
+            // データ構造を安全に初期化
+            if (!window.DataManager.data) {
+                window.DataManager.data = {};
+            }
+            if (!window.DataManager.data.keyPoints) {
+                window.DataManager.data.keyPoints = {};
+            }
 
-            console.log(`✅ ユーザーデータから削除: ${subjectKey} - トピック${topicIndex}`);
+            const currentData = window.DataManager.data.keyPoints;
+            console.log('🔍 現在の要点データ:', currentData);
+
+            if (currentData[subjectKey] && currentData[subjectKey].topics && currentData[subjectKey].topics[topicIndex]) {
+                // 該当トピックのHTMLコンテンツを削除
+                delete currentData[subjectKey].topics[topicIndex].htmlContent;
+                console.log(`🗑️ HTMLコンテンツ削除: ${subjectKey} - トピック${topicIndex}`);
+
+                // 空のトピック配列をクリーンアップ
+                if (Object.keys(currentData[subjectKey].topics).length === 0) {
+                    delete currentData[subjectKey];
+                    console.log(`🗑️ 空の科目削除: ${subjectKey}`);
+                }
+
+                // DataManagerに保存
+                await window.DataManager.saveData();
+                console.log(`✅ ユーザーデータから削除: ${subjectKey} - トピック${topicIndex}`);
+            } else {
+                console.log(`ℹ️ ユーザーデータに該当データなし: ${subjectKey} - トピック${topicIndex}`);
+            }
+
+        } catch (error) {
+            console.error('❌ ユーザーデータ削除エラー:', error);
+            // ユーザーデータの削除に失敗してもテンプレート削除は続行
+            console.log('⚠️ ユーザーデータ削除をスキップしてテンプレート削除を継続');
         }
     }
 
