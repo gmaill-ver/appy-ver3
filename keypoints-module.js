@@ -510,20 +510,22 @@ class KeyPointsModuleClass {
         const adminControls = document.createElement('div');
         adminControls.className = 'admin-controls';
         adminControls.innerHTML = `
-            <div class="admin-panel" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border: 1px solid #87ceeb; border-radius: 5px;">
-                <strong>🔓 管理者機能</strong>
-                <button onclick="KeyPointsModule.saveCurrentAsTemplate('${subjectKey}', ${topicIndex})"
-                        class="admin-btn" style="margin-left: 10px; padding: 5px 10px; background: #4CAF50; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                    初期データとして保存
-                </button>
-                <button onclick="KeyPointsModule.showTemplatePreview('${subjectKey}', ${topicIndex})"
-                        class="admin-btn" style="margin-left: 5px; padding: 5px 10px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                    テンプレート確認
-                </button>
-                <button onclick="KeyPointsModule.deleteKeyPointAndTemplate('${subjectKey}', ${topicIndex})"
-                        class="admin-btn" style="margin-left: 5px; padding: 5px 10px; background: #f44336; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                    要点を完全削除
-                </button>
+            <div class="admin-panel">
+                <div class="admin-panel-header">🔓 管理者機能</div>
+                <div class="admin-btn-group">
+                    <button onclick="KeyPointsModule.saveCurrentAsTemplate('${subjectKey}', ${topicIndex})"
+                            class="admin-btn admin-btn-save">
+                        💾 初期データとして保存
+                    </button>
+                    <button onclick="KeyPointsModule.showTemplatePreview('${subjectKey}', ${topicIndex})"
+                            class="admin-btn admin-btn-preview">
+                        📋 テンプレート確認
+                    </button>
+                    <button onclick="KeyPointsModule.deleteKeyPointAndTemplate('${subjectKey}', ${topicIndex})"
+                            class="admin-btn admin-btn-delete">
+                        🗑️ 要点を完全削除
+                    </button>
+                </div>
             </div>
         `;
         container.appendChild(adminControls);

@@ -1974,14 +1974,97 @@ body {
     z-index: 2999;
 }
 
+/* 管理者コントロールパネル */
+.admin-controls {
+    margin-top: 15px;
+}
+
+.admin-panel {
+    background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+    border: 2px solid #87ceeb;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-panel-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 12px;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #87ceeb;
+}
+
+.admin-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-btn {
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.admin-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.admin-btn-save {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+}
+
+.admin-btn-save:hover {
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+}
+
+.admin-btn-preview {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+}
+
+.admin-btn-preview:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+}
+
+.admin-btn-delete {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: white;
+}
+
+.admin-btn-delete:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #c62828 100%);
+}
+
 /* レスポンシブ対応 */
 @media (max-width: 768px) {
     .achievement-grid {
         grid-template-columns: repeat(4, 1fr);
     }
-    
+
     .question-grid {
         grid-template-columns: repeat(auto-fill, minmax(30px, 1fr));
+    }
+
+    /* 管理者パネルのタブレット対応 */
+    .admin-btn {
+        padding: 16px 18px;
+        font-size: 16px;
     }
 }
 
