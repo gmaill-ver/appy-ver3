@@ -77,6 +77,8 @@ body {
 
 .app-logo-icon {
     font-size: 24px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .app-title {
@@ -1984,19 +1986,67 @@ body {
 }
 
 @media (max-width: 480px) {
-    .app-title {
-        font-size: 18px;
+    /* ヘッダーのスマホ対応 */
+    .app-header {
+        padding: 12px 10px;
     }
-    
+
+    .header-left, .header-right {
+        min-width: 80px;
+        gap: 5px;
+    }
+
+    .app-logo {
+        gap: 2px;
+    }
+
+    .app-logo .logo-title {
+        gap: 5px;
+    }
+
+    .app-logo-icon {
+        font-size: 20px;
+    }
+
+    .app-title {
+        font-size: 16px;
+    }
+
+    .exam-countdown {
+        font-size: 11px;
+        margin-top: 2px;
+    }
+
+    .exam-countdown .days {
+        font-size: 13px;
+    }
+
+    .timer-icon-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+
+    .timer-display {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    .auth-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
     .main-tab {
         padding: 12px 5px;
         font-size: 14px;
     }
-    
+
     .footer-tab-icon {
         font-size: 18px;
     }
-    
+
     .footer-tab-label {
         font-size: 10px;
     }

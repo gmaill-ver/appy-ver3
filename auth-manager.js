@@ -33,20 +33,15 @@ class AuthManagerClass {
     }
 
     /**
-     * 隠しキー操作の設定 (Ctrl+Shift+A で管理者ログインボタン表示)
+     * 隠しキー操作の設定 (Ctrl+Shift+A またはロゴアイコン5回タップで管理者ログインボタン表示)
      */
     setupSecretKeyBinding() {
-        let keySequence = [];
-        const secretKeys = ['ControlLeft', 'ShiftLeft', 'KeyA']; // Ctrl+Shift+A
-        let isSequenceActive = false;
-
+        // キーボードショートカット: Ctrl+Shift+A
         document.addEventListener('keydown', (event) => {
             // 入力フィールドにフォーカス中は無効
             if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
                 return;
             }
-
-            const key = event.code;
 
             // Ctrl+Shift+A の組み合わせ検出
             if (event.ctrlKey && event.shiftKey && event.code === 'KeyA') {
@@ -55,6 +50,34 @@ class AuthManagerClass {
                 return;
             }
         });
+
+        // スマホ対応: ロゴアイコン📚を5回連続タップ
+        const logoIcon = document.querySelector('.app-logo-icon');
+        if (logoIcon) {
+            let tapCount = 0;
+            let tapTimer = null;
+
+            logoIcon.addEventListener('click', (event) => {
+                event.preventDefault();
+                tapCount++;
+
+                // 前回のタップから1秒以内でなければリセット
+                if (tapTimer) {
+                    clearTimeout(tapTimer);
+                }
+
+                if (tapCount >= 5) {
+                    // 5回タップで管理者UIを表示
+                    this.toggleAdminUI();
+                    tapCount = 0;
+                } else {
+                    // 1秒後にカウントをリセット
+                    tapTimer = setTimeout(() => {
+                        tapCount = 0;
+                    }, 1000);
+                }
+            });
+        }
     }
 
     /**
