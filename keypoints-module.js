@@ -462,17 +462,18 @@ class KeyPointsModuleClass {
                 right: 20px;
                 background: linear-gradient(135deg, #4CAF50, #45a049);
                 color: white;
-                padding: 8px 15px;
-                border-radius: 20px;
+                padding: 8px 12px;
+                border-radius: 50%;
                 box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                 z-index: 9999;
-                font-size: 14px;
-                font-weight: bold;
+                font-size: 18px;
                 display: flex;
                 align-items: center;
-                gap: 5px;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
             ">
-                🔓 管理者モード
+                🔓
             </div>
         `;
         document.body.appendChild(indicator);
@@ -959,7 +960,7 @@ class KeyPointsModuleClass {
         let html = `
             <div style="padding: 15px;">
                 <h3 style="text-align: center; margin-bottom: 25px; color: #2d3748;">📋 科目一覧</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
         `;
 
         subjects.forEach(subject => {
