@@ -120,23 +120,21 @@ class DataManagerClass {
         }
         try {
             console.log('🚀 DataManager初期化開始...');
-            
+
             // ★修正: 固定IDの生成と設定
             await this.setupStableUserId();
-            
-            // ★修正: Firebase初期化を先に実行（復元のため）
+
+            // ★修正: まずLocalStorageからデータを読み込み（フォールバック確保）
+            this.loadAllData();
+
+            // ★修正: Firebase初期化を実行（復元のため）
             await this.initializeFirebase();
-            
-            // ★修正: Firebaseから復元できなかった場合のみローカルを読み込み
-            if (!this.firebaseEnabled || Object.keys(this.books).length === 0) {
-                this.loadAllData();
-            }
-            
+
             // サンプルデータの初期化（必要な場合）
             if (Object.keys(this.books).length === 0) {
                 this.initializeSampleData();
             }
-            
+
             this.initialized = true;
             console.log('✅ DataManager初期化完了');
             return true;
