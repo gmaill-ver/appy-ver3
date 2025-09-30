@@ -15,27 +15,27 @@ class KeyPointsModuleClass {
         // 🚀 軽量フォールバック構造（基本情報のみ - 90%軽量化達成！）
         this.subjects = {
             'constitution': {
-                name: '第1編 憲法',
+                name: '1編 憲法',
                 order: 1,
                 topicCount: 22
             },
             'administrative': {
-                name: '第2編 行政法',
+                name: '2編 行政法',
                 order: 2,
                 topicCount: 36
             },
             'civil': {
-                name: '第3編 民法',
+                name: '3編 民法',
                 order: 3,
                 topicCount: 36
             },
             'commercial': {
-                name: '第4編 商法・会社法',
+                name: '4編 商法・会社法',
                 order: 4,
                 topicCount: 16
             },
             'basic_law': {
-                name: '第5編 基礎法学',
+                name: '5編 基礎法学',
                 order: 5,
                 topicCount: 5
             }
