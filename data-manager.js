@@ -337,9 +337,9 @@ class DataManagerClass {
             console.warn('一問一答サブコレクション読み込みエラー:', error);
         }
         
-        // 6. 要点データの復元（keypointsサブコレクション）
+        // 6. 要点データの復元（keyPointsサブコレクション）
         try {
-            const keypointsRef = userRef.collection('keypoints');
+            const keypointsRef = userRef.collection('keyPoints');
             const keypointsSnapshot = await keypointsRef.get();
             
             if (!keypointsSnapshot.empty) {
@@ -534,12 +534,12 @@ async saveToFirebase() {
             }, { merge: true });
         }
         
-        // keypointsサブコレクション
+        // keyPointsサブコレクション
         const keyPointsData = localStorage.getItem('keyPointsData');
         if (keyPointsData) {
             const parsed = JSON.parse(keyPointsData);
             for (const [subjectKey, data] of Object.entries(parsed)) {
-                const keypointRef = userRef.collection('keypoints').doc(subjectKey);
+                const keypointRef = userRef.collection('keyPoints').doc(subjectKey);
                 batch.set(keypointRef, data, { merge: true });
             }
         }
