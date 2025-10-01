@@ -158,16 +158,19 @@ class KeyPointsModuleClass {
 
             // 📝 Step 2: ユーザーの要点内容をマージ（ユーザー固有の編集内容で上書き）
             if (this.userContent) {
+                let totalMerged = 0;
                 Object.keys(this.userContent).forEach(subjectKey => {
                     if (this.subjects[subjectKey] && this.userContent[subjectKey].topics) {
                         this.userContent[subjectKey].topics.forEach((savedTopic, index) => {
-                            if (savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
+                            if (savedTopic && savedTopic.htmlContent && this.subjects[subjectKey].topics[index]) {
                                 this.subjects[subjectKey].topics[index].htmlContent = savedTopic.htmlContent;
                                 this.subjects[subjectKey].topics[index].type = 'html';
+                                totalMerged++;
                             }
                         });
                     }
                 });
+                console.log(`📝 ユーザーデータマージ完了: ${totalMerged}件のトピック`);
             }
 
             console.log('✅ データマージ完了');
@@ -908,17 +911,34 @@ class KeyPointsModuleClass {
             });
             localStorage.setItem('keyPointsData', JSON.stringify(dataToSave));
 
-            // Firebase保存
+            // Firebase保存（ユーザーが登録したHTMLコンテンツのみ）
             if (window.firebase && window.ULTRA_STABLE_USER_ID) {
                 const db = firebase.firestore();
                 const userRef = db.collection('users').doc(window.ULTRA_STABLE_USER_ID);
                 const keyPointsRef = userRef.collection('keyPoints');
 
                 Object.keys(this.subjects).forEach(subjectKey => {
-                    keyPointsRef.doc(subjectKey).set({
-                        ...this.subjects[subjectKey],
-                        lastUpdated: new Date().toISOString()
-                    }, { merge: true });
+                    const subject = this.subjects[subjectKey];
+
+                    // ユーザーが登録したHTMLコンテンツのみを抽出
+                    const userTopics = [];
+                    subject.topics.forEach((topic, index) => {
+                        if (topic.htmlContent && topic.type === 'html') {
+                            userTopics[index] = {
+                                htmlContent: topic.htmlContent,
+                                type: 'html'
+                            };
+                        }
+                    });
+
+                    // HTMLコンテンツがある場合のみ保存
+                    if (userTopics.length > 0 || userTopics.some(t => t)) {
+                        keyPointsRef.doc(subjectKey).set({
+                            topics: userTopics,
+                            lastUpdated: new Date().toISOString()
+                        }, { merge: true });
+                        console.log(`📤 ${subjectKey} をFirestoreに保存:`, userTopics.filter(t => t).length, '件');
+                    }
                 });
             }
 
