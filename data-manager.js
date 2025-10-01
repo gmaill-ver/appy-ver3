@@ -53,18 +53,29 @@ class DataManagerClass {
     }
 
     /**
-     * 複数ストレージからの確実なID取得
+     * 複数ストレージからの確実なID取得（認証ユーザー優先）
      */
     async getOrCreateFixedUserId() {
         console.log("🔍 固定ID取得・生成開始");
-        
+
+        // 0. 認証ユーザーがいればそのUIDを使用（PC⇔スマホ同期のため）
+        if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) {
+            const authUser = window.firebase.auth().currentUser;
+            const userId = authUser.uid;
+            console.log("✅ 認証ユーザーのUIDを使用:", userId);
+            // LocalStorageにも保存（次回起動時のため）
+            localStorage.setItem('ultraStableUserId', userId);
+            sessionStorage.setItem('ultraStableUserId', userId);
+            return userId;
+        }
+
         // 1. LocalStorageから取得
         let userId = localStorage.getItem('ultraStableUserId');
         if (userId) {
             console.log("✅ LocalStorageから固定ID取得:", userId);
             return userId;
         }
-        
+
         // 2. SessionStorageから取得
         userId = sessionStorage.getItem('ultraStableUserId');
         if (userId) {
@@ -72,15 +83,15 @@ class DataManagerClass {
             localStorage.setItem('ultraStableUserId', userId);
             return userId;
         }
-        
-        // 3. 新規生成
+
+        // 3. 新規生成（未ログイン時のみ）
         userId = this.generateUltraStableUserId();
         console.log("🆕 新規固定ID生成:", userId);
-        
+
         // 全ストレージに保存
         localStorage.setItem('ultraStableUserId', userId);
         sessionStorage.setItem('ultraStableUserId', userId);
-        
+
         return userId;
     }
 

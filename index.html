@@ -430,16 +430,16 @@
     const db = firebase.firestore();
     </script>
 
-    <!-- 📱 JavaScript モジュール読み込み（順序重要） -->
-    <script src="data-manager.js?v=20250924"></script>
-    <script src="ui-components.js?v=20250924"></script>
-    <script src="analytics.js?v=20250924"></script>
-    <script src="auth-manager.js?v=20250924"></script>
-    <script src="qa-module.js?v=20250924"></script>
-    <script src="timer-module.js?v=20250924"></script>
-    <script src="keypoints-module.js?v=20250924"></script>
-    <script src="migrate-keypoints-structure.js?v=20250924"></script>
-    <script src="app.js?v=20250924"></script>
+    <!-- 📱 JavaScript モジュール読み込み（順序重要、defer で高速化） -->
+    <script defer src="data-manager.js?v=20250924"></script>
+    <script defer src="ui-components.js?v=20250924"></script>
+    <script defer src="analytics.js?v=20250924"></script>
+    <script defer src="auth-manager.js?v=20250924"></script>
+    <script defer src="qa-module.js?v=20250924"></script>
+    <script defer src="timer-module.js?v=20250924"></script>
+    <script defer src="keypoints-module.js?v=20250924"></script>
+    <script defer src="migrate-keypoints-structure.js?v=20250924"></script>
+    <script defer src="app.js?v=20250924"></script>
 
 </body>
 </html>

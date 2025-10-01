@@ -101,12 +101,29 @@ class AuthManagerClass {
     /**
      * 認証状態変更処理
      */
-    handleAuthStateChange(user) {
+    async handleAuthStateChange(user) {
         this.currentUser = user;
         this.isAuthenticated = !!user;
 
         // 管理者判定
         this.checkAdminStatus(user);
+
+        // ★追加: ログイン時にユーザーIDを認証UIDに更新
+        if (user && window.DataManager) {
+            const oldUserId = window.ULTRA_STABLE_USER_ID;
+            window.ULTRA_STABLE_USER_ID = user.uid;
+            localStorage.setItem('ultraStableUserId', user.uid);
+            sessionStorage.setItem('ultraStableUserId', user.uid);
+
+            console.log(`🔄 ユーザーID更新: ${oldUserId?.substring(0, 20)}... → ${user.uid.substring(0, 20)}...`);
+
+            // DataManagerのcurrentUserも更新
+            window.DataManager.currentUser = { uid: user.uid };
+            window.DataManager.firebaseEnabled = true;
+
+            // Firebaseからデータを再読み込み
+            await window.DataManager.syncWithFirebase();
+        }
 
         // UIの更新
         this.updateAuthUI();
